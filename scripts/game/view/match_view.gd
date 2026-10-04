@@ -13,6 +13,10 @@ const SPRITE_SCALE := 0.72
 const PORTRAIT_FACE := Rect2(140, 84, 360, 313)
 const PORTRAIT_BUST := Rect2(80, 40, 480, 416)
 const DISC_RADIUS := 21.0
+## Flying discs are drawn at waist height with their shadow on the floor
+## marking the real position, so a throw passing behind a player is seen to
+## go behind them rather than through their body.
+const FLY_HEIGHT := 30.0
 const SPECIAL_COLORS := {
 	"mick": Color("ff2e88"), "tiffany": Color("2de2e6"), "pete": Color("ffd23f"),
 	"speed_b": Color("f15bb5"), "balanced_b": Color("9b5de5"), "power_b": Color("ff4d2e"),
@@ -104,7 +108,7 @@ func _update_trail() -> void:
 	var d := sim.disc
 	if d.state == MatchSim.Disc.FLYING and sim.freeze_ticks == 0:
 		disc_spin += d.vel.length() * 0.04 * signf(d.vel.x + 0.001)
-		trail.push_front(proj.floor_point(d.pos) - Vector2(0, 12))
+		trail.push_front(proj.air_point(d.pos, FLY_HEIGHT))
 		var length := 16 if d.pattern != MatchSim.Pattern.NONE else (12 if d.supersonic else 7)
 		while trail.size() > length:
 			trail.pop_back()
@@ -301,11 +305,24 @@ func _draw_shadows(ci: CanvasItem) -> void:
 		var g := proj.floor_point(p.pos)
 		var s := 1.0 - clampf(p.z / 200.0, 0.0, 0.5)
 		_ellipse(ci, g, 34 * s, 12 * s, Color(0.1, 0.0, 0.2, 0.35))
+		if Settings.show_catch_zones:
+			_catch_zone(ci, p)
 	var d := sim.disc
 	if sim.phase != MatchSim.Phase.MATCH_OVER and d.state != MatchSim.Disc.HELD:
 		var g := proj.floor_point(d.pos)
 		var s := 1.0 - clampf(d.z / 400.0, 0.0, 0.6)
 		_ellipse(ci, g, DISC_RADIUS * s, DISC_RADIUS * 0.45 * s, Color(0.1, 0.0, 0.2, 0.4))
+
+
+## The catch circle drawn on the floor (Options > Graphics > Show catch zones).
+func _catch_zone(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
+	var g := proj.floor_point(p.pos)
+	var r := float(sim.cfg.player.catch_radius) * proj.scale
+	var c := UI.P1 if p.side == MatchSim.LEFT else UI.P2
+	ci.draw_set_transform(g + _current_offset, 0.0, Vector2(1.0, proj.floor_y / proj.scale))
+	ci.draw_circle(Vector2.ZERO, r, Color(c, 0.18))
+	ci.draw_arc(Vector2.ZERO, r, 0, TAU, 48, Color(c, 0.9), 3.0)
+	ci.draw_set_transform(_current_offset)
 
 
 func _ellipse(ci: CanvasItem, centre: Vector2, rx: float, ry: float, color: Color) -> void:
@@ -337,7 +354,8 @@ func _draw_world(ci: CanvasItem, off: Vector2) -> void:
 			"barrier":
 				_draw_barrier(ci, it.b)
 			"disc":
-				_draw_disc(ci, proj.air_point(d.pos, d.z), d.z)
+				var lift := FLY_HEIGHT if d.state == MatchSim.Disc.FLYING else d.z
+				_draw_disc(ci, proj.air_point(d.pos, lift), d.z)
 
 
 func _draw_referee(ci: CanvasItem) -> void:

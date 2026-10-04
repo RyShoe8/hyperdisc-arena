@@ -31,6 +31,7 @@ func _init() -> void:
 		"test_reversed_zones_on_tiled",
 		"test_stadium_zone_grows_with_streak",
 		"test_defender_catches_disc",
+		"test_fast_disc_cannot_skip_the_catch_circle",
 		"test_catch_knocks_light_player_back",
 		"test_uncaught_lob_scores_miss_points",
 		"test_lob_caught_under_marker",
@@ -185,6 +186,18 @@ func test_defender_catches_disc() -> void:
 	check(p.holding, "left player should be holding the disc")
 	check(sim.disc.state == MatchSim.Disc.HELD, "disc should be held")
 	check(Array(sim.scores) == [0, 0], "no points expected")
+
+
+func test_fast_disc_cannot_skip_the_catch_circle() -> void:
+	# A 40-unit-per-tick disc clipping the edge of the catch circle: checked
+	# only at the end of each tick it would land either side of the circle.
+	var sim := new_sim()
+	var p := sim.players[MatchSim.LEFT]
+	var r := float(balance.player.catch_radius)
+	p.pos = Vector2(300, 300)
+	fly(sim, Vector2(360, 300 + r - 3), Vector2(-40, 0), MatchSim.RIGHT)  # samples at x=320 and 280 both miss
+	run(sim, 3)
+	check(p.holding, "a fast disc passing through the edge of the catch circle is caught")
 
 
 func test_catch_knocks_light_player_back() -> void:

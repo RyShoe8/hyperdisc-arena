@@ -503,6 +503,7 @@ func _option_rows() -> Array:
 				["EFFECTS", Settings.EFFECT_LEVELS[Settings.effects]],
 				["RETRO SCANLINES", "ON" if Settings.scanlines else "OFF"],
 				["SHOW FPS", "ON" if Settings.show_fps else "OFF"],
+				["SHOW CATCH ZONES", "ON" if Settings.show_catch_zones else "OFF"],
 			]
 		"AUDIO":
 			return [
@@ -577,6 +578,8 @@ func _options_input() -> void:
 					Settings.scanlines = not Settings.scanlines
 				5:
 					Settings.show_fps = not Settings.show_fps
+				6:
+					Settings.show_catch_zones = not Settings.show_catch_zones
 			Settings.apply()
 		"AUDIO":
 			var delta := 0.1 * signf(step) if n.x != 0 else 0.0
