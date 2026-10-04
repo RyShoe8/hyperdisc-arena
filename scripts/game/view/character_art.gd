@@ -33,10 +33,26 @@ func _init(character_id: String) -> void:
 ## Frame index for an animation `ticks` physics ticks after it started.
 func frame_for(anim: String, ticks: int) -> int:
 	var a: Dictionary = animations.get(anim, animations["idle"])
+	if a.has("ticks"):
+		return int(a.start) + _held_frame(a.ticks, ticks, a.loop)
 	var count := int(a.count)
 	var step := int(floor(ticks * float(a.fps) / 60.0))
 	var i := step % count if a.loop else mini(step, count - 1)
 	return int(a.start) + i
+
+
+## Frames that each hold for their own number of ticks (key poses that
+## hold, then snap to the next).
+static func _held_frame(holds: Array, ticks: int, loop: bool) -> int:
+	var total := 0
+	for h in holds:
+		total += int(h)
+	var t := ticks % total if loop else mini(ticks, total - 1)
+	for i in holds.size():
+		t -= int(holds[i])
+		if t < 0:
+			return i
+	return holds.size() - 1
 
 
 func region(frame: int) -> Rect2:
