@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hyperdisc Arena — test builds</title>
+<title>HyperDisc Arena — test builds</title>
 <style>
   :root { --bg:#101626; --panel:#1d3557; --text:#e9ecef; --dim:#8d99ae; --accent:#ffd166; --hot:#ef476f; }
   * { box-sizing: border-box; }
@@ -11,7 +11,8 @@
          font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
          display:flex; align-items:center; justify-content:center; padding:24px 16px; }
   main { width:100%; max-width:640px; text-align:center; }
-  h1 { font-size:clamp(32px, 8vw, 56px); margin:0 0 4px; letter-spacing:1px; }
+  h1 { margin:0 0 8px; }
+  h1 img { display:block; width:100%; height:auto; }
   .sub { color:var(--accent); margin:0 0 32px; }
   .play { display:block; background:var(--hot); color:#fff; text-decoration:none; font-size:24px;
           font-weight:700; padding:18px; border-radius:10px; margin-bottom:24px; }
@@ -26,13 +27,13 @@
 </head>
 <body>
 <main>
-  <h1>HYPERDISC ARENA</h1>
+  <h1><img src="logo.png" alt="HyperDisc Arena" width="1200" height="520"></h1>
   <p class="sub">Test build <code>__COMMIT__</code> · __DATE__</p>
   <a class="play" href="play/">▶ Play in browser</a>
   <div class="downloads">
-    <a href="__RELEASE__/HyperdiscArena-windows.zip">Windows</a>
-    <a href="__RELEASE__/HyperdiscArena-macos.zip">macOS</a>
-    <a href="__RELEASE__/HyperdiscArena-linux.zip">Linux</a>
+    <a href="__RELEASE__/HyperDiscArena-windows.zip">Windows</a>
+    <a href="__RELEASE__/HyperDiscArena-macos.zip">macOS</a>
+    <a href="__RELEASE__/HyperDiscArena-linux.zip">Linux</a>
   </div>
   <p class="note">Controllers: plug in, then press a button so the browser detects it.
     Desktop downloads give the lowest input lag. On macOS the build is unsigned: right-click the app and choose Open the first time.</p>

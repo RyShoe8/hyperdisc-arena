@@ -1,4 +1,4 @@
-# Hyperdisc Arena
+# HyperDisc Arena
 
 Arcade disc duel built in Godot 4.5 (Compatibility renderer). This is the
 single-player prototype: coloured boxes, full core rules, one CPU opponent.

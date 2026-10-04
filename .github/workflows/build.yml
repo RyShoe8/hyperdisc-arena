@@ -3,6 +3,7 @@ name: Build
 on:
   push:
     branches: [main, "claude/**"]
+  pull_request:
   workflow_dispatch:
 
 env:
@@ -57,14 +58,15 @@ jobs:
           for preset in Web Windows Linux macOS; do
             ~/godot/godot --headless --export-release "$preset"
           done
-          (cd build/windows && zip -q ../HyperdiscArena-windows.zip *)
-          (cd build/linux && zip -q ../HyperdiscArena-linux.zip *)
-          cp build/macos/HyperdiscArena.zip build/HyperdiscArena-macos.zip
+          (cd build/windows && zip -q ../HyperDiscArena-windows.zip *)
+          (cd build/linux && zip -q ../HyperDiscArena-linux.zip *)
+          cp build/macos/HyperDiscArena.zip build/HyperDiscArena-macos.zip
 
       - name: Assemble site
         run: |
           mkdir -p public/play
           cp -r build/web/* public/play/
+          cp site/logo.png public/
           sed -e "s|__COMMIT__|${GITHUB_SHA::7}|" \
               -e "s|__DATE__|$(date -u '+%Y-%m-%d %H:%M UTC')|" \
               -e "s|__RELEASE__|https://github.com/${GITHUB_REPOSITORY}/releases/download/latest-build|" \
@@ -73,7 +75,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: builds
-          path: build/HyperdiscArena-*.zip
+          path: build/HyperDiscArena-*.zip
           retention-days: 14
 
       - uses: actions/upload-pages-artifact@v3
@@ -87,7 +89,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete latest-build --yes --cleanup-tag || true
-          gh release create latest-build build/HyperdiscArena-*.zip \
+          gh release create latest-build build/HyperDiscArena-*.zip \
             --prerelease --target "$GITHUB_SHA" --title "Latest test build" \
             --notes "Automatic build of ${GITHUB_SHA::7}. Play in the browser: https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/"
 

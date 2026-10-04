@@ -24,3 +24,6 @@ mono_crash.*.json
 # Uncomment if your project does not version PCK files as runtime dependencies.
 # *.pck
 build/
+
+# Python bytecode (tools/blender scripts)
+__pycache__/
