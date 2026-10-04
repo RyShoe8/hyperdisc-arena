@@ -6,6 +6,12 @@ extends SceneTree
 const MatchSim := preload("res://scripts/sim/match_sim.gd")
 const CpuPlayer := preload("res://scripts/sim/cpu_player.gd")
 const ControlsScript := preload("res://scripts/game/controls.gd")
+const RollbackSession := preload("res://scripts/net/rollback_session.gd")
+const LoopbackTransport := preload("res://scripts/net/loopback_transport.gd")
+const InputCodec := preload("res://scripts/net/input_codec.gd")
+const OnlineMatch := preload("res://scripts/net/online_match.gd")
+const QrCode := preload("res://scripts/game/ui/qr_code.gd")
+const PhoneControllers := preload("res://scripts/net/phone_controllers.gd")
 
 const IDLE := {"x": 0, "y": 0, "a": false, "b": false}
 
@@ -18,7 +24,7 @@ func _init() -> void:
 	balance = JSON.parse_string(FileAccess.get_file_as_string("res://data/balance.json"))
 	# A script that fails to compile can't be instantiated; without this guard
 	# every test would just log errors and the run would still "pass".
-	for script in [MatchSim, CpuPlayer, ControlsScript]:
+	for script in [MatchSim, CpuPlayer, ControlsScript, RollbackSession, LoopbackTransport, InputCodec, OnlineMatch, QrCode, PhoneControllers]:
 		if not script.can_instantiate():
 			printerr("FAIL: %s does not compile" % script.resource_path)
 			quit(1)
@@ -59,7 +65,16 @@ func _init() -> void:
 		"test_cpu_match_is_deterministic",
 		"test_cpu_match_finishes",
 		"test_cpu_matches_finish_on_every_court",
+		"test_save_and_load_state_replays_identically",
+		"test_input_codec_round_trips",
+		"test_rollback_peers_stay_in_sync_over_a_bad_network",
+		"test_rollback_matches_offline_result",
+		"test_online_lobby_to_match_and_rematch",
+		"test_online_rejects_a_different_version",
+		"test_qr_code_versions",
+		"test_phone_tap_between_ticks_still_counts",
 		"test_stick_snaps_to_8_directions",
+		"test_playstation_controllers_detected",
 	]:
 		current = test
 		call(test)
@@ -554,3 +569,221 @@ func test_stick_snaps_to_8_directions() -> void:
 	for v in cases:
 		var got := ControlsScript.snap8(v)
 		check(got == cases[v], "snap8(%s) = %s, expected %s" % [v, got, cases[v]])
+
+
+func test_playstation_controllers_detected() -> void:
+	# Browser ids, desktop (SDL) names and the Sony vendor id all count.
+	check(ControlsScript.looks_like_playstation(
+		"Standard Gamepad Mapping DualSense Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 0ce6)"),
+		"DualSense in a browser")
+	check(ControlsScript.looks_like_playstation("PS5 Controller"), "DualSense on desktop")
+	check(ControlsScript.looks_like_playstation("Standard Gamepad Mapping", 0x054C), "any Sony vendor id")
+	check(not ControlsScript.looks_like_playstation("Xbox Series X Controller", 0x045E), "Xbox pad")
+	check(not ControlsScript.looks_like_playstation("Standard Gamepad Mapping"), "unknown pad")
+
+
+func test_save_and_load_state_replays_identically() -> void:
+	var sim := new_sim(4, 1, 5)
+	var a := CpuPlayer.new(MatchSim.LEFT, balance.cpu.hard, 3)
+	var b := CpuPlayer.new(MatchSim.RIGHT, balance.cpu.hard, 4)
+	for i in 400:
+		sim.step([a.think(sim), b.think(sim)])
+	var saved := sim.save_state()
+	var inputs := []
+	for i in 600:
+		var step := [a.think(sim), b.think(sim)]
+		inputs.append(step)
+		sim.step(step)
+	var expected := sim.state_checksum()
+	sim.load_state(saved)
+	for step in inputs:
+		sim.step(step)
+	check(sim.state_checksum() == expected, "restoring a saved state and replaying gives the same match")
+
+
+func test_input_codec_round_trips() -> void:
+	var samples := [{"x": -1, "y": 1, "a": true, "b": false, "jump": true, "slap": false,
+		"a_down": true, "b_down": false}, {"x": 0, "y": 0}, {"x": 1, "y": -1, "slap": true, "b_down": true}]
+	for input in samples:
+		var back := InputCodec.decode(InputCodec.encode(input))
+		for k in ["x", "y"] + InputCodec.BUTTONS:
+			check(back[k] == input.get(k, 0 if k in ["x", "y"] else false), "codec keeps %s in %s" % [k, input])
+	check(InputCodec.encode({}) == InputCodec.IDLE, "an empty input encodes as idle")
+
+
+## Two peers, each with its own sim and a CPU choosing its inputs, linked by
+## a simulated network. Returns [left_session, right_session].
+func online_pair(ticks: int, latency: int, jitter: int, loss: float, seed_value: int) -> Array:
+	var link := LoopbackTransport.pair(latency, jitter, loss, seed_value)
+	var sessions := []
+	var cpus := []
+	for side in [0, 1]:
+		var sim := new_sim(1, 0, 3)
+		sessions.append(RollbackSession.new(sim, link[side], side, 2))
+		cpus.append(CpuPlayer.new(side, balance.cpu.hard, seed_value * 10 + side))
+	for t in ticks:
+		for side in [0, 1]:
+			link[side].advance()
+			for data in link[side].receive():
+				sessions[side].handle_packet(data)
+			var s = sessions[side]
+			s.tick(cpus[side].think(s.sim))
+	return sessions
+
+
+func test_rollback_peers_stay_in_sync_over_a_bad_network() -> void:
+	var sessions := online_pair(60 * 60, 5, 4, 0.08, 7)
+	var left = sessions[0]
+	var right = sessions[1]
+	check(not left.desynced and not right.desynced, "no desync over a laggy, lossy link")
+	check(left.stats.rollbacks > 0, "the bad link forced some rollbacks (%s)" % [left.stats])
+	check(left._local_checksums.size() > 20, "checksums were exchanged (%d)" % left._local_checksums.size())
+	# Every frame both sides consider final must hold the same state.
+	var common := mini(left.last_remote_frame, right.last_remote_frame)
+	var f := (common / 60) * 60
+	check(left.states.has(f) and right.states.has(f), "both kept frame %d" % f)
+	if left.states.has(f) and right.states.has(f):
+		check(var_to_str(left.states[f]) == var_to_str(right.states[f]), "frame %d is identical on both machines" % f)
+	check(left.frame > 60 * 60 - 120, "the match kept up with real time (frame %d)" % left.frame)
+	print("  rollback: left %s, right %s, frame %d" % [left.stats, right.stats, left.frame])
+
+
+func test_rollback_matches_offline_result() -> void:
+	# With a perfect link and no prediction errors the online sim must equal
+	# an offline sim fed the same inputs.
+	var link := LoopbackTransport.pair(0, 0, 0.0, 1)
+	var sim_l := new_sim(0, 2, 4)
+	var sim_r := new_sim(0, 2, 4)
+	var offline := new_sim(0, 2, 4)
+	var left := RollbackSession.new(sim_l, link[0], 0, 2)
+	var right := RollbackSession.new(sim_r, link[1], 1, 2)
+	var history := {}
+	for t in 1500:
+		var li := {"x": (t / 40) % 3 - 1, "y": (t / 25) % 3 - 1, "a": t % 17 == 0, "b": t % 53 == 0}
+		var ri := {"x": (t / 30) % 3 - 1, "y": (t / 35) % 3 - 1, "a": t % 19 == 0, "jump": t % 61 == 0}
+		for side in [0, 1]:
+			link[side].advance()
+		for data in link[0].receive():
+			left.handle_packet(data)
+		for data in link[1].receive():
+			right.handle_packet(data)
+		left.tick(li)
+		right.tick(ri)
+		history[t + 2] = [li, ri]
+	var frames := mini(left.frame, right.frame) - 10
+	for f in frames:
+		var step: Array = history.get(f, [{}, {}])
+		offline.step([InputCodec.decode(InputCodec.encode(step[0])), InputCodec.decode(InputCodec.encode(step[1]))])
+	check(left.states.has(frames) and var_to_str(left.states[frames]) == var_to_str(offline.save_state()),
+		"online result equals the offline result for the same inputs")
+
+
+func test_online_lobby_to_match_and_rematch() -> void:
+	var link := LoopbackTransport.pair(3, 2, 0.05, 11)
+	var host := OnlineMatch.new(link[0], balance, true, "MICK")
+	var guest := OnlineMatch.new(link[1], balance, false, "PETE")
+	var matches := [host, guest]
+	var cpus := [CpuPlayer.new(0, balance.cpu.hard, 1), CpuPlayer.new(1, balance.cpu.hard, 2)]
+	var phase := 0
+	for t in 60 * 70:
+		for i in [0, 1]:
+			link[i].advance()
+			var m = matches[i]
+			var input: Dictionary = cpus[i].think(m.sim) if m.state == OnlineMatch.State.PLAYING else {}
+			m.poll(input)
+		if phase == 0 and host.state == OnlineMatch.State.LOBBY and guest.state == OnlineMatch.State.LOBBY:
+			check(host.remote_name == "PETE" and guest.remote_name == "MICK", "names exchanged")
+			host.set_court(4)
+			host.set_pick(1, true)
+			guest.set_pick(2, true)
+			phase = 1
+		elif phase == 1 and host.can_start():
+			host.start()
+			phase = 2
+		elif phase == 2 and host.state == OnlineMatch.State.PLAYING and guest.state == OnlineMatch.State.PLAYING:
+			phase = 3
+		elif phase == 3 and host.session.frame > 60 * 30:
+			host.request_rematch()
+			phase = 4
+	check(phase == 4, "lobby reached a match and a rematch (phase %d)" % phase)
+	# match_settled() must turn true once a finished match is confirmed, even
+	# though the opponent's inputs always trail the current frame.
+	var link2 := LoopbackTransport.pair(5, 2, 0.05, 21)
+	var h2 := OnlineMatch.new(link2[0], balance, true, "A")
+	var g2 := OnlineMatch.new(link2[1], balance, false, "B")
+	var pair2 := [h2, g2]
+	var settled := [false, false]
+	for t in 60 * 20:
+		for i in [0, 1]:
+			link2[i].advance()
+			pair2[i].poll({})
+		if t == 30:
+			h2.set_pick(0, true)
+			g2.set_pick(0, true)
+		if t == 60:
+			h2.start()
+		if t == 200:
+			# Force both sims to the brink: one more set ends the match.
+			for om in pair2:
+				if om.sim != null:
+					om.sim.sets_won = [1, 0] as Array[int]
+					om.sim.set_number = 2
+					om.sim.set_ticks_left = 30
+		for i in [0, 1]:
+			settled[i] = settled[i] or pair2[i].match_settled()
+	check(settled[0] and settled[1], "both peers see the finished match as settled (%s)" % [settled])
+	# Leaving from the results screen keeps the result for the other player.
+	h2.leave()
+	for t in 30:
+		link2[1].advance()
+		g2.poll({})
+	check(g2.state == OnlineMatch.State.ENDED and g2.opponent_left,
+		"a settled match survives the opponent leaving (state %d, %s)" % [g2.state, g2.failure])
+	check(guest.court == 4, "the guest got the host's court")
+	check(host.state == OnlineMatch.State.LOBBY and guest.state == OnlineMatch.State.LOBBY,
+		"both went back to the lobby for the rematch (%d, %d)" % [host.state, guest.state])
+	check(not host.local_locked and not guest.remote_locked, "picks unlock for the rematch")
+
+
+func test_online_rejects_a_different_version() -> void:
+	var link := LoopbackTransport.pair(1, 0, 0.0, 3)
+	var host := OnlineMatch.new(link[0], balance, true, "A")
+	var guest := OnlineMatch.new(link[1], balance, false, "B")
+	host._build += 1  # pretend the host runs different rules
+	for t in 120:
+		for i in [0, 1]:
+			link[i].advance()
+		host.poll({})
+		guest.poll({})
+	check(guest.state == OnlineMatch.State.FAILED and "VERSION" in guest.failure,
+		"a guest with different rules is turned away (%s)" % guest.failure)
+
+
+func test_qr_code_versions() -> void:
+	var qr = QrCode.encode("https://playbound.club/c/7KQ2MX")
+	check(qr != null and qr.version == 3 and qr.size == 29, "a join link fits version 3")
+	# Finder pattern corners are dark, their separators light.
+	check(qr.dark(0, 0) and qr.dark(qr.size - 1, 0) and qr.dark(0, qr.size - 1) and not qr.dark(7, 7),
+		"finder patterns in three corners")
+	check(QrCode.encode("x".repeat(300)) == null, "text past version 10 is refused")
+
+
+func test_phone_tap_between_ticks_still_counts() -> void:
+	var controls = ControlsScript.new()
+	var device: int = controls.VIRTUAL_BASE
+	controls.set_virtual_pad(device, "Phone", Vector2.ZERO, {})
+	controls._physics_process(0.0)
+	# Press and release both arrive before the next tick.
+	controls.set_virtual_pad(device, "Phone", Vector2.ZERO, {JOY_BUTTON_B: true})
+	controls.set_virtual_pad(device, "Phone", Vector2.ZERO, {JOY_BUTTON_B: false})
+	controls._physics_process(0.0)
+	check(controls.menu_pressed("b") == device, "the quick tap registers as a press")
+	controls._physics_process(0.0)
+	check(controls.menu_pressed("b") == -1, "and only once")
+	check(controls.pads[0] == device or controls.pads[1] == device, "the phone took a player slot")
+	controls.set_virtual_pad(device, "Phone", Vector2(0, 0.9), {})
+	controls._physics_process(0.0)
+	check(controls.pad_nudged(device) == Vector2i(0, 1), "stick down moves down")
+	controls.remove_virtual_pad(device)
+	check(device not in controls.pads, "leaving frees the slot")
+	controls.free()

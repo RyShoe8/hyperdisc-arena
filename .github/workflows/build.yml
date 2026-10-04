@@ -3,6 +3,9 @@ name: Build
 on:
   push:
     branches: [main, "claude/**"]
+    # A version tag (v0.2.0) publishes a full release: the PlayBound launcher
+    # installs the newest one, and GitHub's "latest" skips prereleases.
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 
@@ -62,7 +65,9 @@ jobs:
         run: ~/godot/godot --headless --import
 
       - name: Run tests
-        run: ~/godot/godot --headless --script res://tests/run_tests.gd
+        run: |
+          ~/godot/godot --headless --script res://tests/run_tests.gd
+          ~/godot/godot --headless --script res://tests/test_mixtape.gd
 
       - name: Export all platforms
         run: |
@@ -106,6 +111,14 @@ jobs:
           gh release create latest-build build/HyperDiscArena-*.zip \
             --prerelease --target "$GITHUB_SHA" --title "Latest test build" \
             --notes "Automatic build of ${GITHUB_SHA::7}. Play in the browser: https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/"
+
+      - name: Publish a versioned release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          gh release create "$tag" build/HyperDiscArena-*.zip             --title "HyperDisc Arena ${tag#v}" --verify-tag             --notes "Windows: download HyperDiscArena-windows.zip, unzip, run HyperDiscArena.exe. Or install it from the PlayBound launcher."
 
     permissions:
       contents: write

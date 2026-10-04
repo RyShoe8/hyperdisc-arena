@@ -47,6 +47,19 @@ Moves that combine buttons:
 
 The pause menu has the full move list, using your current buttons.
 
+## Online play (Windows)
+
+**Online** in the main menu: **Host room** gives you a code to share and
+your friend picks **Join room** and types it; it works over the internet
+with no router setup (PlayBound Connect, WebRTC). **Sign in with PlayBound**
+adds your friends list and in-game match invites. LAN and join-by-address
+are there too. Both players pick, the host picks the court and starts.
+Matches use rollback netcode, so they stay responsive over normal internet
+latency. See [docs/ONLINE.md](docs/ONLINE.md) for how it works.
+
+No controller? **Options > Controls > Phone as controller** shows a QR code:
+scan it and your phone becomes a gamepad through PlayBound (no app or account).
+
 ## Rules
 
 Windjammers 2 rules: sets last 90 seconds or until someone reaches 15
@@ -97,6 +110,8 @@ Kenney Future (CC0). Sound: Kenney Interface Sounds (CC0, see
 | `scripts/game/view/` | Match drawing (court, players, disc, effects, HUD), projection, character sprite sheets |
 | `scripts/game/ui/theme.gd` | Palette, fonts, panels and the animated Outrun background |
 | `scripts/game/controls.gd` | Controller and keyboard input: player slots, hot-plugging, rebinding, 8-way stick, rumble |
+| `scripts/net/` | Online: rollback session, lobby, transports (WebRTC rooms, UDP, simulated), PlayBound client (sign-in, friends, presence, invites, rooms), direct connect |
+| `scripts/game/online_screens.gd` | Online menu, PlayBound sign-in, friends and invites, rooms / LAN, lobby and the online match loop |
 | `scripts/game/settings.gd` | Graphics, audio and control settings, saved to `user://settings.cfg` |
 | `tools/blender/` | Scripts that render the courts, characters and logo |
 | `export_presets.cfg`, `.github/workflows/build.yml` | Web, Windows, macOS and Linux exports, built on every push |
@@ -117,5 +132,10 @@ Pass these after `--` when launching the game, e.g.
 
 - `--demo` CPU plays CPU straight away (also an attract mode)
 - `--court=N --p1=N --p2=N --difficulty=N` pick the court, characters and CPU level
-- `--screen=title|main|select|court|vs|options` open a screen directly
+- `--phone` opens the phone-as-controller QR code
+- `--screen=title|main|select|court|vs|options|online|friends` open a screen directly
 - `--shots=60,240 --out=DIR` save screenshots at those ticks, then quit
+- `--host[=port]`, `--join=address`, `--host-room`, `--join-room=CODE`,
+  `--playbound-api=URL`, `--bot`, `--name=NAME`, `--netlag=MS`,
+  `--netloss=PERCENT`, `--quit-after-match` drive online play from the command
+  line (two CPU-controlled instances can play each other; see docs/ONLINE.md)

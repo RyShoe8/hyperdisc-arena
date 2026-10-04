@@ -201,6 +201,71 @@ func state_hash() -> int:
 	return var_to_str(parts).hash()
 
 
+# --- Save and restore (rollback netcode) -----------------------------------
+
+## Everything step() can change, outside the players and the disc.
+const _STATE_VARS := ["tick", "phase", "phase_ticks", "freeze_ticks", "scores", "sets_won",
+	"streak", "set_number", "sudden_death", "set_ticks_left", "winner", "server"]
+static var _object_vars := {}
+
+
+## A deep copy of the match state. load_state() of it puts the sim back
+## exactly as it was, so rollback can rewind and re-simulate.
+func save_state() -> Dictionary:
+	var s := {}
+	for k in _STATE_VARS:
+		s[k] = _copy(get(k))
+	var ps := []
+	for p in players:
+		ps.append(_save_object(p))
+	s["players"] = ps
+	s["disc"] = _save_object(disc)
+	return s
+
+
+func load_state(s: Dictionary) -> void:
+	for k in _STATE_VARS:
+		set(k, _copy(s[k]))
+	for i in players.size():
+		_load_object(players[i], s.players[i])
+	_load_object(disc, s.disc)
+	events.clear()
+
+
+## Checksum of the complete state, for spotting desyncs between peers.
+func state_checksum() -> int:
+	return var_to_str(save_state()).hash()
+
+
+static func _copy(v: Variant) -> Variant:
+	return v.duplicate(true) if v is Array or v is Dictionary else v
+
+
+## Script variables of a PlayerState or DiscState, except the character
+## definition (shared and never changed by the sim).
+static func _vars_of(o: Object) -> Array:
+	var key: String = o.get_script().resource_path + ":" + str(o.get_script().get_instance_id())
+	if not _object_vars.has(key):
+		var names := []
+		for prop in o.get_property_list():
+			if prop.usage & PROPERTY_USAGE_SCRIPT_VARIABLE and prop.name != "character":
+				names.append(prop.name)
+		_object_vars[key] = names
+	return _object_vars[key]
+
+
+static func _save_object(o: Object) -> Dictionary:
+	var d := {}
+	for k in _vars_of(o):
+		d[k] = _copy(o.get(k))
+	return d
+
+
+static func _load_object(o: Object, d: Dictionary) -> void:
+	for k in d:
+		o.set(k, _copy(d[k]))
+
+
 # --- Simulation ------------------------------------------------------------
 
 func step(inputs: Array) -> void:
