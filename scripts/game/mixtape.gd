@@ -61,8 +61,17 @@ func catalog_ready() -> bool:
 			pool += 1
 	return base == 5 and pool >= 15
 
+## Decks hold six tapes, or every owned tape while the catalog is smaller
+## (PlayBound's testing mode before the launch catalog exists).
+func deck_size() -> int:
+	var owned := 0
+	for t in tracks:
+		if inventory.has(str(t.get("id", ""))):
+			owned += 1
+	return clampi(owned, 1, 6)
+
 func valid_deck() -> bool:
-	if deck.size() != 6:
+	if deck.size() != deck_size():
 		return false
 	var seen := {}
 	for id in deck:
@@ -146,7 +155,7 @@ func begin_match(o) -> void:
 	match_info = {}
 	dub_candidates = []
 	_set_playlist(deck.duplicate())
-	if not Online.signed_in() or active_match == "" or deck.size() != 6 or not "session_id" in o.transport:
+	if not Online.signed_in() or active_match == "" or not valid_deck() or not "session_id" in o.transport:
 		active_match = ""
 		return
 	var res: Dictionary = await Online.api.call_api(HTTPClient.METHOD_POST, "/api/mixtape/match", {

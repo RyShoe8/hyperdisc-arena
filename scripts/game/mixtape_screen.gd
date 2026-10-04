@@ -20,8 +20,9 @@ func open(as_dub := false) -> void:
 	slot = 0
 	jcard = false
 	draft = Mixtape.deck.duplicate()
-	while draft.size() < 6:
+	while draft.size() < Mixtape.deck_size():
 		draft.append("")
+	draft.resize(Mixtape.deck_size())
 	Mixtape.refresh()
 	if dubbing and Online.current != null:
 		Mixtape.finish_match(Online.current)
@@ -54,7 +55,7 @@ func input() -> void:
 		if jcard:
 			_load_cover(str(list[index]))
 	if n.x != 0:
-		slot = posmod(slot + n.x, 6)
+		slot = posmod(slot + n.x, draft.size())
 	if Controls.menu_pressed("slap") != -1:
 		jcard = not jcard
 		if jcard:
@@ -132,7 +133,7 @@ func draw() -> void:
 			if dubbing and Mixtape.inventory.has(list[i]):
 				UI.text(m, Vector2(1080, 360 + row * 165), "IN COLLECTION", 20, UI.DIM, null, 0, HORIZONTAL_ALIGNMENT_RIGHT)
 		if not dubbing:
-			for i in 6:
+			for i in draft.size():
 				var tape := Mixtape.track(str(draft[i]))
 				UI.button(m, Rect2(1190, 240 + i * 95, 550, 78), "%d  %s" % [i + 1, str(tape.get("title", "EMPTY SLOT")).left(24)], slot == i, m.frame, 25)
 			UI.text(m, Vector2(1465, 865), "START: SAVE MATCH DECK", 24, UI.YELLOW)
