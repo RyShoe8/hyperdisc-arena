@@ -15,6 +15,7 @@ var shake := 2
 var effects := 1
 var scanlines := false
 var show_fps := false
+var show_catch_zones := false
 var master_volume := 0.9
 var sfx_volume := 0.9
 
@@ -43,6 +44,7 @@ func load_settings() -> void:
 	effects = int(cfg.get_value("graphics", "effects", effects))
 	scanlines = bool(cfg.get_value("graphics", "scanlines", scanlines))
 	show_fps = bool(cfg.get_value("graphics", "show_fps", show_fps))
+	show_catch_zones = bool(cfg.get_value("graphics", "show_catch_zones", show_catch_zones))
 	master_volume = float(cfg.get_value("audio", "master", master_volume))
 	sfx_volume = float(cfg.get_value("audio", "sfx", sfx_volume))
 	var bindings = cfg.get_value("controls", "bindings", null)
@@ -58,6 +60,7 @@ func save() -> void:
 	cfg.set_value("graphics", "effects", effects)
 	cfg.set_value("graphics", "scanlines", scanlines)
 	cfg.set_value("graphics", "show_fps", show_fps)
+	cfg.set_value("graphics", "show_catch_zones", show_catch_zones)
 	cfg.set_value("audio", "master", master_volume)
 	cfg.set_value("audio", "sfx", sfx_volume)
 	cfg.set_value("controls", "bindings", Controls.get_bindings())

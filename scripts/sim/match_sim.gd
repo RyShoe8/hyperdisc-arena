@@ -395,6 +395,7 @@ func _update_disc() -> void:
 func _update_flying() -> void:
 	var r := disc_radius()
 	var h := court_height()
+	var from := disc.pos
 	disc.pattern_ticks += 1
 	_move_by_pattern()
 
@@ -425,8 +426,11 @@ func _update_flying() -> void:
 		# Deflected back off a barrier: the thrower has to deal with it.
 		defender = disc.thrower
 	var p := players[defender]
-	if p.knock_ticks == 0 and not p.holding and side_of(disc.pos.x) == defender \
-			and p.pos.distance_to(disc.pos) <= float(cfg.player.catch_radius):
+	# Test the whole path travelled this tick, not just where the disc ended
+	# up: fast throws move further per tick than the catch circle is wide.
+	var touch := Geometry2D.get_closest_point_to_segment(p.pos, from, disc.pos)
+	if p.knock_ticks == 0 and not p.holding and side_of(touch.x) == defender \
+			and p.pos.distance_to(touch) <= float(cfg.player.catch_radius):
 		_catch(p)
 		return
 
