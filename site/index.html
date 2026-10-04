@@ -28,7 +28,7 @@
 <body>
 <main>
   <h1><img src="logo.png" alt="HyperDisc Arena" width="1200" height="520"></h1>
-  <p class="sub">Test build <code>__COMMIT__</code> · __DATE__</p>
+  <p class="sub">Test build <code>__COMMIT__</code> · <time id="build-time" datetime="__BUILD_TIMESTAMP__">__DATE__</time></p>
   <a class="play" href="play/">▶ Play in browser</a>
   <div class="downloads">
     <a href="__RELEASE__/HyperDiscArena-windows.zip">Windows</a>
@@ -38,5 +38,18 @@
   <p class="note">Controllers: plug in, then press a button so the browser detects it.
     Desktop downloads give the lowest input lag. On macOS the build is unsigned: right-click the app and choose Open the first time.</p>
 </main>
+<script>
+  const buildTime = document.getElementById('build-time');
+  const builtAt = new Date(buildTime.dateTime);
+  if (!Number.isNaN(builtAt.getTime())) {
+    const weekday = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(builtAt);
+    const hour = new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: true })
+      .format(builtAt).replace(/\s/g, '').toLowerCase();
+    buildTime.textContent = `${weekday} at ${hour}`;
+    buildTime.title = new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'full', timeStyle: 'long'
+    }).format(builtAt);
+  }
+</script>
 </body>
 </html>
