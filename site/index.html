@@ -23,20 +23,31 @@
   .downloads a:hover { outline:2px solid var(--accent); }
   .note { color:var(--dim); font-size:14px; margin-top:28px; }
   code { color:var(--accent); }
+  .pad { background:var(--panel); border-radius:8px; padding:12px 14px; margin-bottom:16px;
+         text-align:left; font-size:14px; border-left:4px solid var(--dim); }
+  .pad.ok { border-left-color:#06d6a0; }
+  .pad.warn { border-left-color:var(--accent); }
+  .pad strong { display:block; font-size:15px; }
+  .pad .detail { color:var(--dim); overflow-wrap:anywhere; }
+  .pad .live { color:var(--accent); font-family:ui-monospace, Consolas, monospace; }
 </style>
 </head>
 <body>
 <main>
   <h1><img src="logo.png" alt="HyperDisc Arena" width="1200" height="520"></h1>
   <p class="sub">Test build <code>__COMMIT__</code> · <time id="build-time" datetime="__BUILD_TIMESTAMP__">__DATE__</time></p>
+  <div class="pad" id="pad" aria-live="polite">
+    <strong id="pad-title">Controller check</strong>
+    <span class="detail" id="pad-detail">Plug in a controller, click this page, then press a button.</span>
+    <div class="live" id="pad-live"></div>
+  </div>
   <a class="play" href="play/">▶ Play in browser</a>
   <div class="downloads">
     <a href="__RELEASE__/HyperDiscArena-windows.zip">Windows</a>
     <a href="__RELEASE__/HyperDiscArena-macos.zip">macOS</a>
     <a href="__RELEASE__/HyperDiscArena-linux.zip">Linux</a>
   </div>
-  <p class="note">Controllers: plug in, then press a button so the browser detects it.
-    Desktop downloads give the lowest input lag. On macOS the build is unsigned: right-click the app and choose Open the first time.</p>
+  <p class="note">Desktop downloads give the lowest input lag. On macOS the build is unsigned: right-click the app and choose Open the first time.</p>
 </main>
 <script>
   const buildTime = document.getElementById('build-time');
@@ -49,6 +60,61 @@
     buildTime.title = new Intl.DateTimeFormat(undefined, {
       dateStyle: 'full', timeStyle: 'long'
     }).format(builtAt);
+  }
+
+  // Controller check: shows what this browser reports, so testers can tell a
+  // browser problem from a game problem before they press Play.
+  const box = document.getElementById("pad");
+  const title = document.getElementById("pad-title");
+  const detail = document.getElementById("pad-detail");
+  const live = document.getElementById("pad-live");
+  const BUTTONS = ["A / Cross", "B / Circle", "X / Square", "Y / Triangle", "LB / L1", "RB / R1",
+    "LT / L2", "RT / R2", "Back / Create", "Start / Options", "L3", "R3",
+    "D-pad up", "D-pad down", "D-pad left", "D-pad right", "Home / PS", "Touchpad"];
+
+  function show(state, heading, text, extra = "") {
+    box.className = "pad " + state;
+    title.textContent = heading;
+    detail.textContent = text;
+    live.textContent = extra;
+  }
+
+  function check() {
+    const pads = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : null;
+    if (!pads) {
+      show("warn", "Controllers not supported here",
+        "This browser has no controller support. Use Chrome or Edge, or a desktop download.");
+      return;
+    }
+    if (!pads.length) {
+      show("", "No controller yet",
+        document.hasFocus()
+          ? "Plug one in and press a face button (A / Cross). The PS and Xbox buttons may not count."
+          : "Click this page first: the browser only shows controllers to the focused tab.");
+    } else {
+      const p = pads[0];
+      const name = p.id.replace(/\s*\(.*\)\s*$/, "") || p.id;
+      const pressed = p.buttons.map((b, i) => b.pressed ? (BUTTONS[i] || "button " + i) : null)
+        .filter(Boolean);
+      const stick = Math.hypot(p.axes[0] || 0, p.axes[1] || 0) > 0.35
+        ? `stick ${(p.axes[0] || 0).toFixed(2)}, ${(p.axes[1] || 0).toFixed(2)}` : "";
+      const input = [...pressed, stick].filter(Boolean).join(" + ") || "press buttons to test";
+      const more = pads.length > 1 ? ` (+${pads.length - 1} more)` : "";
+      if (p.mapping === "standard") {
+        show("ok", `✓ ${name} detected${more}`, "Ready for the browser version.", input);
+      } else {
+        show("warn", `${name} detected, unusual layout${more}`,
+          "The browser doesn't recognise this controller's layout, so buttons may be wrong in the browser version. The desktop download handles it properly.",
+          input);
+      }
+    }
+    requestAnimationFrame(check);
+  }
+  if (navigator.getGamepads) {
+    addEventListener("gamepadconnected", () => {});  // some browsers only expose pads to pages listening for this
+    requestAnimationFrame(check);
+  } else {
+    check();
   }
 </script>
 </body>
