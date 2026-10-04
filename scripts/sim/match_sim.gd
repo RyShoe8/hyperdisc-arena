@@ -401,6 +401,18 @@ func _update_player(p: PlayerState, input: Dictionary) -> void:
 	_clamp_to_half(p)
 
 
+## Vertical aim for throws, slaps and lobs, -1..1. With the analog stick it's
+## continuous: a stick at 45 degrees or steeper gives the full angle (as the
+## 8-way diagonal always did), shallower angles give flatter shots. Keys and
+## D-pad give -1, 0 or 1.
+static func aim_y(input: Dictionary) -> float:
+	var ma := int(input.get("ma", 0))
+	if ma > 0:
+		var s := sin(float(ma - 1) * TAU / 48.0)
+		return clampf(s / 0.7071, -1.0, 1.0)
+	return float(input.get("y", 0))
+
+
 ## Movement direction (unit vector, or zero): the analog stick's angle when
 ## there is one ("ma"), else the 8-way x/y. Aiming always uses x/y.
 static func move_dir(input: Dictionary) -> Vector2:
@@ -654,7 +666,7 @@ func _throw(p: PlayerState, input: Dictionary, smash: bool) -> void:
 		dir = Vector2(fwd * cos(a), curve_dir * sin(a))
 	else:
 		var angle := float(t.smash_angle_degrees if smash else t.angle_degrees)
-		var a := deg_to_rad(angle) * float(input.get("y", 0))
+		var a := deg_to_rad(angle) * aim_y(input)
 		dir = Vector2(fwd * cos(a), sin(a))
 
 	var rally_mult := minf(1.0 + float(t.rally_speed_gain) * disc.rally, float(t.rally_speed_cap))
@@ -728,7 +740,7 @@ func _lob(p: PlayerState, input: Dictionary) -> void:
 	var shallow_x := net_x() + float(a.lob_shallow_x_from_net) if p.side == LEFT \
 		else net_x() - float(a.lob_shallow_x_from_net)
 	var target := Vector2(lerpf(deep_x, shallow_x, depth),
-		p.pos.y + float(input.get("y", 0)) * float(a.lob_aim_y_offset))
+		p.pos.y + aim_y(input) * float(a.lob_aim_y_offset))
 	var margin := float(cfg.player.radius)
 	target.y = clampf(target.y, margin, court_height() - margin)
 	var superlob := p.charged
@@ -746,12 +758,12 @@ func _slap(p: PlayerState, input: Dictionary) -> void:
 	var d: Dictionary = cfg.defence
 	var fwd := forward(p.side)
 	var rx := int(input.get("x", 0)) * fwd
-	var y := float(input.get("y", 0))
+	var y := aim_y(input)
 	var angle := 0.0
 	if y != 0.0:
 		angle = float(d.slap_steep_degrees if rx < 0 else d.slap_narrow_degrees)
-	var a := deg_to_rad(angle)
-	var dir := Vector2(fwd * cos(a), y * sin(a))
+	var a := deg_to_rad(angle) * absf(y)
+	var dir := Vector2(fwd * cos(a), signf(y) * sin(a))
 	var speed := maxf(disc.vel.length() * float(d.slap_speed_mult),
 		float(cfg.throw.base_speed) * float(p.character.power))
 	disc.rally += 1

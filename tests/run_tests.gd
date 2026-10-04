@@ -68,6 +68,7 @@ func _init() -> void:
 		"test_save_and_load_state_replays_identically",
 		"test_input_codec_round_trips",
 		"test_analog_stick_moves_at_any_angle",
+		"test_analog_aim_is_continuous",
 		"test_rollback_peers_stay_in_sync_over_a_bad_network",
 		"test_rollback_matches_offline_result",
 		"test_online_lobby_to_match_and_rematch",
@@ -805,3 +806,13 @@ func test_analog_stick_moves_at_any_angle() -> void:
 	for deg in [0.0, 45.0, 90.0, 135.0, 180.0, -90.0]:
 		var v := Vector2(cos(deg_to_rad(deg)), sin(deg_to_rad(deg)))
 		check(MatchSim.move_dir({"ma": InputCodec.angle_step(v)}).is_equal_approx(v), "%d degrees is exact" % deg)
+
+
+func test_analog_aim_is_continuous() -> void:
+	var at := func(deg: float) -> float:
+		return MatchSim.aim_y({"x": 1, "ma": InputCodec.angle_step(Vector2(cos(deg_to_rad(deg)), sin(deg_to_rad(deg))))})
+	check(absf(at.call(0.0)) < 0.01, "level stick throws straight")
+	check(at.call(15.0) > 0.2 and at.call(15.0) < 0.5, "a shallow stick gives a shallow angle (%.2f)" % at.call(15.0))
+	check(is_equal_approx(at.call(45.0), 1.0) and is_equal_approx(at.call(90.0), 1.0), "45 degrees and steeper is the full angle")
+	check(at.call(-30.0) < -0.5, "upward aims up")
+	check(MatchSim.aim_y({"y": -1}) == -1.0, "keys keep the 8-way aim")
