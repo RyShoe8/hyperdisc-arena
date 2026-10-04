@@ -1,75 +1,168 @@
 {
-  "version": 1,
-  "court": {
-    "width": 1000,
-    "height": 560,
-    "net_x": 500,
-    "disc_radius": 12,
-    "zones": [
+  "version": 2,
+  "disc_radius": 14,
+  "zone_layouts": {
+    "standard": [
       { "from": 0.0, "to": 0.3, "points": 3 },
       { "from": 0.3, "to": 0.7, "points": 5 },
       { "from": 0.7, "to": 1.0, "points": 3 }
+    ],
+    "reversed": [
+      { "from": 0.0, "to": 0.15, "points": 5 },
+      { "from": 0.15, "to": 0.85, "points": 3 },
+      { "from": 0.85, "to": 1.0, "points": 5 }
     ]
   },
+  "stadium": {
+    "base_half_width": 0.05,
+    "growth_per_point": 0.05,
+    "max_half_width": 0.25
+  },
+  "courts": [
+    { "id": "beach", "name": "BEACH", "width": 1120, "height": 600, "zones": "standard", "barriers": [] },
+    { "id": "lawn", "name": "LAWN", "width": 1240, "height": 660, "zones": "standard", "barriers": [] },
+    { "id": "tiled", "name": "TILED", "width": 1120, "height": 600, "zones": "reversed", "barriers": [] },
+    { "id": "concrete", "name": "CONCRETE", "width": 1240, "height": 660, "zones": "reversed",
+      "barriers": [
+        { "x": 0.24, "y": 0.13, "r": 30 }, { "x": 0.24, "y": 0.87, "r": 30 },
+        { "x": 0.76, "y": 0.13, "r": 30 }, { "x": 0.76, "y": 0.87, "r": 30 }
+      ] },
+    { "id": "clay", "name": "CLAY", "width": 1240, "height": 660, "zones": "standard",
+      "barriers": [
+        { "x": 0.36, "y": 0.5, "r": 34 }, { "x": 0.64, "y": 0.5, "r": 34 }
+      ] },
+    { "id": "stadium", "name": "STADIUM", "width": 1240, "height": 660, "zones": "stadium", "barriers": [] }
+  ],
   "match": {
-    "set_seconds": 30,
-    "points_to_win_set": 12,
+    "set_seconds": 90,
+    "points_to_win_set": 15,
     "sets_to_win": 2,
     "max_sets": 3,
     "miss_points": 2,
-    "point_pause_ticks": 90,
-    "set_pause_ticks": 150,
-    "serve_delay_ticks": 30
+    "ready_ticks": 130,
+    "point_pause_ticks": 120,
+    "set_pause_ticks": 220,
+    "serve_delay_ticks": 20
   },
   "player": {
-    "radius": 22,
-    "catch_radius": 36,
-    "run_speed": 5.0,
-    "dash_speed": 11.0,
-    "dash_ticks": 10,
-    "dash_recovery_ticks": 12,
+    "radius": 26,
+    "catch_radius": 46,
+    "run_speed": 8.5,
+    "air_control": 0.5,
+    "dash_speed": 19.0,
+    "dash_ticks": 9,
+    "dash_recovery_ticks": 10,
     "hold_limit_ticks": 120,
     "serve_hold_limit_ticks": 180,
-    "home_x_from_wall": 90
+    "home_x_from_wall": 110,
+    "jump_velocity": 10.0,
+    "gravity": 0.72,
+    "jump_reach": 60,
+    "landing_recovery_ticks": 5
   },
   "throw": {
-    "base_speed": 9.0,
+    "base_speed": 17.0,
     "angle_degrees": 35,
-    "rally_speed_gain": 0.04,
-    "rally_speed_cap": 1.6,
-    "supersonic_window_ticks": 6,
-    "supersonic_mult": 1.35,
+    "rally_speed_gain": 0.03,
+    "rally_speed_cap": 1.45,
+    "supersonic_window_ticks": 8,
+    "supersonic_mult": 1.3,
     "hold_decay_per_tick": 0.006,
     "hold_decay_floor": 0.55,
     "curve_angle_degrees": 40,
-    "curve_accel": 0.35,
-    "motion_window_ticks": 15
+    "curve_accel": 0.55,
+    "motion_window_ticks": 15,
+    "smash_mult": 1.35,
+    "smash_angle_degrees": 25
   },
-  "lob": {
-    "flight_ticks": 70,
-    "peak_height": 140,
-    "deep_x_from_wall": 80,
-    "shallow_x_from_net": 80,
-    "shallow_after_ticks": 60,
-    "aim_y_offset": 160,
-    "catch_height": 30
+  "defence": {
+    "block_radius": 96,
+    "slap_radius": 112,
+    "slap_steep_degrees": 62,
+    "slap_narrow_degrees": 16,
+    "slap_speed_mult": 0.95,
+    "slap_whiff_recovery_ticks": 16,
+    "power_toss_radius": 260
+  },
+  "air": {
+    "catch_height": 40,
+    "lob_flight_ticks": 62,
+    "lob_peak": 170,
+    "lob_deep_x_from_wall": 90,
+    "lob_shallow_x_from_net": 110,
+    "lob_shallow_after_ticks": 50,
+    "lob_aim_y_offset": 200,
+    "toss_flight_ticks": 48,
+    "toss_peak": 150,
+    "toss_forward": 40,
+    "drop_flight_ticks": 36,
+    "drop_peak": 90,
+    "drop_x_from_net": 80,
+    "ref_flight_ticks": 72,
+    "ref_peak": 230,
+    "superlob_flight_ticks": 54,
+    "superlob_peak": 200,
+    "buzzsaw_speed": 13.0
+  },
+  "charge": {
+    "radius": 46,
+    "ticks_needed": 22
+  },
+  "special": {
+    "speed_mult": 1.1,
+    "knock_mult": 2.0,
+    "launch_freeze_ticks": 8,
+    "ex_speed_mult": 1.35,
+    "ex_knock_mult": 3.2,
+    "snake_amplitude": 0.3,
+    "snake_frequency": 0.16,
+    "zigzag_angle_degrees": 42,
+    "zigzag_ticks": 11,
+    "loop_radius": 72,
+    "loop_angular_speed": 0.26,
+    "loop_forward_mult": 0.75,
+    "wallburn_accel": 1.03,
+    "wallburn_max_mult": 2.0,
+    "ricochet_angle_degrees": 68,
+    "ricochet_speed_mult": 1.25,
+    "cannon_start_mult": 0.8,
+    "cannon_accel": 1.045,
+    "cannon_max_mult": 1.7,
+    "cannon_knock_mult": 2.8
+  },
+  "ex": {
+    "max": 100,
+    "gain_throw": 5,
+    "gain_catch": 4,
+    "gain_supersonic": 9,
+    "gain_slap": 12,
+    "gain_block": 8,
+    "gain_conceded": 10
   },
   "knockback": {
-    "base": 3.0,
+    "base": 3.6,
     "ticks": 12,
     "decay": 0.85
   },
+  "hitstop": {
+    "fast_catch_speed": 21.0,
+    "fast_catch_ticks": 4,
+    "special_catch_ticks": 9
+  },
   "characters": [
-    { "id": "speed_a", "name": "Speed A", "speed": 1.4, "power": 0.7, "weight": 0.75 },
-    { "id": "speed_b", "name": "Speed B", "speed": 1.25, "power": 0.85, "weight": 0.85 },
-    { "id": "balanced_a", "name": "Balanced A", "speed": 1.1, "power": 1.0, "weight": 1.0 },
-    { "id": "balanced_b", "name": "Balanced B", "speed": 1.1, "power": 1.0, "weight": 1.0 },
-    { "id": "power_a", "name": "Power A", "speed": 0.95, "power": 1.2, "weight": 1.15 },
-    { "id": "power_b", "name": "Power B", "speed": 0.85, "power": 1.35, "weight": 1.3 }
+    { "id": "mick", "name": "Mick Magnum", "archetype": "Balanced", "speed": 1.1, "power": 1.0, "weight": 1.0, "special": "loop", "special_name": "DANGER ZONE" },
+    { "id": "tiffany", "name": "Tiffany Seasons", "archetype": "Speed", "speed": 1.4, "power": 0.7, "weight": 0.75, "special": "snake", "special_name": "RIPTIDE" },
+    { "id": "pete", "name": "Pete Pelican", "archetype": "Power", "speed": 0.95, "power": 1.2, "weight": 1.15, "special": "ricochet", "special_name": "PELICAN DIVE" },
+    { "id": "speed_b", "name": "Speed B", "archetype": "Speed", "speed": 1.25, "power": 0.85, "weight": 0.85, "special": "wallburn", "special_name": "WALL BURNER" },
+    { "id": "balanced_b", "name": "Balanced B", "archetype": "Balanced", "speed": 1.1, "power": 1.0, "weight": 1.0, "special": "zigzag", "special_name": "ZIGZAG" },
+    { "id": "power_b", "name": "Power B", "archetype": "Power", "speed": 0.85, "power": 1.35, "weight": 1.3, "special": "cannon", "special_name": "CANNON" }
   ],
   "cpu": {
-    "easy": { "reaction_ticks": 18, "aim_error": 70, "hold_min": 20, "hold_max": 60, "lob_chance": 0.15, "curve_chance": 0.1, "dash_distance": 9999 },
-    "normal": { "reaction_ticks": 10, "aim_error": 35, "hold_min": 8, "hold_max": 35, "lob_chance": 0.2, "curve_chance": 0.25, "dash_distance": 140 },
-    "hard": { "reaction_ticks": 5, "aim_error": 12, "hold_min": 2, "hold_max": 15, "lob_chance": 0.2, "curve_chance": 0.4, "dash_distance": 90 }
+    "easy": { "reaction_ticks": 16, "aim_error": 80, "hold_min": 20, "hold_max": 60, "lob_chance": 0.15, "curve_chance": 0.1, "dash_distance": 9999,
+      "jump_chance": 0.1, "slap_chance": 0.0, "block_chance": 0.05, "drop_chance": 0.02, "special_chance": 0.5, "ex_chance": 0.3, "power_toss_chance": 0.0 },
+    "normal": { "reaction_ticks": 9, "aim_error": 40, "hold_min": 6, "hold_max": 30, "lob_chance": 0.18, "curve_chance": 0.25, "dash_distance": 150,
+      "jump_chance": 0.35, "slap_chance": 0.08, "block_chance": 0.12, "drop_chance": 0.05, "special_chance": 0.85, "ex_chance": 0.7, "power_toss_chance": 0.1 },
+    "hard": { "reaction_ticks": 4, "aim_error": 14, "hold_min": 1, "hold_max": 14, "lob_chance": 0.18, "curve_chance": 0.4, "dash_distance": 95,
+      "jump_chance": 0.7, "slap_chance": 0.18, "block_chance": 0.18, "drop_chance": 0.08, "special_chance": 1.0, "ex_chance": 1.0, "power_toss_chance": 0.25 }
   }
 }

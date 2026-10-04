@@ -3,10 +3,11 @@
 ## input Dictionaries. Controllers are read directly by device id rather than
 ## through InputMap, so slots survive unplugging and replugging.
 ##
-## Slots: player 1 = first controller + WASD/J/K/Esc or Enter,
-##        player 2 = second controller + arrows/Numpad1/Numpad2/Backspace.
-## Controller: left stick or D-pad = move/aim, A = throw/dash, B = lob,
-##             X = throw/dash, Y = lob (alternates), Start = pause.
+## Slots: player 1 = first controller + its keyboard keys,
+##        player 2 = second controller + its keyboard keys.
+## Every action can be rebound per player, for controller and keyboard,
+## from the options menu. Movement is always the left stick or D-pad (pad)
+## and the player's four direction keys (keyboard).
 extends Node
 
 signal changed(message: String)
@@ -14,21 +15,33 @@ signal changed(message: String)
 const PLAYERS := 2
 ## Stick travel ignored around the centre, to stop drift on worn sticks.
 const DEADZONE := 0.35
-
-const KEYS := [
-	{"up": KEY_W, "down": KEY_S, "left": KEY_A, "right": KEY_D,
-		"a": KEY_J, "b": KEY_K, "start": KEY_ESCAPE, "start2": KEY_ENTER},
-	{"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT,
-		"a": KEY_KP_1, "b": KEY_KP_2, "start": KEY_BACKSPACE, "start2": KEY_KP_ENTER},
+## Rebindable actions, in the order the options menu lists them.
+const ACTIONS := ["a", "b", "jump", "slap", "start"]
+const ACTION_NAMES := {
+	"a": "THROW / DASH / BLOCK", "b": "LOB / DROP SHOT", "jump": "JUMP",
+	"slap": "SLAP / EX SHOT", "start": "PAUSE",
+}
+const MOVE_KEYS := [
+	{"up": KEY_W, "down": KEY_S, "left": KEY_A, "right": KEY_D},
+	{"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT},
 ]
-const PAD_A := [JOY_BUTTON_A, JOY_BUTTON_X]
-const PAD_B := [JOY_BUTTON_B, JOY_BUTTON_Y]
+const DEFAULT_KEYS := [
+	{"a": [KEY_J], "b": [KEY_K], "jump": [KEY_L], "slap": [KEY_I], "start": [KEY_ESCAPE, KEY_ENTER]},
+	{"a": [KEY_KP_1], "b": [KEY_KP_2], "jump": [KEY_KP_3], "slap": [KEY_KP_5],
+		"start": [KEY_BACKSPACE, KEY_KP_ENTER]},
+]
+const DEFAULT_PAD := {
+	"a": [JOY_BUTTON_A], "b": [JOY_BUTTON_B], "jump": [JOY_BUTTON_X],
+	"slap": [JOY_BUTTON_Y, JOY_BUTTON_RIGHT_SHOULDER], "start": [JOY_BUTTON_START],
+}
 
 ## Controller device id per player slot, or -1 when the slot has none.
 var pads: Array[int] = [-1, -1]
 ## True when the player last touched a controller rather than the keyboard,
 ## so on-screen prompts can show the right buttons.
 var using_pad: Array[bool] = [false, false]
+## bindings[player] = {"keys": {action: [keycodes]}, "pad": {action: [buttons]}}
+var bindings: Array = []
 
 var _now: Array[Dictionary] = [{}, {}]
 var _prev: Array[Dictionary] = [{}, {}]
@@ -40,6 +53,12 @@ var _pad_prev := {}
 var _seen := {}
 ## Last raw controller event, shown on the menu for troubleshooting.
 var last_raw := "none yet"
+## While rebinding, the next key or button press is captured instead of used.
+var _capture := {}
+
+
+func _init() -> void:
+	reset_bindings()
 
 
 func _ready() -> void:
@@ -48,6 +67,47 @@ func _ready() -> void:
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 	for device in Input.get_connected_joypads():
 		_assign(device, false)
+
+
+func reset_bindings() -> void:
+	bindings = []
+	for i in PLAYERS:
+		bindings.append({"keys": DEFAULT_KEYS[i].duplicate(true), "pad": DEFAULT_PAD.duplicate(true)})
+
+
+func get_bindings() -> Dictionary:
+	return {"players": bindings.duplicate(true)}
+
+
+func set_bindings(data: Dictionary) -> void:
+	var players = data.get("players", null)
+	if not players is Array or players.size() != PLAYERS:
+		return
+	reset_bindings()
+	for i in PLAYERS:
+		for kind in ["keys", "pad"]:
+			var src = players[i].get(kind, {})
+			for action in ACTIONS:
+				if src is Dictionary and src.get(action) is Array and not src[action].is_empty():
+					bindings[i][kind][action] = src[action].duplicate()
+
+
+## Starts capturing the next key ("keys") or controller button ("pad") for
+## a player's action. Escape / the pad's Start cancels.
+func capture(player: int, kind: String, action: String) -> void:
+	_capture = {"player": player, "kind": kind, "action": action, "done": false}
+
+
+func capturing() -> bool:
+	return not _capture.is_empty() and not _capture.done
+
+
+func capture_finished() -> bool:
+	return not _capture.is_empty() and _capture.done
+
+
+func end_capture() -> void:
+	_capture = {}
 
 
 func _physics_process(_delta: float) -> void:
@@ -68,6 +128,8 @@ func _physics_process(_delta: float) -> void:
 ## announcing the controller. Register any controller the moment it sends
 ## something, so it still gets a player slot.
 func _input(event: InputEvent) -> void:
+	if capturing():
+		_try_capture(event)
 	if event is InputEventJoypadButton:
 		last_raw = "device %d button %d %s" % [event.device, event.button_index,
 			"down" if event.pressed else "up"]
@@ -78,6 +140,20 @@ func _input(event: InputEvent) -> void:
 	if not _seen.has(event.device):
 		_seen[event.device] = true
 		_assign(event.device, true)
+
+
+func _try_capture(event: InputEvent) -> void:
+	var c := _capture
+	if c.kind == "keys" and event is InputEventKey and event.pressed and not event.echo:
+		if event.physical_keycode != KEY_ESCAPE or c.action == "start":
+			bindings[c.player].keys[c.action] = [event.physical_keycode]
+		c.done = true
+		get_viewport().set_input_as_handled()
+	elif c.kind == "pad" and event is InputEventJoypadButton and event.pressed:
+		if event.button_index != JOY_BUTTON_START or c.action == "start":
+			bindings[c.player].pad[c.action] = [event.button_index]
+		c.done = true
+		get_viewport().set_input_as_handled()
 
 
 ## One line describing detected controllers, for the menu.
@@ -98,10 +174,12 @@ func diagnostics() -> String:
 func input(player: int) -> Dictionary:
 	var s := _now[player]
 	return {"x": s.get("x", 0), "y": s.get("y", 0),
-		"a": pressed(player, "a"), "b": pressed(player, "b")}
+		"a": pressed(player, "a"), "b": pressed(player, "b"),
+		"jump": pressed(player, "jump"), "slap": pressed(player, "slap"),
+		"a_down": s.get("a", false), "b_down": s.get("b", false)}
 
 
-## True on the tick a button ("a", "b" or "start") goes down.
+## True on the tick a button goes down.
 func pressed(player: int, button: String) -> bool:
 	return _now[player].get(button, false) and not _prev[player].get(button, false)
 
@@ -132,18 +210,25 @@ func menu_nudged(only_player_one := false) -> Vector2i:
 	for device in _pad_now:
 		if only_player_one and device == pads[1]:
 			continue
-		var now: Dictionary = _pad_now[device]
-		var prev: Dictionary = _pad_prev.get(device, {})
-		var x: int = now.x if now.x != prev.get("x", 0) else 0
-		var y: int = now.y if now.y != prev.get("y", 0) else 0
-		if x != 0 or y != 0:
-			return Vector2i(x, y)
+		var n := pad_nudged(device)
+		if n != Vector2i.ZERO:
+			return n
 	return Vector2i.ZERO
+
+
+func pad_nudged(device: int) -> Vector2i:
+	var now: Dictionary = _pad_now.get(device, {})
+	var prev: Dictionary = _pad_prev.get(device, {})
+	var x: int = now.get("x", 0) if now.get("x", 0) != prev.get("x", 0) else 0
+	var y: int = now.get("y", 0) if now.get("y", 0) != prev.get("y", 0) else 0
+	return Vector2i(x, y)
 
 
 ## The controller that just pressed this button, -2 for a keyboard, or -1
 ## if nothing did. Lets any controller confirm in menus.
 func menu_pressed(button: String) -> int:
+	if capturing():
+		return -1
 	for device in _pad_now:
 		if _pad_now[device].get(button, false) and not _pad_prev.get(device, {}).get(button, false):
 			return device
@@ -151,6 +236,14 @@ func menu_pressed(button: String) -> int:
 		if _keys_pressed(i, button):
 			return -2
 	return -1
+
+
+## Any key or button at all (title screen).
+func anything_pressed() -> bool:
+	for button in ACTIONS:
+		if menu_pressed(button) != -1:
+			return true
+	return false
 
 
 ## Makes this controller player 1, moving any previous player-1 controller
@@ -183,16 +276,31 @@ func rumble(player: int, weak: float, strong: float, seconds: float) -> void:
 		Input.start_joy_vibration(pads[player], clampf(weak, 0, 1), clampf(strong, 0, 1), seconds)
 
 
-## Button labels for prompts, following the device the player last used.
-## PlayStation controllers get Cross/Circle/Options instead of A/B/Start.
+## Button label for prompts, following the device the player last used.
 func label(player: int, button: String) -> String:
+	if button == "move":
+		return "STICK" if using_pad[player] else ("WASD" if player == 0 else "ARROWS")
 	if using_pad[player]:
-		if is_playstation(player):
-			return {"a": "Cross", "b": "Circle", "start": "Options", "move": "Stick"}[button]
-		return {"a": "A", "b": "B", "start": "Start", "move": "Stick"}[button]
-	if player == 0:
-		return {"a": "J", "b": "K", "start": "Esc", "move": "WASD"}[button]
-	return {"a": "Num1", "b": "Num2", "start": "Backspace", "move": "Arrows"}[button]
+		var b: Array = bindings[player].pad[button]
+		return button_name(b[0], is_playstation(player)) if not b.is_empty() else "?"
+	var k: Array = bindings[player].keys[button]
+	return key_name(k[0]) if not k.is_empty() else "?"
+
+
+static func key_name(code: int) -> String:
+	return OS.get_keycode_string(code).to_upper()
+
+
+static func button_name(button: int, playstation: bool) -> String:
+	var xbox := {JOY_BUTTON_A: "A", JOY_BUTTON_B: "B", JOY_BUTTON_X: "X", JOY_BUTTON_Y: "Y",
+		JOY_BUTTON_LEFT_SHOULDER: "LB", JOY_BUTTON_RIGHT_SHOULDER: "RB", JOY_BUTTON_START: "START",
+		JOY_BUTTON_BACK: "BACK", JOY_BUTTON_LEFT_STICK: "L3", JOY_BUTTON_RIGHT_STICK: "R3"}
+	var ps := {JOY_BUTTON_A: "CROSS", JOY_BUTTON_B: "CIRCLE", JOY_BUTTON_X: "SQUARE",
+		JOY_BUTTON_Y: "TRIANGLE", JOY_BUTTON_LEFT_SHOULDER: "L1", JOY_BUTTON_RIGHT_SHOULDER: "R1",
+		JOY_BUTTON_START: "OPTIONS", JOY_BUTTON_BACK: "CREATE", JOY_BUTTON_LEFT_STICK: "L3",
+		JOY_BUTTON_RIGHT_STICK: "R3"}
+	var names := ps if playstation else xbox
+	return names.get(button, "BUTTON %d" % button)
 
 
 func is_playstation(player: int) -> bool:
@@ -208,29 +316,46 @@ func is_playstation(player: int) -> bool:
 # --- Sampling --------------------------------------------------------------
 
 func _sample(player: int) -> Dictionary:
-	var keys: Dictionary = KEYS[player]
+	var mk: Dictionary = MOVE_KEYS[player]
 	var kb := Vector2(
-		int(Input.is_physical_key_pressed(keys.right)) - int(Input.is_physical_key_pressed(keys.left)),
-		int(Input.is_physical_key_pressed(keys.down)) - int(Input.is_physical_key_pressed(keys.up)))
-	var kb_a := Input.is_physical_key_pressed(keys.a)
-	var kb_b := Input.is_physical_key_pressed(keys.b)
-	var kb_start := Input.is_physical_key_pressed(keys.start) \
-		or Input.is_physical_key_pressed(keys.start2)
+		int(Input.is_physical_key_pressed(mk.right)) - int(Input.is_physical_key_pressed(mk.left)),
+		int(Input.is_physical_key_pressed(mk.down)) - int(Input.is_physical_key_pressed(mk.up)))
+	var keys_down := {}
+	for action in ACTIONS:
+		var down := false
+		for code in bindings[player].keys[action]:
+			down = down or Input.is_physical_key_pressed(code)
+		keys_down[action] = down
 
 	var pad: Dictionary = _pad_now.get(pads[player], {}) if pads[player] >= 0 else {}
 	var stick := Vector2(pad.get("x", 0), pad.get("y", 0))
-	var pad_a: bool = pad.get("a", false)
-	var pad_b: bool = pad.get("b", false)
-	var pad_start: bool = pad.get("start", false)
-
-	if stick != Vector2.ZERO or pad_a or pad_b or pad_start:
+	var pad_any := stick != Vector2.ZERO
+	var kb_any := kb != Vector2.ZERO
+	var out := {}
+	for action in ACTIONS:
+		var p: bool = _pad_action(pad, player, action)
+		pad_any = pad_any or p
+		kb_any = kb_any or keys_down[action]
+		out[action] = p or keys_down[action]
+		out["kb_" + action] = keys_down[action]
+	if pad_any:
 		using_pad[player] = true
-	elif kb != Vector2.ZERO or kb_a or kb_b or kb_start:
+	elif kb_any:
 		using_pad[player] = false
-
 	var dir := Vector2i(stick) if stick != Vector2.ZERO else snap8(kb)
-	return {"x": dir.x, "y": dir.y, "a": pad_a or kb_a, "b": pad_b or kb_b,
-		"start": pad_start or kb_start, "kb_a": kb_a, "kb_b": kb_b, "kb_start": kb_start}
+	out["x"] = dir.x
+	out["y"] = dir.y
+	return out
+
+
+func _pad_action(pad: Dictionary, player: int, action: String) -> bool:
+	if pad.is_empty():
+		return false
+	var buttons: Dictionary = pad.get("buttons", {})
+	for b in bindings[player].pad[action]:
+		if buttons.get(b, false):
+			return true
+	return false
 
 
 func _pad_state(device: int) -> Dictionary:
@@ -246,14 +371,16 @@ func _pad_state(device: int) -> Dictionary:
 	if dpad != Vector2.ZERO:
 		stick = dpad
 	var dir := snap8(stick)
-	var a := false
-	var b := false
-	for button in PAD_A:
-		a = a or Input.is_joy_button_pressed(device, button)
-	for button in PAD_B:
-		b = b or Input.is_joy_button_pressed(device, button)
-	return {"x": dir.x, "y": dir.y, "a": a, "b": b,
-		"start": Input.is_joy_button_pressed(device, JOY_BUTTON_START)}
+	var buttons := {}
+	for b in [JOY_BUTTON_A, JOY_BUTTON_B, JOY_BUTTON_X, JOY_BUTTON_Y, JOY_BUTTON_LEFT_SHOULDER,
+			JOY_BUTTON_RIGHT_SHOULDER, JOY_BUTTON_START, JOY_BUTTON_BACK, JOY_BUTTON_LEFT_STICK,
+			JOY_BUTTON_RIGHT_STICK]:
+		buttons[b] = Input.is_joy_button_pressed(device, b)
+	# Menus use the default layout on any controller, whatever the bindings:
+	# bottom face button confirms, right face button goes back.
+	return {"x": dir.x, "y": dir.y, "buttons": buttons,
+		"a": buttons[JOY_BUTTON_A], "b": buttons[JOY_BUTTON_B], "jump": buttons[JOY_BUTTON_X],
+		"slap": buttons[JOY_BUTTON_Y], "start": buttons[JOY_BUTTON_START]}
 
 
 func _keys_pressed(player: int, button: String) -> bool:

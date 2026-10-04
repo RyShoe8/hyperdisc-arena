@@ -48,5 +48,5 @@ func play(sound: String, pitch := 1.0, volume_db := 0.0) -> void:
 	_next = (_next + 1) % POOL_SIZE
 	p.stream = _streams[sound]
 	p.pitch_scale = pitch
-	p.volume_db = volume_db
+	p.volume_db = volume_db + linear_to_db(maxf(Settings.sfx_volume, 0.0001))
 	p.play()

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  GODOT_VERSION: 4.5.1
+  GODOT_VERSION: 4.7.2
 
 concurrency:
   group: build-${{ github.ref }}
@@ -17,9 +17,22 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # LFS files come from a cache keyed on their hashes, so builds only
+      # download art and audio that changed (GitHub meters LFS bandwidth).
       - uses: actions/checkout@v4
+
+      - name: List LFS files
+        run: git lfs ls-files --long | cut -d ' ' -f1 | sort > .lfs-assets-id
+
+      - name: Cache LFS files
+        uses: actions/cache@v4
         with:
-          lfs: true
+          path: .git/lfs
+          key: lfs-${{ hashFiles('.lfs-assets-id') }}
+          restore-keys: lfs-
+
+      - name: Fetch LFS files
+        run: git lfs pull
 
       - name: Cache Godot and export templates
         id: cache
