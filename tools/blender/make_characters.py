@@ -82,6 +82,16 @@ DESIGNS = {
 }
 
 
+# The referee who stands at the net: only needs a few animations.
+REFEREE = {
+    "build": {"h": 0.98, "sw": 40, "hw": 24, "chest": 16, "belly": 16, "arm": 1.05, "leg": 1.05},
+    "skin": "d9a47a", "top": "f4f1ff", "top_sleeve": True, "top_accent": "1a0f2e",
+    "bottom": "1a0f2e", "shoe": "1a0f2e", "shoe_accent": "f4f1ff", "sock": "f4f1ff",
+    "hair": ("slick", "8a8a9a"), "face": "shades", "extras": ["whistle", "stripes"],
+}
+REFEREE_ANIMS = ("idle", "lob", "win")
+
+
 # --- Poses -----------------------------------------------------------------
 # A pose is a dict of angles in degrees. Arms/legs are (swing, raise, bend):
 # swing is forward(+)/back(-), raise is out to the side, bend is the elbow
@@ -479,7 +489,12 @@ def extras_body(design, j):
     chest = j["chest"]
     b = design["build"]
     accent = C.toon(design["top_accent"], 0.64)
-    if design["top_sleeve"]:
+    if "stripes" in design["extras"]:
+        # Referee stripes down the shirt.
+        for k in (-2, -1, 0, 1, 2):
+            C.box("ref_stripe", (2.5, 3.2, 34), tuple(chest + fwd * (b["chest"] * 1.0) + side * (k * 7) - up * 12),
+                  accent, rot=r.to_euler(), ink=0)
+    elif design["top_sleeve"]:
         # Hawaiian shirt flowers.
         for k in range(5):
             off = side * ((k - 2) * 6) + up * (-6 - (k % 2) * 10)
@@ -564,13 +579,15 @@ def build(design, p):
     return j
 
 
-def render_frames(cid, design, tmp):
+def render_frames(cid, design, tmp, only=None):
     scene = C.reset()
     cam = setup_camera(scene)
     C.sun("key", 3.4, (55, 0, 48))
     frames = []
     anims = {}
     for name, fn, fps, loop in ANIMATIONS:
+        if only and name not in only:
+            continue
         start = len(frames)
         for p in fn():
             clear_character()
@@ -649,3 +666,7 @@ if __name__ == "__main__":
         render_portrait(cid, design)
         render_select(cid, design)
         print("rendered", cid, len(frames), "frames")
+    if not wanted or "referee" in wanted:
+        frames, anims, anchor = render_frames("referee", REFEREE, tmp, REFEREE_ANIMS)
+        pack("referee", frames, anims, anchor)
+        print("rendered referee", len(frames), "frames")

@@ -90,6 +90,7 @@ func _ready() -> void:
 ##   --court=N --p1=N --p2=N --difficulty=N
 ##   --screen=title|main|select|court|vs|options|results
 ##   --shots=60,240,600 --out=C:/path   save screenshots at those ticks, then quit
+##   --speed=N         run N times faster
 func _read_args() -> void:
 	for arg in OS.get_cmdline_user_args():
 		var kv: PackedStringArray = arg.trim_prefix("--").split("=")
@@ -105,6 +106,10 @@ func _read_args() -> void:
 				difficulty = clampi(value, 0, 2)
 			"demo":
 				demo = true
+			"speed":
+				# Fast-forward (for capturing late-match screens).
+				Engine.time_scale = maxf(1.0, value)
+				Engine.max_physics_steps_per_frame = 8 * maxi(1, value)
 			"shots":
 				for t in kv[1].split(","):
 					shots.append(int(t))
@@ -701,7 +706,7 @@ func _draw_select() -> void:
 		var r := Rect2(pos, cell)
 		draw_rect(r.grow(4), UI.INK)
 		draw_rect(r, Color("2a1250"))
-		draw_texture_rect_region(portraits[i], r, Rect2(30, 0, 360, 360))
+		draw_texture_rect_region(portraits[i], r, Rect2(100, 40, 440, 440))
 		for who in [0, 1]:
 			if pick[who] != i:
 				continue
@@ -741,8 +746,8 @@ func _draw_fighter_card(who: int, c: Dictionary) -> void:
 	var col := UI.P1 if left else UI.P2
 	var art: Texture2D = select_art[pick[who]]
 	var bob := sin(frame * 0.06 + who) * 6.0
-	draw_set_transform(Vector2(x + 200, 600 + bob), 0.0, Vector2(1.0 if left else -1.0, 1.0) * 0.95)
-	draw_texture(art, Vector2(-320, -400))
+	draw_set_transform(Vector2(x + 200, 600 + bob), 0.0, Vector2(1.0 if left else -1.0, 1.0) * 0.76)
+	draw_texture(art, Vector2(-400, -500))
 	draw_set_transform(Vector2.ZERO)
 	var panel := Rect2(Vector2(x, 820), Vector2(400, 200))
 	UI.slant_panel(self, panel, Color("120826"), col, 24, 4)
@@ -790,8 +795,8 @@ func _draw_vs() -> void:
 	for who in [0, 1]:
 		var left: bool = who == 0
 		var x := lerpf(-500.0 if left else 2420.0, 430.0 if left else 1490.0, slide)
-		draw_set_transform(Vector2(x, 560), 0.0, Vector2(1.0 if left else -1.0, 1.0) * 1.9)
-		draw_texture(portraits[pick[who]], Vector2(-210, -210))
+		draw_set_transform(Vector2(x, 560), 0.0, Vector2(1.0 if left else -1.0, 1.0) * 1.25)
+		draw_texture(portraits[pick[who]], Vector2(-320, -320))
 		draw_set_transform(Vector2.ZERO)
 		var c: Dictionary = balance.characters[pick[who]]
 		UI.slant_panel(self, Rect2(Vector2(x - 300, 900), Vector2(600, 90)), Color("120826"),
@@ -899,12 +904,13 @@ func _draw_results() -> void:
 	var split := PackedVector2Array([Vector2(1060, 0), Vector2(1920, 0), Vector2(1920, 1080), Vector2(860, 1080)])
 	draw_colored_polygon(split, Color("3d1a6e"))
 	draw_line(Vector2(1060, 0), Vector2(860, 1080), UI.YELLOW, 10)
+	UI.slant_panel(self, Rect2(Vector2(700, 420), Vector2(520, 220)), Color("120826"), UI.YELLOW, 30, 5)
 	for side in [0, 1]:
 		var left: bool = side == 0
 		var won: bool = side == w
 		var x := 470.0 if left else 1450.0
-		draw_set_transform(Vector2(x, 560), 0.0, Vector2(1.0 if left else -1.0, 1.0) * 1.7)
-		draw_texture(portraits[pick[side]], Vector2(-210, -210), Color(1, 1, 1) if won else Color(0.55, 0.5, 0.65))
+		draw_set_transform(Vector2(x, 560), 0.0, Vector2(1.0 if left else -1.0, 1.0) * 1.1)
+		draw_texture(portraits[pick[side]], Vector2(-320, -320), Color(1, 1, 1) if won else Color(0.55, 0.5, 0.65))
 		draw_set_transform(Vector2.ZERO)
 		var label := "WIN" if won else "LOSE"
 		UI.text(self, Vector2(x, 1000), label, 150, UI.YELLOW if won else UI.DIM, UI.display, 12,
@@ -912,7 +918,7 @@ func _draw_results() -> void:
 		var s: Dictionary = stats[side]
 		var lines := ["THROWS  %d" % (int(s.get("throw", 0)) + int(s.get("slap", 0))),
 			"CATCHES  %d" % int(s.get("catch", 0)), "SPECIALS  %d" % int(s.get("special", 0)),
-			"POINTS  %d" % int(s.get("point", 0))]
+			"SCORES  %d" % int(s.get("point", 0))]
 		for i in lines.size():
 			UI.text(self, Vector2(x, 150 + i * 44), lines[i], 32, Color.WHITE, UI.ui, 4)
 	UI.text(self, Vector2(960, 470), "SET COUNTS", 44, Color.WHITE, UI.display, 5)

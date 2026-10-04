@@ -18,8 +18,10 @@ func _init(character_id: String) -> void:
 	id = character_id
 	var base := "res://assets/art/characters/%s" % id
 	sheet = load(base + ".webp")
-	portrait = load(base + "_portrait.webp")
-	select = load(base + "_select.webp")
+	# The referee has a sprite sheet only.
+	if ResourceLoader.exists(base + "_portrait.webp"):
+		portrait = load(base + "_portrait.webp")
+		select = load(base + "_select.webp")
 	var meta: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(base + ".json"))
 	frame_size = int(meta.frame_size)
 	columns = int(meta.columns)

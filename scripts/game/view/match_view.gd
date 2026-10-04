@@ -9,6 +9,9 @@ const CourtProjection := preload("res://scripts/game/view/projection.gd")
 const CharacterArt := preload("res://scripts/game/view/character_art.gd")
 
 const SPRITE_SCALE := 0.72
+## Regions of the 640px portrait renders: the face, and head and shoulders.
+const PORTRAIT_FACE := Rect2(140, 84, 360, 313)
+const PORTRAIT_BUST := Rect2(80, 40, 480, 416)
 const DISC_RADIUS := 21.0
 const SPECIAL_COLORS := {
 	"mick": Color("ff2e88"), "tiffany": Color("2de2e6"), "pete": Color("ffd23f"),
@@ -43,6 +46,10 @@ var overlay := {}     # current big overlay: {kind, ticks, ...}
 var cutin := {}       # special-move cut-in banner
 var banner_text := ""
 var banner_ticks := 0
+var referee: CharacterArt
+var ref_anim := "idle"
+var ref_ticks := 0
+var ref_facing_right := true
 
 
 func _init(match_sim: MatchSim, character_ids: Array, player_names: Array[String]) -> void:
@@ -57,12 +64,16 @@ func _init(match_sim: MatchSim, character_ids: Array, player_names: Array[String
 		load("res://assets/art/courts/%s_crowd_b.webp" % cid)]
 	for p in sim.players:
 		last_pos[p.side] = p.pos
+	referee = CharacterArt.new("referee")
 
 
 # --- Per-tick updates ------------------------------------------------------
 
 func tick() -> void:
 	frame += 1
+	ref_ticks += 1
+	if ref_anim != "idle" and ref_ticks > 70:
+		ref_anim = "idle"
 	shake = maxf(0.0, shake - 0.7)
 	cheer_ticks = maxi(0, cheer_ticks - 1)
 	banner_ticks = maxi(0, banner_ticks - 1)
@@ -113,6 +124,7 @@ func handle(e: Dictionary) -> void:
 			overlay = {"kind": "ready", "ticks": int(sim.cfg.match.ready_ticks), "set": e.set}
 		"go":
 			overlay = {"kind": "go", "ticks": 45}
+			_referee("lob", sim.server == MatchSim.LEFT)
 		"throw":
 			trail_color = Color("ffb347") if e.supersonic else Color(1, 1, 1, 0.7)
 			if e.smash:
@@ -171,6 +183,7 @@ func handle(e: Dictionary) -> void:
 				for i in zones.size():
 					if t >= float(zones[i].from) and t <= float(zones[i].to):
 						zone_flash["%d:%d" % [defender, i]] = 70
+			_referee("win", e.side == MatchSim.LEFT)
 			overlay = {"kind": "point", "ticks": int(sim.cfg.match.point_pause_ticks), "side": e.side,
 				"points": e.points, "reason": e.reason, "scores": e.scores}
 		"set_end":
@@ -179,6 +192,12 @@ func handle(e: Dictionary) -> void:
 				"sets": e.sets_won, "set": e.set}
 		"match_over":
 			cheer_ticks = 400
+
+
+func _referee(anim: String, facing_right: bool) -> void:
+	ref_anim = anim
+	ref_ticks = 0
+	ref_facing_right = facing_right
 
 
 func banner(p: MatchSim.PlayerState, text: String) -> void:
@@ -218,6 +237,7 @@ func draw(ci: CanvasItem) -> void:
 	_draw_markers(ci)
 	_draw_shadows(ci)
 	_draw_world(ci, off)
+	_draw_referee(ci)
 	_draw_trail(ci)
 	_draw_effects(ci, off)
 	ci.draw_set_transform(Vector2.ZERO)
@@ -318,6 +338,13 @@ func _draw_world(ci: CanvasItem, off: Vector2) -> void:
 				_draw_barrier(ci, it.b)
 			"disc":
 				_draw_disc(ci, proj.air_point(d.pos, d.z), d.z)
+
+
+func _draw_referee(ci: CanvasItem) -> void:
+	var ground := proj.floor_point(Vector2(sim.net_x() + 4.0, sim.court_height() + 58.0))
+	var f := referee.frame_for(ref_anim, ref_ticks if ref_anim != "idle" else frame)
+	_ellipse(ci, ground, 30, 10, Color(0.1, 0.0, 0.2, 0.35))
+	referee.draw(ci, f, ground, ref_facing_right, SPRITE_SCALE * 0.9)
 
 
 func _anim_for(p: MatchSim.PlayerState) -> Array:
@@ -494,7 +521,7 @@ func _draw_hud(ci: CanvasItem) -> void:
 		var c := UI.P1 if left else UI.P2
 		UI.slant_panel(ci, frame_rect, Color("120826"), c, 24, 4)
 		var face := Rect2(frame_rect.position + Vector2(10 if left else 300 - 130, 6), Vector2(120, 104))
-		ci.draw_texture_rect_region(art.portrait, face, Rect2(70, 10, 280, 243))
+		ci.draw_texture_rect_region(art.portrait, face, PORTRAIT_FACE)
 		var name_x := frame_rect.position.x + (140.0 if left else 14.0)
 		UI.text(ci, Vector2(name_x, frame_rect.position.y + 46), names[side], 34, c, UI.display, 4,
 			HORIZONTAL_ALIGNMENT_LEFT, 150)
@@ -596,7 +623,7 @@ func _draw_cutin(ci: CanvasItem) -> void:
 		var art = arts[cutin.side]
 		var px := 220.0 if left else 1700.0
 		var face := Rect2(Vector2(px - 150, y - 20), Vector2(300, 260))
-		ci.draw_texture_rect_region(art.portrait, face, Rect2(40, 0, 340, 300), Color(1, 1, 1, out))
+		ci.draw_texture_rect_region(art.portrait, face, PORTRAIT_BUST, Color(1, 1, 1, out))
 		var label: String = ("EX " if cutin.ex else "") + str(cutin.name) + "!"
 		UI.text(ci, Vector2(1030 if left else 890, y + 150), label, 110, Color(c, out), UI.display, 9,
 			HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)
