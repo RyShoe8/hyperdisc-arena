@@ -56,6 +56,12 @@ from bl_ext.blender_org.mpfb.services.humanservice import HumanService  # noqa: 
 
 from hd_dressing import DESIGNS  # noqa: E402
 import hd_dressing as D  # noqa: E402
+import hd_model as M  # noqa: E402
+
+# MPFB body used only as the source of a Mixamo-compatible rig for supplied models.
+TEMPLATE_MACRO = {"gender": 1.0, "age": 0.5, "muscle": 1.0, "weight": 0.6, "proportions": 0.9,
+                  "height": 0.7, "cupsize": 0.5, "firmness": 0.5,
+                  "race": {"asian": 0.1, "caucasian": 0.8, "african": 0.1}}
 
 # Game animation -> (Mixamo clip, [(source frame, hold ticks)], loop, extras).
 # Source frames are picked as strong key poses; holds give WJ2's snap.
@@ -81,6 +87,10 @@ ANIMATIONS = [
 # --- Scene -------------------------------------------------------------------
 
 def clear_scene():
+    # Cached Mixamo actions and source armatures die with the scene.
+    _actions.clear()
+    _sources.clear()
+    _offset_cache.clear()
     for ob in list(bpy.data.objects):
         bpy.data.objects.remove(ob, do_unlink=True)
     for coll in (bpy.data.meshes, bpy.data.armatures, bpy.data.materials, bpy.data.cameras,
@@ -164,6 +174,32 @@ def build(design):
     return body, rig, pieces + props
 
 
+def build_model(cid):
+    """A character from a supplied 3D model: its own look, rigged here."""
+    spec = M.MODELS[cid]
+    pieces, lm = M.load_model(spec, 0, style="model")
+    props = M.add_aviators(spec, lm, 0, style="model") if "aviators" in spec.get("props", []) else []
+    rig, _joints = M.rig_model(pieces, lm, lambda: HumanService.create_human(macro_detail_dict=TEMPLATE_MACRO, scale=0.1),
+                               lambda h: HumanService.add_builtin_rig(h, "mixamo"))
+    for pb in rig.pose.bones:
+        pb.rotation_mode = "QUATERNION"
+    rig["retarget"] = True
+    for ob in props:
+        D._parent_to_bone(ob, rig, "mixamorig:Head")
+    body = next(o for o in pieces if o.get("hd_key") == "skin")
+    return body, rig, pieces + props
+
+
+def model_lighting(scene):
+    """Studio lighting for the straight 3D look: warm key, cool rim, soft fill."""
+    C.sun("key", 4.0, (50, 0, 35), color=(1.0, 0.95, 0.88))
+    C.sun("rim", 3.0, (60, 0, 200), color=(0.75, 0.85, 1.0), shadows=False)
+    C.sun("fill", 1.0, (75, 0, -60), color=(1.0, 0.85, 0.95), shadows=False)
+    scene.world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.6
+    scene.view_settings.view_transform = "AgX"
+    scene.eevee.taa_render_samples = 32
+
+
 def _image_of(ob):
     for mat in ob.data.materials:
         if mat and mat.use_nodes:
@@ -232,10 +268,12 @@ def apply_materials(design, pieces, lm):
 # --- Animation -------------------------------------------------------------------
 
 _actions = {}
+_sources = {}
 
 
 def load_action(clip, rig):
-    """Imports a Mixamo FBX once and returns its action, hips rescaled to our rig."""
+    """Imports a Mixamo FBX once. Returns its action (hips rescaled to our
+    rig for the direct path) and keeps the source armature for retargeting."""
     if clip in _actions:
         return _actions[clip]
     before = set(bpy.data.objects)
@@ -244,17 +282,90 @@ def load_action(clip, rig):
     src = next(o for o in imported if o.type == "ARMATURE")
     action = src.animation_data.action
     action.use_fake_user = True
-    ratio = rig.data.bones["mixamorig:Hips"].head_local.length / src.data.bones["mixamorig:Hips"].head_local.length
-    for fc in _fcurves(action):
-        if fc.data_path == 'pose.bones["mixamorig:Hips"].location':
-            for kp in fc.keyframe_points:
-                kp.co.y *= ratio
-                kp.handle_left.y *= ratio
-                kp.handle_right.y *= ratio
     for o in imported:
-        bpy.data.objects.remove(o, do_unlink=True)
+        if o is not src:
+            bpy.data.objects.remove(o, do_unlink=True)
+    src.hide_render = True
+    src["clip"] = clip
+    _sources[clip] = src
+    if not rig.get("retarget"):
+        ratio = rig.data.bones["mixamorig:Hips"].head_local.length / src.data.bones["mixamorig:Hips"].head_local.length
+        action = action.copy()
+        for fc in _fcurves(action):
+            if fc.data_path == 'pose.bones["mixamorig:Hips"].location':
+                for kp in fc.keyframe_points:
+                    kp.co.y *= ratio
+                    kp.handle_left.y *= ratio
+                    kp.handle_right.y *= ratio
+    action["clip"] = clip
     _actions[clip] = action
     return action
+
+
+def _rot(m):
+    return m.to_3x3().normalized().to_quaternion()
+
+
+def retarget_pose(scene, rig, src, frame):
+    """Poses `rig` like the Mixamo source armature at `frame`.
+
+    For each bone, the source's rotation away from its own rest orientation
+    is applied to the target's rest orientation after that has been aimed
+    along the source's rest direction. Limbs therefore point where the mocap
+    says even though the model was sculpted in an A-pose and Mixamo's rest
+    is a T-pose, and each bone keeps its own twist convention."""
+    scene.frame_set(frame)
+    bpy.context.view_layer.update()
+    src_mw = src.matrix_world
+    offsets = src.get("_offsets_for")
+    if offsets != rig.name:
+        cache = {}
+        for bone in rig.data.bones:
+            sb = src.data.bones.get(bone.name)
+            if sb is None:
+                continue
+            s_rest = _rot(src_mw @ sb.matrix_local)
+            t_rest = _rot(bone.matrix_local)
+            s_dir = s_rest @ Vector((0, 1, 0))
+            t_dir = t_rest @ Vector((0, 1, 0))
+            aligned = t_dir.rotation_difference(s_dir) @ t_rest
+            cache[bone.name] = s_rest.inverted() @ aligned
+        _offset_cache[src.name] = cache
+        src["_offsets_for"] = rig.name
+    cache = _offset_cache[src.name]
+    src_hips_rest = (src_mw @ src.data.bones["mixamorig:Hips"].head_local).z
+    ratio = rig.data.bones["mixamorig:Hips"].head_local.z / max(src_hips_rest, 1e-6)
+    posed = {}
+
+    def visit(bone):
+        name = bone.name
+        spb = src.pose.bones.get(name)
+        if bone.parent is not None:
+            pm = posed[bone.parent.name]
+            rest_rel = bone.parent.matrix_local.inverted() @ bone.matrix_local
+            follow = pm @ rest_rel
+        else:
+            follow = bone.matrix_local.copy()
+        if spb is None or name not in cache:
+            m = follow
+        else:
+            rot = (_rot(src_mw @ spb.matrix) @ cache[name]).to_matrix().to_4x4()
+            head = (src_mw @ spb.head) * ratio if bone.parent is None else follow.to_translation()
+            m = Matrix.Translation(head) @ rot
+        posed[name] = m
+        # Set the local transform directly: the pose-matrix setter would use
+        # the parent's stale (not yet re-evaluated) pose.
+        rig.pose.bones[name].matrix_basis = follow.inverted() @ m
+        for child in bone.children:
+            visit(child)
+
+    for bone in rig.data.bones:
+        if bone.parent is None:
+            visit(bone)
+    bpy.context.view_layer.update()
+
+
+_offset_cache = {}
 
 
 def _fcurves(action):
@@ -270,6 +381,19 @@ def _fcurves(action):
 
 def pose_rig(scene, rig, action, frame, keep_height=False):
     """Poses the rig at a source frame, holding the hips over the origin."""
+    if rig.get("retarget"):
+        src = _sources[action["clip"]]
+        rig.location = (0, 0, 0)
+        facing = rig.rotation_euler.copy()
+        rig.rotation_euler = (0, 0, 0)
+        bpy.context.view_layer.update()
+        retarget_pose(scene, rig, src, frame)
+        rig.rotation_euler = facing
+        _lift_head(rig)
+        hips = rig.matrix_world @ rig.pose.bones["mixamorig:Hips"].head
+        rig.location = (-hips.x, -hips.y, 0)
+        bpy.context.view_layer.update()
+        return
     rig.animation_data_create()
     rig.animation_data.action = action
     if hasattr(rig.animation_data, "action_slot") and action.slots:
@@ -279,14 +403,18 @@ def pose_rig(scene, rig, action, frame, keep_height=False):
     # Freeze this pose: with the action detached, scene updates no longer
     # overwrite the tweaks below.
     rig.animation_data.action = None
-    # Keep the face toward the camera: mocap fighters tuck the chin, which
-    # from above hides the face. Lift head and neck a little on every frame.
+    _lift_head(rig)
+    hips = rig.matrix_world @ rig.pose.bones["mixamorig:Hips"].head
+    rig.location = (-hips.x, -hips.y, 0)
+    bpy.context.view_layer.update()
+
+
+def _lift_head(rig):
+    """Keeps the face toward the camera: mocap fighters tuck the chin, which
+    from above hides the face. Lift head and neck a little on every frame."""
     for bone, deg in (("mixamorig:Neck", -HEAD_LIFT * 0.4), ("mixamorig:Head", -HEAD_LIFT * 0.6)):
         pb = rig.pose.bones[bone]
         pb.rotation_quaternion = pb.rotation_quaternion @ Matrix.Rotation(math.radians(deg), 4, "X").to_quaternion()
-    bpy.context.view_layer.update()
-    hips = rig.matrix_world @ rig.pose.bones["mixamorig:Hips"].head
-    rig.location = (-hips.x, -hips.y, 0)
     bpy.context.view_layer.update()
 
 
@@ -328,8 +456,12 @@ def render_frames(cid, design, tmp):
     clear_scene()
     scene = setup_scene()
     cam = setup_camera(scene)
-    C.sun("key", 3.4, (55, 0, 48))
-    body, rig, pieces = build(design)
+    if cid in M.MODELS:
+        model_lighting(scene)
+        body, rig, pieces = build_model(cid)
+    else:
+        C.sun("key", 3.4, (55, 0, 48))
+        body, rig, pieces = build(design)
     # MPFB bodies face -Y; turn to face the net (+X), then toward the camera.
     rig.rotation_euler = (0, 0, math.radians(90 - YAW))
     disc = make_disc()
@@ -357,6 +489,31 @@ def render_frames(cid, design, tmp):
                        "ticks": [t for _f, t in picks]}
     anchor = to_pixel(scene, cam, (0, 0, 0))
     return frames, anims, anchor
+
+
+def render_stills(cid, design, out_dir=OUT):
+    """HUD portrait (head and shoulders) and character-select pose."""
+    clear_scene()
+    scene = setup_scene()
+    if cid in M.MODELS:
+        model_lighting(scene)
+        body, rig, pieces = build_model(cid)
+    else:
+        C.sun("key", 3.4, (55, 0, 48))
+        body, rig, pieces = build(design)
+    rig.rotation_euler = (0, 0, math.radians(90 - YAW))
+    pose_rig(scene, rig, load_action("bouncing_fight_idle", rig), 1)
+    head = bone_world(rig, "mixamorig:Head")
+    cam = setup_camera(scene, size=640, ortho=0.62, target_z=head.z + 0.06, pitch=8)
+    cam.location.x += head.x
+    cam.location.y += head.y
+    render(os.path.join(out_dir, f"{cid}_portrait.webp"))
+    bpy.data.objects.remove(cam, do_unlink=True)
+    disc = make_disc()
+    pose_rig(scene, rig, load_action("frisbee_throw", rig), 30)
+    place_disc(disc, rig, True)
+    setup_camera(scene, size=800, ortho=2.3, target_z=1.0, pitch=12)
+    render(os.path.join(out_dir, f"{cid}_select.webp"))
 
 
 def pack(cid, frames, anims, anchor, out_dir=OUT):
@@ -397,4 +554,5 @@ if __name__ == "__main__":
             continue
         frames, anims, anchor = render_frames(cid, design, tmp)
         pack(cid, frames, anims, anchor, PREVIEW if preview else OUT)
+        render_stills(cid, design, PREVIEW if preview else OUT)
         print("rendered", cid, len(frames), "frames")
