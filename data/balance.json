@@ -47,7 +47,7 @@
   "player": {
     "radius": 26,
     "catch_radius": 46,
-    "run_speed": 8.0,
+    "run_speed": 8.5,
     "air_control": 0.5,
     "dash_speed": 19.0,
     "dash_ticks": 9,
@@ -61,7 +61,7 @@
     "landing_recovery_ticks": 5
   },
   "throw": {
-    "base_speed": 15.5,
+    "base_speed": 17.0,
     "angle_degrees": 35,
     "rally_speed_gain": 0.03,
     "rally_speed_cap": 1.45,
