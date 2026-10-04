@@ -57,6 +57,9 @@ are there too. Both players pick, the host picks the court and starts.
 Matches use rollback netcode, so they stay responsive over normal internet
 latency. See [docs/ONLINE.md](docs/ONLINE.md) for how it works.
 
+No controller? **Options > Controls > Phone as controller** shows a QR code:
+scan it and your phone becomes a gamepad through PlayBound (no app or account).
+
 ## Rules
 
 Windjammers 2 rules: sets last 90 seconds or until someone reaches 15
@@ -129,6 +132,7 @@ Pass these after `--` when launching the game, e.g.
 
 - `--demo` CPU plays CPU straight away (also an attract mode)
 - `--court=N --p1=N --p2=N --difficulty=N` pick the court, characters and CPU level
+- `--phone` opens the phone-as-controller QR code
 - `--screen=title|main|select|court|vs|options|online|friends` open a screen directly
 - `--shots=60,240 --out=DIR` save screenshots at those ticks, then quit
 - `--host[=port]`, `--join=address`, `--host-room`, `--join-room=CODE`,

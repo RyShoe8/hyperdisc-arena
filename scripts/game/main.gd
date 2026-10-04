@@ -11,6 +11,9 @@ const CpuPlayer := preload("res://scripts/sim/cpu_player.gd")
 const UI := preload("res://scripts/game/ui/theme.gd")
 const MatchView := preload("res://scripts/game/view/match_view.gd")
 const OnlineScreens := preload("res://scripts/game/online_screens.gd")
+const QrCode := preload("res://scripts/game/ui/qr_code.gd")
+## Options > Controls rows before the per-action bindings.
+const CONTROL_HEADER_ROWS := 4
 
 const BALANCE_PATH := "res://data/balance.json"
 const SCREEN := Vector2(1920, 1080)
@@ -54,6 +57,10 @@ var paused_by := 0
 var result_index := 0
 var options_tab := 0
 var options_row := 0
+## The phone controller QR overlay is open (Options > Controls).
+var phone_overlay := false
+var _qr  # QrCode for the current join link
+var _qr_text := ""
 var options_return: int = Screen.MAIN
 var bind_player := 0
 var bind_device := 0    # 0 controller, 1 keyboard
@@ -101,10 +108,12 @@ func _ready() -> void:
 ##   --host[=port] / --join=address   start online play straight away (LAN)
 ##   --host-room / --join-room=CODE    the same through a PlayBound Connect room
 ##   --playbound-api=URL               another PlayBound server (tests, staging)
+##   --phone           open Options > Controls > Phone as controller (QR code)
 ##   --bot             the CPU plays this side online and picks automatically
 ##   --name=NAME --netlag=MS --netloss=PERCENT --quit-after-match
 func _read_args() -> void:
 	var online_start := ""
+	var open_phone := false
 	var room := ""
 	for arg in OS.get_cmdline_user_args():
 		var kv: PackedStringArray = arg.trim_prefix("--").split("=")
@@ -145,6 +154,8 @@ func _read_args() -> void:
 				net.quit_after_match = true
 			"tab":
 				options_tab = clampi(value, 0, OPTION_TABS.size() - 1)
+			"phone":
+				open_phone = true
 			"speed":
 				# Fast-forward (for capturing late-match screens).
 				Engine.time_scale = maxf(1.0, value)
@@ -172,6 +183,11 @@ func _read_args() -> void:
 		net.host_room()
 	elif online_start == "join_room":
 		net.join_room(room)
+	if open_phone:
+		_open_options(Screen.MAIN)
+		options_tab = OPTION_TABS.find("CONTROLS")
+		options_row = 3
+		_open_phone_overlay()
 
 
 func _physics_process(_delta: float) -> void:
@@ -600,7 +616,8 @@ func _option_rows() -> Array:
 		"CONTROLS":
 			var rows := [["PLAYER", "P%d" % (bind_player + 1)],
 				["DEVICE", "CONTROLLER" if bind_device == 0 else "KEYBOARD"],
-				["BUTTON LABELS", _label_style_text()]]
+				["BUTTON LABELS", _label_style_text()],
+				["PHONE AS CONTROLLER", _phone_row_text()]]
 			var kind := "pad" if bind_device == 0 else "keys"
 			for action in Controls.ACTIONS:
 				var codes: Array = Controls.bindings[bind_player][kind][action]
@@ -615,6 +632,9 @@ func _option_rows() -> Array:
 
 
 func _options_input() -> void:
+	if phone_overlay:
+		_phone_overlay_input()
+		return
 	if Controls.capturing():
 		return
 	if Controls.capture_finished():
@@ -683,15 +703,56 @@ func _options_input() -> void:
 				bind_device = posmod(bind_device + step, 2)
 			elif options_row == 2:
 				Settings.button_labels = posmod(Settings.button_labels + step, Settings.LABEL_STYLES.size())
+			elif options_row == 3:
+				if confirm:
+					_open_phone_overlay()
+					return
 			elif options_row == rows.size() - 1:
 				if confirm:
 					Controls.reset_bindings()
 					toast_msg("CONTROLS RESET TO DEFAULTS")
 			elif confirm:
-				var action: String = Controls.ACTIONS[options_row - 3]
+				var action: String = Controls.ACTIONS[options_row - CONTROL_HEADER_ROWS]
 				Controls.capture(bind_player, "pad" if bind_device == 0 else "keys", action)
 	Settings.save()
 	Sfx.play("menu_move", 1.15)
+
+
+func _phone_row_text() -> String:
+	if not _phones_supported():
+		return "NOT IN THE BROWSER"
+	var n: int = Online.phones.connected_count()
+	if n > 0:
+		return "%d CONNECTED" % n
+	return "SHOW QR CODE"
+
+
+func _phones_supported() -> bool:
+	return not OS.has_feature("web") and ClassDB.class_exists("WebRTCPeerConnection")
+
+
+func _open_phone_overlay() -> void:
+	if not _phones_supported():
+		toast_msg("PHONE CONTROLLERS NEED THE DESKTOP GAME")
+		return
+	phone_overlay = true
+	Sfx.play("menu_confirm")
+	if not Online.phones.active():
+		Online.phones.start()
+
+
+func _phone_overlay_input() -> void:
+	if _back_pressed():
+		# Phones stay connected after closing; the slot keeps working.
+		phone_overlay = false
+		Sfx.play("menu_back")
+	elif Controls.menu_pressed("slap") != -1 and Online.phones.active():
+		Online.phones.stop()
+		phone_overlay = false
+		Sfx.play("menu_back")
+		toast_msg("PHONE CONTROLLERS DISCONNECTED")
+	elif _confirm_device() != -1 and not Online.phones.active() and not Online.phones.starting:
+		Online.phones.start()  # retry after an error
 
 
 ## "AUTO (PLAYSTATION)" etc.: what Auto picked for this player's controller.
@@ -993,8 +1054,9 @@ func _draw_options() -> void:
 	else:
 		UI.slant_panel(self, area, Color(0.07, 0.02, 0.16, 0.92), UI.PURPLE, 30, 4)
 		var rows := _option_rows()
+		var row_step := mini(70, int((area.size.y - 100) / rows.size()))
 		for i in rows.size():
-			var y := area.position.y + 40 + i * 70
+			var y := area.position.y + 40 + i * row_step
 			var on: bool = i == options_row
 			var row := Rect2(Vector2(area.position.x + 60, y), Vector2(area.size.x - 120, 64))
 			if on:
@@ -1006,16 +1068,92 @@ func _draw_options() -> void:
 				value = "PRESS A %s..." % ("BUTTON" if bind_device == 0 else "KEY")
 			elif on and value != "":
 				value = "<  %s  >" % value if OPTION_TABS[options_tab] != "CONTROLS" or i < 3 else value
+				if OPTION_TABS[options_tab] == "CONTROLS" and i == 3:
+					value = "%s  >" % rows[i][1]
 			UI.text(self, Vector2(row.end.x - 40, y + 44), value, 30, UI.YELLOW, UI.ui, 4,
 				HORIZONTAL_ALIGNMENT_RIGHT)
 		if OPTION_TABS[options_tab] == "GRAPHICS" and OS.has_feature("web"):
 			UI.text(self, Vector2(960, area.end.y - 30), "DISPLAY AND VSYNC ARE SET BY THE BROWSER", 24,
 				UI.DIM, UI.ui, 3)
 		if OPTION_TABS[options_tab] == "CONTROLS":
-			UI.text(self, Vector2(960, area.end.y - 30), "PICK AN ACTION AND PRESS %s, THEN THE NEW BUTTON" % _a(),
+			UI.text(self, Vector2(960, area.end.y - 18), "PICK AN ACTION AND PRESS %s, THEN THE NEW BUTTON" % _a(),
 				24, UI.DIM, UI.ui, 3)
+	if phone_overlay:
+		_draw_phone_overlay()
+		return
 	_hint("%s / %s SWITCH TAB     %s CHANGE     %s BACK" % [Controls.label(0, "jump"),
 		Controls.label(0, "slap"), _a(), _b()])
+
+
+func _draw_phone_overlay() -> void:
+	draw_rect(Rect2(Vector2.ZERO, SCREEN), Color(0.03, 0.0, 0.1, 0.88))
+	var panel := Rect2(Vector2(150, 110), Vector2(1620, 840))
+	UI.slant_panel(self, panel, Color("1a0b38"), UI.CYAN, 34, 6)
+	UI.text(self, Vector2(960, 205), "PHONE AS CONTROLLER", 72, UI.YELLOW, UI.display, 7, HORIZONTAL_ALIGNMENT_CENTER,
+		-1.0, true)
+	var phones = Online.phones
+	var box := Rect2(Vector2(260, 270), Vector2(560, 560))
+	if phones.active():
+		if _qr_text != phones.join_url():
+			_qr_text = phones.join_url()
+			_qr = QrCode.encode(_qr_text)
+		if _qr != null:
+			_draw_qr(_qr, box)
+	else:
+		draw_rect(box, Color("120826"))
+		var msg: String = phones.error if phones.error != "" and not phones.starting 			else "GETTING A CODE" + ".".repeat(1 + (frame / 20) % 3)
+		_fit_text(box.get_center() + Vector2(0, 12), msg, 30, UI.CYAN, UI.ui, box.size.x - 60,
+			HORIZONTAL_ALIGNMENT_CENTER)
+	# Right column: stays inside the panel's slanted right edge.
+	var x := 900.0
+	var w := panel.end.x - 60.0 - x
+	var steps := ["1.  SCAN THE QR CODE WITH YOUR PHONE'S CAMERA",
+		"2.  THE PLAYBOUND CONTROLLER OPENS IN ITS BROWSER",
+		"3.  NO APP OR ACCOUNT NEEDED"]
+	for i in steps.size():
+		_fit_text(Vector2(x, 330 + i * 54), steps[i], 30, Color.WHITE, UI.ui, w)
+	_fit_text(Vector2(x, 530), "NO CAMERA?  GO TO  PLAYBOUND.CLUB/C  AND TYPE", 26, UI.DIM, UI.ui, w)
+	UI.text(self, Vector2(x, 612), phones.join_code() if phones.active() else "------", 76, UI.YELLOW, UI.display,
+		7, HORIZONTAL_ALIGNMENT_LEFT)
+	var n: int = phones.connected_count()
+	var status := "WAITING FOR A PHONE" + ".".repeat(1 + (frame / 20) % 3)
+	if n > 0:
+		var slots := []
+		for i in Controls.PLAYERS:
+			if Controls.has_pad(i) and Controls.is_virtual(Controls.pads[i]):
+				slots.append("PLAYER %d" % (i + 1))
+		status = "%d PHONE%s CONNECTED" % [n, "" if n == 1 else "S"]
+		if not slots.is_empty():
+			status += ":  " + ", ".join(slots)
+	_fit_text(Vector2(x, 720), status, 32, Color("39ff88") if n > 0 else UI.CYAN, UI.ui, w)
+	_fit_text(Vector2(x, 770), "A PHONE TAKES A FREE PLAYER SLOT, LIKE PLUGGING IN A PAD", 24, UI.DIM, UI.ui, w)
+	var hint := "%s DONE (PHONES STAY CONNECTED)" % _b()
+	if phones.active():
+		hint += "     %s DISCONNECT PHONES" % Controls.label(0, "slap")
+	elif phones.error != "":
+		hint = "%s TRY AGAIN     %s BACK" % [_a(), _b()]
+	_hint(hint)
+
+
+## Text shrunk (never grown) to fit max_width.
+func _fit_text(pos: Vector2, text: String, size: int, color: Color, font: Font, max_width: float,
+		align := HORIZONTAL_ALIGNMENT_LEFT) -> void:
+	var width := UI.text_width(text, size, font)
+	var fitted := size if width <= max_width else maxi(12, int(size * max_width / width))
+	UI.text(self, pos, text, fitted, color, font, maxi(2, fitted / 8), align)
+
+
+## Dark modules on white with the standard 4-module quiet zone.
+func _draw_qr(qr, box: Rect2) -> void:
+	var cells: int = qr.size + 8
+	var px := floorf(box.size.x / cells)
+	var side := px * cells
+	var origin := box.position + (box.size - Vector2(side, side)) / 2.0
+	draw_rect(Rect2(origin, Vector2(side, side)), Color.WHITE)
+	for y in qr.size:
+		for x in qr.size:
+			if qr.dark(x, y):
+				draw_rect(Rect2(origin + Vector2(x + 4, y + 4) * px, Vector2(px, px)), Color.BLACK)
 
 
 func _draw_results() -> void:

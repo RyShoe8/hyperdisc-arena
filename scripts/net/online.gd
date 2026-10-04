@@ -6,10 +6,13 @@ const DirectService := preload("res://scripts/net/direct_service.gd")
 const PlayBoundService := preload("res://scripts/net/playbound_service.gd")
 const PlayBoundApi := preload("res://scripts/net/playbound_api.gd")
 const OnlineMatch := preload("res://scripts/net/online_match.gd")
+const PhoneControllers := preload("res://scripts/net/phone_controllers.gd")
 
 var direct: DirectService
 var playbound: PlayBoundService
 var api: PlayBoundApi
+## Phones as controllers (Options > Controls > Phone controller).
+var phones: PhoneControllers
 var current: OnlineMatch
 ## The Connect room code while hosting a room (shown and sent with invites).
 var room_code := ""
@@ -32,6 +35,10 @@ func _ready() -> void:
 	if base != "":
 		api.base = base.trim_suffix("/")
 	add_child(api)
+	phones = PhoneControllers.new()
+	phones.name = "PhoneControllers"
+	phones.api = api
+	add_child(phones)
 	direct = DirectService.new()
 	playbound = PlayBoundService.new()
 	playbound.api = api
@@ -56,8 +63,9 @@ func _notification(what: int) -> void:
 
 ## Quits the game, first telling PlayBound we went offline.
 func quit_game() -> void:
-	if playbound.has_presence():
+	if playbound.has_presence() or phones.active():
 		get_tree().create_timer(1.5, true, false, true).timeout.connect(get_tree().quit)
+		phones.stop()
 		await playbound.shutdown()
 	get_tree().quit()
 

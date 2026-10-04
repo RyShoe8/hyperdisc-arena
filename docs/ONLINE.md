@@ -134,10 +134,29 @@ The data channel is unordered with no retransmits, because rollback resends
 inputs itself. Room creation sends the build hash as `gameVersion`, so a
 friend on another version is told so instead of desyncing.
 
-### Later
+## Phone as controller
 
-- Phone as controller: the QR code flow through PlayBound's controller
-  system (only for using a phone as a gamepad; match play needs no QR codes).
+**Options > Controls > Phone as controller** shows a QR code. Scanning it
+opens PlayBound's controller page (`playbound.club/c/CODE`) on the phone; no
+app or account. Without a camera, go to `playbound.club/c` and type the code.
+The phone takes a free player slot like a plugged-in pad (up to two phones)
+and keeps working after the overlay is closed; the slap button there
+disconnects them. Match play never needs a QR code; this is only for using a
+phone as a gamepad.
+
+How it works (`scripts/net/phone_controllers.gd`): the game opens a
+PlayBound couch session (`POST /api/couch/sessions`), shows the returned
+join link as a QR code (`scripts/game/ui/qr_code.gd`, a built-in encoder),
+and polls `/api/couch/sessions/{id}/signal` for the phone's WebRTC offer. It
+answers in-process (the same webrtc-native addon as rooms); the phone's
+unordered `input` data channel then carries PlayBound's couch input protocol
+v1 (button bitmask and sticks, see PlayBound `docs/couch-input-protocol.md`)
+straight to the game. Each phone becomes a virtual controller in
+`Controls` (device ids from 1000). Presses are held until the game has read
+them, so a quick tap is never lost between ticks. `--phone` opens the
+overlay directly; `HYPERDISC_PHONE_DEBUG=1` logs button changes.
+
+### Later
 - Matchmaking queue that ends in the same room flow.
 - Recording match results and ratings (both peers report, server reconciles).
 - Reporting desyncs with the frame number and build, to catch bugs.

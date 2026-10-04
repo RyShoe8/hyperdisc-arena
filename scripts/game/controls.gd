@@ -5,6 +5,8 @@
 ##
 ## Slots: player 1 = first controller + its keyboard keys,
 ##        player 2 = second controller + its keyboard keys.
+## Phones used as controllers (PlayBound) arrive as virtual controllers with
+## ids from VIRTUAL_BASE up, and take a slot like a plugged-in pad.
 ## Every action can be rebound per player, for controller and keyboard,
 ## from the options menu. Movement is always the left stick or D-pad (pad)
 ## and the player's four direction keys (keyboard).
@@ -15,6 +17,8 @@ signal changed(message: String)
 const PLAYERS := 2
 ## Stick travel ignored around the centre, to stop drift on worn sticks.
 const DEADZONE := 0.35
+## Device ids for virtual (phone) controllers; real pads are far below this.
+const VIRTUAL_BASE := 1000
 ## Rebindable actions, in the order the options menu lists them.
 const ACTIONS := ["a", "b", "jump", "slap", "start"]
 const ACTION_NAMES := {
@@ -51,6 +55,8 @@ var _pad_now := {}
 var _pad_prev := {}
 ## Controllers seen sending input, even if the platform never announced them.
 var _seen := {}
+## Virtual controllers by device id: {"name", "axes": Vector2, "buttons": {JOY_BUTTON_*: bool}}.
+var _virtual := {}
 ## Last raw controller event, shown on the menu for troubleshooting.
 var last_raw := "none yet"
 ## While rebinding, the next key or button press is captured instead of used.
@@ -119,6 +125,8 @@ func _physics_process(_delta: float) -> void:
 			devices.append(device)
 	for device in devices:
 		_pad_now[device] = _pad_state(device)
+	for device in _virtual:
+		_pad_now[device] = _virtual_state(device)
 	for i in PLAYERS:
 		_prev[i] = _now[i]
 		_now[i] = _sample(i)
@@ -161,7 +169,7 @@ func diagnostics() -> String:
 	var names := []
 	for device in _pad_now:
 		var slot := pads.find(device)
-		names.append("%s [%s]" % [Input.get_joy_name(device),
+		names.append("%s [%s]" % [joy_name(device),
 			"P%d" % (slot + 1) if slot >= 0 else "no slot"])
 	if names.is_empty():
 		names.append("no controllers detected")
@@ -267,12 +275,48 @@ func has_pad(player: int) -> bool:
 
 
 func pad_name(player: int) -> String:
-	return Input.get_joy_name(pads[player]) if has_pad(player) else "Keyboard"
+	return joy_name(pads[player]) if has_pad(player) else "Keyboard"
+
+
+func joy_name(device: int) -> String:
+	if _virtual.has(device):
+		return _virtual[device].name
+	return Input.get_joy_name(device)
+
+
+# --- Virtual controllers (phones) -----------------------------------------
+
+## Adds or updates a virtual controller. axes is the left stick (-1..1, down
+## positive); buttons maps JOY_BUTTON_* to pressed.
+func set_virtual_pad(device: int, name: String, axes: Vector2, buttons: Dictionary) -> void:
+	var is_new := not _virtual.has(device)
+	# A press and release can both arrive between two ticks (a quick tap);
+	# latch presses until a tick has seen them so no tap is lost.
+	var latched: Dictionary = {} if is_new else _virtual[device].latched
+	for b in buttons:
+		if buttons[b]:
+			latched[b] = true
+	_virtual[device] = {"name": name, "axes": axes, "buttons": buttons, "latched": latched}
+	if is_new:
+		_assign(device, true)
+
+
+func remove_virtual_pad(device: int) -> void:
+	if _virtual.erase(device):
+		_on_joy_connection_changed(device, false)
+
+
+func virtual_pads() -> Array:
+	return _virtual.keys()
+
+
+func is_virtual(device: int) -> bool:
+	return _virtual.has(device)
 
 
 ## Short rumble on this player's controller. Strengths are 0..1.
 func rumble(player: int, weak: float, strong: float, seconds: float) -> void:
-	if has_pad(player):
+	if has_pad(player) and not is_virtual(pads[player]):
 		Input.start_joy_vibration(pads[player], clampf(weak, 0, 1), clampf(strong, 0, 1), seconds)
 
 
@@ -321,6 +365,8 @@ var _playstation_cache := {}
 
 
 func _is_playstation_pad(device: int) -> bool:
+	if is_virtual(device):
+		return false  # the phone pad shows Xbox letters
 	if not _playstation_cache.has(device):
 		var info := Input.get_joy_info(device)
 		var vendor := int(info.get("vendor_id", 0))
@@ -423,6 +469,30 @@ func _pad_state(device: int) -> Dictionary:
 		"slap": buttons[JOY_BUTTON_Y], "start": buttons[JOY_BUTTON_START]}
 
 
+func _virtual_state(device: int) -> Dictionary:
+	var v: Dictionary = _virtual[device]
+	var stick: Vector2 = v.axes
+	if stick.length() < DEADZONE:
+		stick = Vector2.ZERO
+	var b: Dictionary = v.buttons.duplicate()
+	for k in v.latched:
+		b[k] = true
+	v.latched = {}
+	var dpad := Vector2(int(b.get(JOY_BUTTON_DPAD_RIGHT, false)) - int(b.get(JOY_BUTTON_DPAD_LEFT, false)),
+		int(b.get(JOY_BUTTON_DPAD_DOWN, false)) - int(b.get(JOY_BUTTON_DPAD_UP, false)))
+	if dpad != Vector2.ZERO:
+		stick = dpad
+	var dir := snap8(stick)
+	var buttons := {}
+	for k in [JOY_BUTTON_A, JOY_BUTTON_B, JOY_BUTTON_X, JOY_BUTTON_Y, JOY_BUTTON_LEFT_SHOULDER,
+			JOY_BUTTON_RIGHT_SHOULDER, JOY_BUTTON_START, JOY_BUTTON_BACK, JOY_BUTTON_LEFT_STICK,
+			JOY_BUTTON_RIGHT_STICK]:
+		buttons[k] = b.get(k, false)
+	return {"x": dir.x, "y": dir.y, "buttons": buttons,
+		"a": buttons[JOY_BUTTON_A], "b": buttons[JOY_BUTTON_B], "jump": buttons[JOY_BUTTON_X],
+		"slap": buttons[JOY_BUTTON_Y], "start": buttons[JOY_BUTTON_START]}
+
+
 func _keys_pressed(player: int, button: String) -> bool:
 	var key := "kb_" + button
 	return _now[player].get(key, false) and not _prev[player].get(key, false)
@@ -460,5 +530,5 @@ func _assign(device: int, announce: bool) -> void:
 			pads[i] = device
 			using_pad[i] = true
 			if announce:
-				changed.emit("Player %d: %s connected" % [i + 1, Input.get_joy_name(device)])
+				changed.emit("Player %d: %s connected" % [i + 1, joy_name(device)])
 			return

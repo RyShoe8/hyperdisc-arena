@@ -10,6 +10,8 @@ const RollbackSession := preload("res://scripts/net/rollback_session.gd")
 const LoopbackTransport := preload("res://scripts/net/loopback_transport.gd")
 const InputCodec := preload("res://scripts/net/input_codec.gd")
 const OnlineMatch := preload("res://scripts/net/online_match.gd")
+const QrCode := preload("res://scripts/game/ui/qr_code.gd")
+const PhoneControllers := preload("res://scripts/net/phone_controllers.gd")
 
 const IDLE := {"x": 0, "y": 0, "a": false, "b": false}
 
@@ -22,7 +24,7 @@ func _init() -> void:
 	balance = JSON.parse_string(FileAccess.get_file_as_string("res://data/balance.json"))
 	# A script that fails to compile can't be instantiated; without this guard
 	# every test would just log errors and the run would still "pass".
-	for script in [MatchSim, CpuPlayer, ControlsScript, RollbackSession, LoopbackTransport, InputCodec, OnlineMatch]:
+	for script in [MatchSim, CpuPlayer, ControlsScript, RollbackSession, LoopbackTransport, InputCodec, OnlineMatch, QrCode, PhoneControllers]:
 		if not script.can_instantiate():
 			printerr("FAIL: %s does not compile" % script.resource_path)
 			quit(1)
@@ -69,6 +71,8 @@ func _init() -> void:
 		"test_rollback_matches_offline_result",
 		"test_online_lobby_to_match_and_rematch",
 		"test_online_rejects_a_different_version",
+		"test_qr_code_versions",
+		"test_phone_tap_between_ticks_still_counts",
 		"test_stick_snaps_to_8_directions",
 		"test_playstation_controllers_detected",
 	]:
@@ -753,3 +757,33 @@ func test_online_rejects_a_different_version() -> void:
 		guest.poll({})
 	check(guest.state == OnlineMatch.State.FAILED and "VERSION" in guest.failure,
 		"a guest with different rules is turned away (%s)" % guest.failure)
+
+
+func test_qr_code_versions() -> void:
+	var qr = QrCode.encode("https://playbound.club/c/7KQ2MX")
+	check(qr != null and qr.version == 3 and qr.size == 29, "a join link fits version 3")
+	# Finder pattern corners are dark, their separators light.
+	check(qr.dark(0, 0) and qr.dark(qr.size - 1, 0) and qr.dark(0, qr.size - 1) and not qr.dark(7, 7),
+		"finder patterns in three corners")
+	check(QrCode.encode("x".repeat(300)) == null, "text past version 10 is refused")
+
+
+func test_phone_tap_between_ticks_still_counts() -> void:
+	var controls = ControlsScript.new()
+	var device: int = controls.VIRTUAL_BASE
+	controls.set_virtual_pad(device, "Phone", Vector2.ZERO, {})
+	controls._physics_process(0.0)
+	# Press and release both arrive before the next tick.
+	controls.set_virtual_pad(device, "Phone", Vector2.ZERO, {JOY_BUTTON_B: true})
+	controls.set_virtual_pad(device, "Phone", Vector2.ZERO, {JOY_BUTTON_B: false})
+	controls._physics_process(0.0)
+	check(controls.menu_pressed("b") == device, "the quick tap registers as a press")
+	controls._physics_process(0.0)
+	check(controls.menu_pressed("b") == -1, "and only once")
+	check(controls.pads[0] == device or controls.pads[1] == device, "the phone took a player slot")
+	controls.set_virtual_pad(device, "Phone", Vector2(0, 0.9), {})
+	controls._physics_process(0.0)
+	check(controls.pad_nudged(device) == Vector2i(0, 1), "stick down moves down")
+	controls.remove_virtual_pad(device)
+	check(device not in controls.pads, "leaving frees the slot")
+	controls.free()
