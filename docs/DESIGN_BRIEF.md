@@ -1,10 +1,10 @@
-# Hyperdisc Arena — Design Brief
+# HyperDisc Arena — Design Brief
 
 Oct 4, 2026 · @Ryan
 
 ## Name
 
-Decided: **Hyperdisc Arena**. Earlier shortlist below, kept for reference; the first pick was Overspin. It names the signature move (the curve shot), is one short word, and reads well as a logo and a verb ("get overspun"). No trademark or Steam search has been done yet; clear the shortlist before committing.
+Decided: **HyperDisc Arena**. Earlier shortlist below, kept for reference; the first pick was Overspin. It names the signature move (the curve shot), is one short word, and reads well as a logo and a verb ("get overspun"). No trademark or Steam search has been done yet; clear the shortlist before committing.
 
 | Name | Why it works | Watch-out |
 |---|---|---|
@@ -29,7 +29,7 @@ A free, fast arcade disc duel for 1v1 and 2v2: throw, curve and slam a disc past
 
 ## Base game spec (Windjammers 1994 rules)
 
-Hyperdisc Arena v1 copies the rules of Data East's Windjammers (Neo Geo, 1994) as closely as possible; only names, characters, art, audio and text are our own. Where this section and the older sections below disagree, this section wins. Numbers marked *tune* are not published anywhere and must be matched by playing the original.
+HyperDisc Arena v1 copies the rules of Data East's Windjammers (Neo Geo, 1994) as closely as possible; only names, characters, art, audio and text are our own. Where this section and the older sections below disagree, this section wins. Numbers marked *tune* are not published anywhere and must be matched by playing the original.
 
 ### Court and camera
 
@@ -258,6 +258,6 @@ Target: a local-play launch in about 10 weeks, with online play after launch. We
 **Open questions:**
 
 - [ ] Final name, after a trademark and Steam search
-- [ ] Art budget and which artist
-- [ ] Setting: one theme (beach sports league) or mixed courts?
+- [x] Art budget and which artist: no budget; art is made in-house with Blender (installed at `D:\Blender`) plus CC0 packs, so the commission rows in Art and audio no longer apply
+- [ ] Setting: on hold until the separate lore document is written
 - [ ] Is 2v2 a launch feature or post-launch?

@@ -1,4 +1,4 @@
-## Pure match rules for Hyperdisc Arena. No nodes, no rendering, no wall-clock
+## Pure match rules for HyperDisc Arena. No nodes, no rendering, no wall-clock
 ## time: everything advances one fixed tick per step() call, driven only by
 ## the inputs passed in. Keeping it that way is what lets rollback netcode
 ## re-simulate matches later.
