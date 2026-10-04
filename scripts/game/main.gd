@@ -854,9 +854,12 @@ func _draw() -> void:
 		var song := "NOW PLAYING  %s - %s" % [str(Mixtape.now_playing.get("title", "")).left(32),
 			str(Mixtape.now_playing.get("artist", "")).left(22)]
 		var size := 22
-		while size > 14 and UI.text_width(song, size) > 900:
+		while size > 14 and UI.text_width(song, size) > 880:
 			size -= 1
-		UI.text(self, Vector2(960, 1052), song, size, UI.CYAN)
+		# A white tag behind it so it reads over any court.
+		var w := UI.text_width(song, size) + 56
+		UI.slant_panel(self, Rect2(Vector2(960 - w / 2.0, 1028), Vector2(w, 36)), Color(1, 1, 1, 0.92), UI.CYAN, 12, 3)
+		UI.text(self, Vector2(960, 1054), song, size, UI.INK, null, 0)
 	if Settings.scanlines:
 		UI.scanlines(self, SCREEN)
 	if Settings.show_fps:
