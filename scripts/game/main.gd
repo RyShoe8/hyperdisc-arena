@@ -12,6 +12,7 @@ const UI := preload("res://scripts/game/ui/theme.gd")
 const MatchView := preload("res://scripts/game/view/match_view.gd")
 const OnlineScreens := preload("res://scripts/game/online_screens.gd")
 const QrCode := preload("res://scripts/game/ui/qr_code.gd")
+const MixtapeScreen := preload("res://scripts/game/mixtape_screen.gd")
 ## Options > Controls rows before the per-action bindings.
 const CONTROL_HEADER_ROWS := 4
 
@@ -31,7 +32,7 @@ const COURT_NOTES := {
 }
 
 enum Screen { TITLE, MAIN, SELECT, COURT, VS, MATCH, PAUSED, OPTIONS, RESULTS,
-	ONLINE, ONLINE_WAIT, ONLINE_JOIN, ONLINE_LOBBY, ONLINE_SIGNIN, ONLINE_FRIENDS, ONLINE_ROOM }
+	ONLINE, ONLINE_WAIT, ONLINE_JOIN, ONLINE_LOBBY, ONLINE_SIGNIN, ONLINE_FRIENDS, ONLINE_ROOM, MIXTAPE }
 
 var balance: Dictionary
 var sim: MatchSim
@@ -44,6 +45,7 @@ var versus := false
 ## True while playing (or in the results of) an online match.
 var online := false
 var net: OnlineScreens
+var tapes: MixtapeScreen
 
 # Menu state
 var main_index := 0
@@ -89,6 +91,7 @@ func _ready() -> void:
 	UI.load_fonts()
 	Controls.changed.connect(_on_controls_changed)
 	net = OnlineScreens.new(self)
+	tapes = MixtapeScreen.new(self)
 	logo = load("res://assets/logo/logo.png")
 	for c in balance.courts:
 		court_thumbs.append(load("res://assets/art/courts/%s.webp" % c.id))
@@ -168,7 +171,7 @@ func _read_args() -> void:
 			"screen":
 				var names := {"title": Screen.TITLE, "main": Screen.MAIN, "select": Screen.SELECT,
 					"court": Screen.COURT, "vs": Screen.VS, "options": Screen.OPTIONS, "online": Screen.ONLINE,
-					"friends": Screen.ONLINE_FRIENDS}
+					"friends": Screen.ONLINE_FRIENDS, "mixtape": Screen.MIXTAPE}
 				if kv.size() > 1 and names.has(kv[1]):
 					_go(names[kv[1]])
 	if demo:
@@ -205,6 +208,8 @@ func _physics_process(_delta: float) -> void:
 			_title_input()
 		Screen.MAIN:
 			_main_input()
+		Screen.MIXTAPE:
+			tapes.input()
 		Screen.SELECT:
 			_select_input()
 		Screen.COURT:
@@ -260,6 +265,10 @@ func _take_shot(tick: int) -> void:
 func _go(to: int) -> void:
 	screen = to
 	screen_ticks = 0
+	if to in [Screen.TITLE, Screen.MAIN, Screen.ONLINE, Screen.ONLINE_LOBBY, Screen.RESULTS]:
+		Mixtape.menu_music()
+	if to == Screen.VS and not online:
+		Mixtape.local_music()
 
 
 func _back_pressed() -> bool:
@@ -286,7 +295,7 @@ func _title_input() -> void:
 
 
 func _main_items() -> Array:
-	var items := ["VS CPU", "VS PLAYER 2", "ONLINE", "OPTIONS"]
+	var items := ["VS CPU", "VS PLAYER 2", "ONLINE", "MIXTAPES", "OPTIONS"]
 	if OS.has_feature("web"):
 		items.erase("ONLINE")  # browsers can't open UDP sockets
 	if not OS.has_feature("web"):
@@ -319,6 +328,8 @@ func _main_input() -> void:
 			_go(Screen.ONLINE)
 		"OPTIONS":
 			_open_options(Screen.MAIN)
+		"MIXTAPES":
+			tapes.open()
 		"QUIT":
 			Online.quit_game()
 
@@ -515,6 +526,7 @@ func _sound_for(e: Dictionary) -> void:
 			_rumble(1 - e.side, 0.6, 0.8, 0.3)
 		"set_end":
 			Sfx.play("set_end")
+			Mixtape.next_round()
 		"match_over":
 			Sfx.play("match_win")
 			_rumble(e.winner, 0.5, 0.5, 0.6)
@@ -612,6 +624,7 @@ func _option_rows() -> Array:
 			return [
 				["MASTER VOLUME", "%d%%" % roundi(Settings.master_volume * 100)],
 				["EFFECTS VOLUME", "%d%%" % roundi(Settings.sfx_volume * 100)],
+				["MUSIC VOLUME", "%d%%" % roundi(Mixtape.music_volume * 100)],
 			]
 		"CONTROLS":
 			var rows := [["PLAYER", "P%d" % (bind_player + 1)],
@@ -693,8 +706,10 @@ func _options_input() -> void:
 			var delta := 0.1 * signf(step) if n.x != 0 else 0.0
 			if options_row == 0:
 				Settings.master_volume = clampf(Settings.master_volume + delta, 0.0, 1.0)
-			else:
+			elif options_row == 1:
 				Settings.sfx_volume = clampf(Settings.sfx_volume + delta, 0.0, 1.0)
+			else:
+				Mixtape.set_volume(Mixtape.music_volume + delta)
 			Settings.apply()
 		"CONTROLS":
 			if options_row == 0:
@@ -793,6 +808,8 @@ func _draw() -> void:
 			_draw_title()
 		Screen.MAIN:
 			_draw_main()
+		Screen.MIXTAPE:
+			tapes.draw()
 		Screen.SELECT:
 			_draw_select()
 		Screen.COURT:
@@ -832,6 +849,8 @@ func _draw() -> void:
 	if net.invite_modal_active():
 		net.draw_invite()
 	_draw_toast()
+	if screen in [Screen.MATCH, Screen.PAUSED] and not Mixtape.now_playing.is_empty():
+		UI.text(self, Vector2(45, 1020), "NOW PLAYING  %s - %s" % [str(Mixtape.now_playing.get("title", "")).left(35), str(Mixtape.now_playing.get("artist", "")).left(25)], 22, UI.CYAN, null, 0, HORIZONTAL_ALIGNMENT_LEFT)
 	if Settings.scanlines:
 		UI.scanlines(self, SCREEN)
 	if Settings.show_fps:
@@ -868,7 +887,7 @@ func _draw_main() -> void:
 	draw_texture_rect(logo, Rect2(Vector2((SCREEN.x - size.x) / 2.0, 40), size), false)
 	var items := _main_items()
 	for i in items.size():
-		var r := Rect2(Vector2(660, 560 + i * 104), Vector2(600, 84))
+		var r := Rect2(Vector2(660, 510 + i * 82), Vector2(600, 68))
 		UI.button(self, r, items[i], i == main_index, frame, 40)
 	_hint("%s SELECT     %s BACK" % [_a(), _b()])
 

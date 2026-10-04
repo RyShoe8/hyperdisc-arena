@@ -12,7 +12,7 @@ const RollbackSession := preload("res://scripts/net/rollback_session.gd")
 enum State { CONNECTING, LOBBY, PLAYING, ENDED, FAILED }
 
 ## Bump when the wire format or the rules change incompatibly.
-const PROTOCOL := 1
+const PROTOCOL := 2
 const PKT_LOBBY := 1
 const RESEND_TICKS := 20
 const TIMEOUT_TICKS := 600
@@ -36,6 +36,7 @@ var sim: MatchSim
 var session: RollbackSession
 ## Which side this machine plays.
 var local_side := 0
+var mixtape_match_id := ""
 
 var _build := 0
 var _ticks := 0
@@ -116,6 +117,7 @@ func start() -> void:
 	if not can_start():
 		return
 	_start_sent = true
+	mixtape_match_id = Crypto.new().generate_random_bytes(16).hex_encode()
 	_send_start()
 
 
@@ -170,6 +172,7 @@ func _on_message(msg) -> void:
 				court = clampi(int(msg.get("court", 0)), 0, balance.courts.size() - 1)
 		"start":
 			if not is_host and state == State.LOBBY:
+				mixtape_match_id = str(msg.get("mixtape", ""))
 				court = clampi(int(msg.get("court", 0)), 0, balance.courts.size() - 1)
 				input_delay = clampi(int(msg.get("delay", 2)), 0, 8)
 				_begin(int(msg.p1), int(msg.p2))
@@ -195,7 +198,7 @@ func _send_pick() -> void:
 
 
 func _send_start() -> void:
-	_send({"t": "start", "court": court, "p1": local_pick, "p2": remote_pick, "delay": input_delay})
+	_send({"t": "start", "court": court, "p1": local_pick, "p2": remote_pick, "delay": input_delay, "mixtape": mixtape_match_id})
 
 
 func _begin(p1: int, p2: int) -> void:

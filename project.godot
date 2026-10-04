@@ -21,6 +21,7 @@ Controls="*res://scripts/game/controls.gd"
 Sfx="*res://scripts/game/sfx.gd"
 Settings="*res://scripts/game/settings.gd"
 Online="*res://scripts/net/online.gd"
+Mixtape="*res://scripts/game/mixtape.gd"
 
 [display]
 

@@ -11,7 +11,7 @@ const OnlineMatch := preload("res://scripts/net/online_match.gd")
 const UdpTransport := preload("res://scripts/net/udp_transport.gd")
 const UI := preload("res://scripts/game/ui/theme.gd")
 
-const ONLINE_RESULTS := ["REMATCH", "LEAVE"]
+const ONLINE_RESULTS := ["DUB TAPES", "REMATCH", "LEAVE"]
 
 var m  # main.gd
 var menu_index := 0
@@ -428,6 +428,7 @@ func _start_online_match() -> void:
 	vs_ticks = 0
 	bot_cpu = CpuPlayer.new(o.local_side, m.balance.cpu.hard, int(Time.get_ticks_usec())) if bot else null
 	Online.playbound.set_presence("in_match")
+	Mixtape.begin_match(o)
 	m._go(m.Screen.VS)
 
 
@@ -469,6 +470,7 @@ func match_tick() -> void:
 	if o.session != null and o.session.desynced and m.toast_ticks <= 0:
 		m.toast_msg("DESYNC DETECTED AT FRAME %d" % o.session.desync_frame)
 	if o.match_settled() and (o.sim.phase_ticks > 150 or o.opponent_left):
+		Mixtape.finish_match(o)
 		if bot:
 			_bot_report(o)
 		m.result_index = 0
@@ -538,7 +540,9 @@ func results_input() -> void:
 	if m.screen_ticks < 40 or m._confirm_device() == -1:
 		return
 	Sfx.play("menu_confirm")
-	if ONLINE_RESULTS[m.result_index] == "REMATCH" and o != null and o.opponent_left:
+	if ONLINE_RESULTS[m.result_index] == "DUB TAPES":
+		m.tapes.open(true)
+	elif ONLINE_RESULTS[m.result_index] == "REMATCH" and o != null and o.opponent_left:
 		m.toast_msg("%s HAS LEFT" % o.remote_name)
 		Online.close()
 		m.online = false

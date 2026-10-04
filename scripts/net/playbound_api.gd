@@ -35,7 +35,9 @@ func call_api(method: int, path: String, body: Variant = null, auth := true, bea
 	req.queue_free()
 	var status: int = res[1]
 	var text: String = (res[3] as PackedByteArray).get_string_from_utf8()
-	var data = JSON.parse_string(text) if text != "" else {}
+	var parser := JSON.new()
+	var parsed := parser.parse(text) if text != "" else ERR_PARSE_ERROR
+	var data = parser.data if parsed == OK else {}
 	var out: Dictionary = data if data is Dictionary else {}
 	out["_status"] = status if res[0] == HTTPRequest.RESULT_SUCCESS else 0
 	out["_ok"] = out["_status"] >= 200 and out["_status"] < 300

@@ -65,7 +65,9 @@ jobs:
         run: ~/godot/godot --headless --import
 
       - name: Run tests
-        run: ~/godot/godot --headless --script res://tests/run_tests.gd
+        run: |
+          ~/godot/godot --headless --script res://tests/run_tests.gd
+          ~/godot/godot --headless --script res://tests/test_mixtape.gd
 
       - name: Export all platforms
         run: |
