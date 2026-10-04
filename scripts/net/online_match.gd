@@ -22,6 +22,8 @@ var balance: Dictionary
 var is_host := false
 var state: int = State.CONNECTING
 var failure := ""
+## They left after the result was settled (from the results screen).
+var opponent_left := false
 var local_name := "PLAYER"
 var remote_name := ""
 var local_pick := 0
@@ -48,8 +50,12 @@ func _init(net_transport, rules: Dictionary, hosting: bool, player_name: String)
 	is_host = hosting
 	local_side = 0 if hosting else 1
 	local_name = player_name
-	# Both players must run the same rules, or the sims would drift apart.
-	_build = (str(PROTOCOL) + FileAccess.get_file_as_string("res://data/balance.json")).hash()
+	_build = build_hash()
+
+
+## Both players must run the same rules, or the sims would drift apart.
+static func build_hash() -> int:
+	return (str(PROTOCOL) + FileAccess.get_file_as_string("res://data/balance.json")).hash()
 
 
 ## Call every tick. While playing, returns the sim events of the new frame.
@@ -63,6 +69,9 @@ func poll(local_input: Dictionary) -> Array[Dictionary]:
 		elif session != null:
 			session.handle_packet(data)
 	if state == State.FAILED or state == State.ENDED:
+		return []
+	if transport.failure != "":
+		_fail(transport.failure)
 		return []
 	if _quiet > TIMEOUT_TICKS and (transport.has_peer() or state != State.CONNECTING):
 		_fail("NO RESPONSE FROM HOST" if state == State.CONNECTING else "CONNECTION LOST")
@@ -173,7 +182,12 @@ func _on_message(msg) -> void:
 			if state == State.PLAYING or state == State.LOBBY:
 				_back_to_lobby()
 		"bye":
-			_fail("OPPONENT LEFT")
+			if match_settled():
+				# They left from the results screen: the result stands.
+				opponent_left = true
+				state = State.ENDED
+			else:
+				_fail("OPPONENT LEFT")
 
 
 func _send_pick() -> void:

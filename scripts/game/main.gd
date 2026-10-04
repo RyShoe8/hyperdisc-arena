@@ -28,7 +28,7 @@ const COURT_NOTES := {
 }
 
 enum Screen { TITLE, MAIN, SELECT, COURT, VS, MATCH, PAUSED, OPTIONS, RESULTS,
-	ONLINE, ONLINE_WAIT, ONLINE_JOIN, ONLINE_LOBBY }
+	ONLINE, ONLINE_WAIT, ONLINE_JOIN, ONLINE_LOBBY, ONLINE_SIGNIN, ONLINE_FRIENDS, ONLINE_ROOM }
 
 var balance: Dictionary
 var sim: MatchSim
@@ -94,14 +94,18 @@ func _ready() -> void:
 ## Developer shortcuts, passed after "--" on the command line:
 ##   --demo            CPU vs CPU match straight away (attract mode, screenshots)
 ##   --court=N --p1=N --p2=N --difficulty=N
-##   --screen=title|main|select|court|vs|options|results  (--tab=N picks the options tab)
+##   --screen=title|main|select|court|vs|options|results|online|friends
+##                     (--tab=N picks the options tab)
 ##   --shots=60,240,600 --out=C:/path   save screenshots at those ticks, then quit
 ##   --speed=N         run N times faster
-##   --host[=port] / --join=address   start online play straight away
+##   --host[=port] / --join=address   start online play straight away (LAN)
+##   --host-room / --join-room=CODE    the same through a PlayBound Connect room
+##   --playbound-api=URL               another PlayBound server (tests, staging)
 ##   --bot             the CPU plays this side online and picks automatically
 ##   --name=NAME --netlag=MS --netloss=PERCENT --quit-after-match
 func _read_args() -> void:
 	var online_start := ""
+	var room := ""
 	for arg in OS.get_cmdline_user_args():
 		var kv: PackedStringArray = arg.trim_prefix("--").split("=")
 		var value := int(kv[1]) if kv.size() > 1 and kv[1].is_valid_int() else 0
@@ -123,6 +127,11 @@ func _read_args() -> void:
 			"join":
 				online_start = "join"
 				Settings.last_address = arg.trim_prefix("--join=")
+			"host-room":
+				online_start = "host_room"
+			"join-room":
+				online_start = "join_room"
+				room = arg.trim_prefix("--join-room=")
 			"bot":
 				net.bot = true
 				net.bot_court = court
@@ -147,7 +156,8 @@ func _read_args() -> void:
 				shots_dir = arg.trim_prefix("--out=")
 			"screen":
 				var names := {"title": Screen.TITLE, "main": Screen.MAIN, "select": Screen.SELECT,
-					"court": Screen.COURT, "vs": Screen.VS, "options": Screen.OPTIONS, "online": Screen.ONLINE}
+					"court": Screen.COURT, "vs": Screen.VS, "options": Screen.OPTIONS, "online": Screen.ONLINE,
+					"friends": Screen.ONLINE_FRIENDS}
 				if kv.size() > 1 and names.has(kv[1]):
 					_go(names[kv[1]])
 	if demo:
@@ -158,6 +168,10 @@ func _read_args() -> void:
 		net.host()
 	elif online_start == "join":
 		net._connect(Settings.last_address)
+	elif online_start == "host_room":
+		net.host_room()
+	elif online_start == "join_room":
+		net.join_room(room)
 
 
 func _physics_process(_delta: float) -> void:
@@ -166,6 +180,10 @@ func _physics_process(_delta: float) -> void:
 		_take_shot(shots.pop_front())
 	screen_ticks += 1
 	toast_ticks = maxi(0, toast_ticks - 1)
+	if net.invite_modal_active():
+		net.invite_input()
+		queue_redraw()
+		return
 	match screen:
 		Screen.TITLE:
 			_title_input()
@@ -202,6 +220,12 @@ func _physics_process(_delta: float) -> void:
 			net.join_input()
 		Screen.ONLINE_LOBBY:
 			net.lobby_input()
+		Screen.ONLINE_SIGNIN:
+			net.signin_input()
+		Screen.ONLINE_FRIENDS:
+			net.friends_input()
+		Screen.ONLINE_ROOM:
+			net.join_input()
 	queue_redraw()
 
 
@@ -275,12 +299,12 @@ func _main_input() -> void:
 			versus = true
 			_open_select()
 		"ONLINE":
-			net.menu_index = 1
+			net.menu_index = 0
 			_go(Screen.ONLINE)
 		"OPTIONS":
 			_open_options(Screen.MAIN)
 		"QUIT":
-			get_tree().quit()
+			Online.quit_game()
 
 
 # --- Character select ------------------------------------------------------
@@ -738,6 +762,14 @@ func _draw() -> void:
 			net.draw_join()
 		Screen.ONLINE_LOBBY:
 			net.draw_lobby()
+		Screen.ONLINE_SIGNIN:
+			net.draw_signin()
+		Screen.ONLINE_FRIENDS:
+			net.draw_friends()
+		Screen.ONLINE_ROOM:
+			net.draw_join()
+	if net.invite_modal_active():
+		net.draw_invite()
 	_draw_toast()
 	if Settings.scanlines:
 		UI.scanlines(self, SCREEN)

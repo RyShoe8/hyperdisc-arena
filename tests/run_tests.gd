@@ -728,6 +728,13 @@ func test_online_lobby_to_match_and_rematch() -> void:
 		for i in [0, 1]:
 			settled[i] = settled[i] or pair2[i].match_settled()
 	check(settled[0] and settled[1], "both peers see the finished match as settled (%s)" % [settled])
+	# Leaving from the results screen keeps the result for the other player.
+	h2.leave()
+	for t in 30:
+		link2[1].advance()
+		g2.poll({})
+	check(g2.state == OnlineMatch.State.ENDED and g2.opponent_left,
+		"a settled match survives the opponent leaving (state %d, %s)" % [g2.state, g2.failure])
 	check(guest.court == 4, "the guest got the host's court")
 	check(host.state == OnlineMatch.State.LOBBY and guest.state == OnlineMatch.State.LOBBY,
 		"both went back to the lobby for the rematch (%d, %d)" % [host.state, guest.state])

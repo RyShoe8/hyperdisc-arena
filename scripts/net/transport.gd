@@ -4,6 +4,10 @@
 ## relay) later without touching the netcode.
 extends RefCounted
 
+## Set when the connection can't be made or has dropped, with a message for
+## the player. The lobby gives up when it sees this.
+var failure := ""
+
 
 ## Queue a packet for the peer. Packets may be lost, duplicated or reordered.
 func send(_data: PackedByteArray) -> void:

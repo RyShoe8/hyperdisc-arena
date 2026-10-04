@@ -49,14 +49,13 @@ The pause menu has the full move list, using your current buttons.
 
 ## Online play (Windows)
 
-**Online** in the main menu: set a name, then **Host game** (shares your
-address, UDP port 7777) or **Join game** (type the host's address). Both
-players pick, the host picks the court and starts. Matches use rollback
-netcode, so they stay responsive over normal internet latency. Over the
-internet the host currently needs UDP 7777 forwarded; PlayBound accounts,
-friends, invites and automatic connections are next. See
-[docs/ONLINE.md](docs/ONLINE.md) for how it works and what the PlayBound API
-needs to provide.
+**Online** in the main menu: **Host room** gives you a code to share and
+your friend picks **Join room** and types it; it works over the internet
+with no router setup (PlayBound Connect, WebRTC). **Sign in with PlayBound**
+adds your friends list and in-game match invites. LAN and join-by-address
+are there too. Both players pick, the host picks the court and starts.
+Matches use rollback netcode, so they stay responsive over normal internet
+latency. See [docs/ONLINE.md](docs/ONLINE.md) for how it works.
 
 ## Rules
 
@@ -108,8 +107,8 @@ Kenney Future (CC0). Sound: Kenney Interface Sounds (CC0, see
 | `scripts/game/view/` | Match drawing (court, players, disc, effects, HUD), projection, character sprite sheets |
 | `scripts/game/ui/theme.gd` | Palette, fonts, panels and the animated Outrun background |
 | `scripts/game/controls.gd` | Controller and keyboard input: player slots, hot-plugging, rebinding, 8-way stick, rumble |
-| `scripts/net/` | Online: rollback session, lobby, transports (UDP, simulated), online service interface (direct connect now, PlayBound stub) |
-| `scripts/game/online_screens.gd` | Online menu, host / join, lobby and the online match loop |
+| `scripts/net/` | Online: rollback session, lobby, transports (WebRTC rooms, UDP, simulated), PlayBound client (sign-in, friends, presence, invites, rooms), direct connect |
+| `scripts/game/online_screens.gd` | Online menu, PlayBound sign-in, friends and invites, rooms / LAN, lobby and the online match loop |
 | `scripts/game/settings.gd` | Graphics, audio and control settings, saved to `user://settings.cfg` |
 | `tools/blender/` | Scripts that render the courts, characters and logo |
 | `export_presets.cfg`, `.github/workflows/build.yml` | Web, Windows, macOS and Linux exports, built on every push |
@@ -130,8 +129,9 @@ Pass these after `--` when launching the game, e.g.
 
 - `--demo` CPU plays CPU straight away (also an attract mode)
 - `--court=N --p1=N --p2=N --difficulty=N` pick the court, characters and CPU level
-- `--screen=title|main|select|court|vs|options` open a screen directly
+- `--screen=title|main|select|court|vs|options|online|friends` open a screen directly
 - `--shots=60,240 --out=DIR` save screenshots at those ticks, then quit
-- `--host[=port]`, `--join=address`, `--bot`, `--name=NAME`, `--netlag=MS`,
+- `--host[=port]`, `--join=address`, `--host-room`, `--join-room=CODE`,
+  `--playbound-api=URL`, `--bot`, `--name=NAME`, `--netlag=MS`,
   `--netloss=PERCENT`, `--quit-after-match` drive online play from the command
   line (two CPU-controlled instances can play each other; see docs/ONLINE.md)

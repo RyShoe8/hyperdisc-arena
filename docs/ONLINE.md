@@ -1,28 +1,28 @@
 # Online play
 
-Status (Oct 4, 2026): online 1v1 works on Windows with rollback netcode over
-direct UDP (LAN, or the internet with a forwarded port). Accounts, friends,
-presence and invites are waiting on the PlayBound API described below; the
-game side is already written against an interface, so plugging PlayBound in
-doesn't touch the netcode or menus.
+Status (Oct 4, 2026): online 1v1 works on Windows with rollback netcode.
+Players connect through **PlayBound Connect rooms** (WebRTC, no port
+forwarding) or directly on a LAN / by address. Signing in with a PlayBound
+account adds friends, presence and match invites from inside the game.
 
 ## How it fits together
 
 ```
 Menus (scripts/game/online_screens.gd)
    |
-Online (autoload, scripts/net/online.gd)  -- picks the service: PlayBound if available, else Direct
-   |                                  \
-OnlineService interface                OnlineMatch (scripts/net/online_match.gd)
- (scripts/net/online_service.gd)          handshake, version check, lobby, start, rematch
-   |- DirectService  (name + IP)             |
-   |- PlayBoundService (stub)              RollbackSession (scripts/net/rollback_session.gd)
-                                             input delay, prediction, rollback, sync, checksums
-                                             |
-                                          Transport interface (scripts/net/transport.gd)
-                                             |- UdpTransport      direct UDP (now)
-                                             |- LoopbackTransport simulated network (tests)
-                                             |- (PlayBound relay / NAT-punched UDP, later)
+Online (autoload, scripts/net/online.gd)
+   |- PlayBoundApi      (scripts/net/playbound_api.gd)    JSON over HTTPS to playbound.club
+   |- PlayBoundService  (scripts/net/playbound_service.gd) sign-in, friends, presence, invites, rooms
+   |- DirectService     (scripts/net/direct_service.gd)    LAN host / join by address
+   |
+OnlineMatch (scripts/net/online_match.gd)   handshake, version check, lobby, start, rematch
+   |
+RollbackSession (scripts/net/rollback_session.gd)   input delay, prediction, rollback, sync, checksums
+   |
+Transport interface (scripts/net/transport.gd)
+   |- WebRtcTransport   PlayBound Connect room: signaling + STUN/TURN (addons/webrtc_native)
+   |- UdpTransport      direct UDP (LAN / forwarded port)
+   |- LoopbackTransport simulated network (tests)
 ```
 
 - **The sim is deterministic.** `MatchSim` advances one fixed 60 Hz tick per
@@ -39,19 +39,40 @@ OnlineService interface                OnlineMatch (scripts/net/online_match.gd)
 - **Desync detection.** Every 60 confirmed frames both peers exchange a
   checksum of the full state; a mismatch shows "DESYNC DETECTED".
 - **Sides.** The host plays on the left, the guest on the right.
-- **Windows only for now.** Browsers can't open UDP sockets, so the web build
-  hides the Online menu. Cross-platform play (Windows vs. Mac vs. browser)
+- **Windows only for now.** The web build hides the Online menu (the WebRTC
+  addon is excluded from web exports with the `web` / `no-webrtc` tags). Cross-platform play (Windows vs. Mac vs. browser)
   will need the sim moved to fixed-point maths first, because floating-point
   results can differ slightly between platforms.
 
 ## Playing online today
 
-1. Both players: **Online** from the main menu, set a name.
-2. Host: **Host game**. The screen shows your LAN address and port (UDP 7777).
-3. Friend: **Join game**, type that address (or `public-ip:7777` over the
-   internet, with UDP 7777 forwarded on the host's router).
-4. Both pick a player and lock in; the host picks the court and starts.
-5. After the match: **Rematch** goes back to the lobby; **Leave** disconnects.
+**With a friend anywhere (recommended):**
+
+1. Host: **Online > Host room**. The screen shows a room code like `7KQ2MX`.
+2. Friend: **Online > Join room**, type the code.
+3. Both pick a player and lock in; the host picks the court and starts.
+4. After the match: **Rematch** goes back to the lobby; **Leave** disconnects.
+
+Rooms work with or without a PlayBound account.
+
+**Signed in with PlayBound:**
+
+- **Sign in with PlayBound** opens playbound.club/link in the browser and
+  shows a code. Sign in there (or create an account), check the code
+  matches, and approve; the game signs in within a few seconds and remembers
+  you on this PC (the token is stored encrypted, tied to the machine). Games
+  started from the PlayBound launcher can skip this: the launcher passes
+  `PLAYBOUND_TOKEN` (see below).
+- **Friends** lists your PlayBound friends: who's in HyperDisc, online or
+  offline. Picking one opens a room (if you aren't hosting one) and sends
+  them an invite with the room code. While hosting a room, the slap button
+  (Triangle / Y / I) opens the list too.
+- An incoming invite pops up over any menu: **Join** connects straight to
+  the friend's room; **Not now** declines.
+
+**Same network / direct:** **Host on LAN** shows your address (UDP 7777);
+**Join by address** connects to it. Over the internet that needs the port
+forwarded, which is why rooms exist.
 
 Start opens a small menu during an online match (the game keeps running);
 leaving forfeits.
@@ -70,61 +91,53 @@ leaving forfeits.
 
   Each prints `ONLINE_PROGRESS` lines and an `ONLINE_RESULT` line with the
   winner, sets, rollback stats and whether a desync happened.
+- **PlayBound without the real site:** `python tools/fake_playbound.py`
+  runs an in-memory stand-in (sign-in, friends, presence, invites, Connect
+  rooms with signaling). Users are `tok-alice`, `tok-bob`, `tok-carol`,
+  `tok-dave`, all friends with each other; rooms are numbered `HYPER1`,
+  `HYPER2`, ... Two bots through a WebRTC room:
 
-## What the game needs from PlayBound
+  ```
+  PLAYBOUND_TOKEN=tok-alice godot -- --host-room --bot --quit-after-match --playbound-api=http://127.0.0.1:8787
+  PLAYBOUND_TOKEN=tok-bob godot -- --join-room=HYPER1 --bot --quit-after-match --playbound-api=http://127.0.0.1:8787
+  ```
 
-Every method lives on `OnlineService`; `PlayBoundService` has a TODO at each
-one. Endpoints below are suggestions; anything with the same information works.
+  Signing in from the game against the fake server prints a link; opening
+  it approves the code (as alice, or add `&as=bob`).
 
-### Accounts and profile
+## PlayBound API used by the game
 
-| Game call | Needs | Notes |
-| --- | --- | --- |
-| `sign_in()` | A login flow that gives the game a session token | Device-code or browser redirect works well for a desktop game: the game shows a code / opens the browser, polls until the user approves. The PlayBound launcher could also pass a token on the command line so players are signed in already. |
-| `create_account()` | Account creation, or a link to the sign-up page that returns into the same flow | |
-| `is_signed_in()`, `profile()` | `GET /me` -> `{id, display_name, avatar_url}` | The display name replaces the local name. Token refresh as needed. |
-| `sign_out()` | Revoke the token | |
+Base URL `https://playbound.club` (override with `PLAYBOUND_API_BASE` or
+`--playbound-api=`). Account calls send `Authorization: Bearer <token>`.
 
-### Friends and presence
+| What | Endpoint |
+| --- | --- |
+| Start sign-in | `POST /api/game-auth/link` `{gameSlug, deviceName}` -> `{code, pollToken, verifyUrl, expiresInMs, intervalMs}` |
+| Wait for approval | `POST /api/game-auth/link/poll` `{pollToken}` -> `pending` / `approved {token, user}` / `denied` / `expired` |
+| Who am I | `GET /api/game-auth/me` -> `{user: {id, username}}` |
+| Sign out | `POST /api/game-auth/logout` (revokes the token) |
+| Launcher token | `POST /api/game-auth/launcher-token` `{gameSlug}` with the launcher's own token -> a game token for `PLAYBOUND_TOKEN` |
+| Friends | `GET /api/friends` (polled every 15 s) |
+| Presence | `POST /api/presence/start`, `/heartbeat` (60 s), `/end` (on quit) |
+| Invites | `GET /api/play-invites` (polled every 5 s), `POST /api/play-invites` `{recipientId, gameSlug, connectCode}`, `POST /api/play-invites/{id}` `{action}` |
+| Rooms | `POST /api/multiplayer/hyperdisc-arena/sessions`, `POST .../sessions/{code}/join`, `GET/POST .../sessions/{id}/signal` |
 
-| Game call | Needs | Notes |
-| --- | --- | --- |
-| `friends()` | `GET /friends` -> `[{id, display_name, avatar_url, online, in_game, game_id, joinable}]` | Friends are PlayBound-wide; the game filters or labels by `game_id`. |
-| `friends_changed` signal | A push channel for presence and friend-list changes | WebSocket (or SSE) per signed-in session. Polling every few seconds is an acceptable first version. |
-| `set_presence(status)` | `PUT /me/presence` `{game_id, status: "menus" | "online" | "in_match", joinable}` | The game calls this when entering menus, online lobby, a match. |
+The game-auth endpoints, `connectCode` on invites and the `hyperdisc-arena`
+Connect adapter come from PlayBound PR #1 (`game-accounts-api`). Invites also
+need HyperDisc in the PlayBound game catalog (added through the admin panel).
 
-### Invites
+**Connecting.** The room's signal endpoint carries the WebRTC offer, answer
+and ICE candidates (the guest announces itself with `join` until the host's
+offer arrives; the host answers each `join` with an offer). Connect's STUN
+servers find a direct route; its TURN server relays when there isn't one.
+The data channel is unordered with no retransmits, because rollback resends
+inputs itself. Room creation sends the build hash as `gameVersion`, so a
+friend on another version is told so instead of desyncing.
 
-| Game call | Needs | Notes |
-| --- | --- | --- |
-| `send_invite(friend_id)` | `POST /invites` `{to, game_id, build}` -> `{invite_id}` | Include the build hash so a friend on an older version can be told to update. |
-| `invite_received` signal | Pushed over the same channel: `{invite_id, from_id, from_name, game_id, build}` | The game shows a toast and an Accept/Decline prompt. Invites should expire (e.g. 60 s). |
-| `respond_to_invite(id, accept)` | `POST /invites/{id}/respond` `{accept}` | |
-| `invite_answered` signal | Pushed to the inviter | |
+### Later
 
-### Connecting the two players (the important one)
-
-After an invite is accepted, both games need to reach each other without the
-players forwarding ports. The game expects PlayBound to hand back a
-**Transport** that can send and receive small unreliable packets:
-
-1. **Signaling.** A way for the two games to exchange connection details
-   through PlayBound (over the push channel): each side's public address
-   from a STUN check, or WebRTC offers/answers and ICE candidates.
-2. **NAT traversal.** Try a direct UDP connection first (hole punching via
-   the exchanged addresses, or WebRTC data channels in unreliable mode).
-3. **Relay fallback.** When direct fails (strict NATs, some mobile networks),
-   relay through a PlayBound TURN/relay server (the free stack plans coturn
-   on an always-free server).
-
-When that's done, `PlayBoundService` emits
-`match_ready({role: "host"|"join", transport, opponent: {id, display_name}})`
-and the existing lobby and rollback code take over unchanged. Packet sizes
-are small: about 60 bytes 60 times a second each way during a match.
-
-### Later (not needed for the first version)
-
-- Matchmaking queue (`POST /queue`) that ends in the same `match_ready`.
-- Recording match results and ratings (`POST /matches` from both peers,
-  server reconciles).
+- Phone as controller: the QR code flow through PlayBound's controller
+  system (only for using a phone as a gamepad; match play needs no QR codes).
+- Matchmaking queue that ends in the same room flow.
+- Recording match results and ratings (both peers report, server reconciles).
 - Reporting desyncs with the frame number and build, to catch bugs.
