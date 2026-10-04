@@ -3,8 +3,9 @@
 Run from the repo root:
     blender -b --factory-startup -P tools/blender/make_logo.py
 
-Writes assets/logo/logo.png (transparent) and assets/logo/logo_preview.png
-(on the game's background colour). Everything is built in code, so edit this
+Writes assets/logo/logo.png (transparent), assets/logo/logo_preview.png
+(on the game's background colour) and site/logo.png (cropped, 1200 px wide,
+for the GitHub Pages site). Everything is built in code, so edit this
 file rather than a .blend.
 """
 
@@ -16,6 +17,7 @@ import bpy
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 FONT = os.path.join(ROOT, "assets", "fonts", "kenney_future.ttf")
 OUT_DIR = os.path.join(ROOT, "assets", "logo")
+SITE_LOGO = os.path.join(ROOT, "site", "logo.png")
 
 # Palette from scripts/game/main.gd
 BG = "16213e"
@@ -320,8 +322,31 @@ def render(scene, path, transparent):
     bpy.ops.render.render(write_still=True)
 
 
+def save_cropped(src, dst, width, pad=12):
+    """Trim transparent margins from src, scale to width and save as dst."""
+    import numpy as np
+
+    img = bpy.data.images.load(src)
+    w, h = img.size
+    px = np.empty(w * h * 4, dtype=np.float32)
+    img.pixels.foreach_get(px)
+    px = px.reshape(h, w, 4)
+    ys, xs = np.nonzero(px[:, :, 3] > 0.01)
+    x0, x1 = max(xs.min() - pad, 0), min(xs.max() + pad + 1, w)
+    y0, y1 = max(ys.min() - pad, 0), min(ys.max() + pad + 1, h)
+    crop = np.ascontiguousarray(px[y0:y1, x0:x1])
+
+    out = bpy.data.images.new("cropped", x1 - x0, y1 - y0, alpha=True)
+    out.pixels.foreach_set(crop.ravel())
+    out.scale(width, round(width * (y1 - y0) / (x1 - x0)))
+    out.filepath_raw = dst
+    out.file_format = "PNG"
+    out.save()
+
+
 if __name__ == "__main__":
     os.makedirs(OUT_DIR, exist_ok=True)
     s = build()
     render(s, os.path.join(OUT_DIR, "logo.png"), transparent=True)
     render(s, os.path.join(OUT_DIR, "logo_preview.png"), transparent=False)
+    save_cropped(os.path.join(OUT_DIR, "logo.png"), SITE_LOGO, width=1200)
