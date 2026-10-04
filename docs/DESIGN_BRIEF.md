@@ -152,7 +152,8 @@ Launch with the six character archetypes and six courts from the base game spec 
 1. **Versus (1v1, local):** the core mode; ships first.
 2. **Arcade ladder vs CPU:** one match against each character plus the two bonus games, as in the original.
 3. **Online ranked and casual (1v1):** after launch, using rollback netcode.
-4. **Doubles and party mode (later):** 2v2 and sabotage pickups are our own additions, outside the base rules.
+4. **Doubles (2v2, local):** ships at launch; our own addition, outside the base rules.
+5. **Party mode (later):** sabotage pickups, also our own addition.
 
 ## Art and audio
 
@@ -260,4 +261,4 @@ Target: a local-play launch in about 10 weeks, with online play after launch. We
 - [ ] Final name, after a trademark and Steam search
 - [x] Art budget and which artist: no budget; art is made in-house with Blender (installed at `D:\Blender`) plus CC0 packs, so the commission rows in Art and audio no longer apply
 - [ ] Setting: on hold until the separate lore document is written
-- [ ] Is 2v2 a launch feature or post-launch?
+- [x] Is 2v2 a launch feature or post-launch? Launch (local 2v2)
