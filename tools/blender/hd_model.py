@@ -29,6 +29,8 @@ MODELS = {
         # Straight 3D look: tint the model's own colours (painted skin keeps
         # its variation); plain parts are set outright.
         "model_tints": {"skin": "d9a67e", "hair": "f5d066", "eyebrows": "a8782e"},
+        # Clothes cut from his own skin (see add_garments).
+        "garments": {"tank": "2fb8c4", "shorts": "6a2c91"},
     },
 }
 
@@ -506,3 +508,102 @@ def _bind(rig, pieces):
         arm.object = rig
         o.parent = rig
     bpy.data.objects.remove(proxy, do_unlink=True)
+
+
+# --- Garments ----------------------------------------------------------------------
+# Clothes cut from the model's own (rigged) skin: faces chosen by which bone
+# moves them and by height, pushed out along the normals, coloured, and kept
+# on the body's weights so they move with it.
+
+TORSO_BONES = {"Hips", "Spine", "Spine1", "Spine2"}
+SHORTS_BONES = {"Hips", "LeftUpLeg", "RightUpLeg", "Spine"}
+
+
+def _dominant_bones(body):
+    names = [g.name.replace("mixamorig:", "") for g in body.vertex_groups]
+    out = []
+    for v in body.data.vertices:
+        best = max(v.groups, key=lambda g: g.weight, default=None)
+        out.append(names[best.group] if best is not None else "")
+    return out
+
+
+def _pbr(name, color, roughness=0.75):
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    bsdf = m.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs["Base Color"].default_value = C.rgb(color)
+    bsdf.inputs["Roughness"].default_value = roughness
+    return m
+
+
+def _cut_garment(body, rig, name, keep_vert, offset_of, material):
+    """New mesh from the body faces whose vertices all pass keep_vert(index, co),
+    each vertex pushed out by offset_of(co) along its normal."""
+    bm = bmesh.new()
+    bm.from_mesh(body.data)
+    bm.verts.ensure_lookup_table()
+    keep = [keep_vert(v.index, v.co) for v in bm.verts]
+    doomed = [f for f in bm.faces if not all(keep[v.index] for v in f.verts)]
+    bmesh.ops.delete(bm, geom=doomed, context="FACES")
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    bm.normal_update()
+    for v in bm.verts:
+        v.co += v.normal * offset_of(v.co)
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    ob = bpy.data.objects.new(name, me)
+    bpy.context.collection.objects.link(ob)
+    for g in body.vertex_groups:  # same order, so the copied weights line up
+        ob.vertex_groups.new(name=g.name)
+    ob.data.materials.append(material)
+    for poly in ob.data.polygons:
+        poly.use_smooth = True
+    ob.modifiers.new("thickness", "SOLIDIFY").thickness = 0.004
+    arm = ob.modifiers.new("Armature", "ARMATURE")
+    arm.object = rig
+    ob.parent = rig
+    return ob
+
+
+def add_garments(spec, pieces, rig, joints):
+    garments = spec.get("garments", {})
+    if not garments:
+        return []
+    body = next(o for o in pieces if o["hd_key"] == "skin")
+    dom = _dominant_bones(body)
+    out = []
+    waist = joints["Hips"].z + 0.16
+    if "shorts" in garments:
+        hem = joints["LeftKnee"].z + 0.11
+
+        def keep_shorts(i, co):
+            return dom[i] in SHORTS_BONES and hem < co.z < waist
+
+        def shorts_offset(co):
+            t = max(0.0, min(1.0, (waist - co.z) / (waist - hem)))
+            return 0.010 + 0.022 * t * t  # loose toward the hem
+
+        out.append(_cut_garment(body, rig, "BoardShorts", keep_shorts, shorts_offset,
+                                _pbr("shorts", garments["shorts"], 0.7)))
+    if "tank" in garments:
+        neck = joints["Neck"].z - 0.03
+        armpit = joints["LeftShoulder"].z - 0.09
+        strap = abs(joints["LeftShoulder"].x) * 0.55
+
+        def keep_tank(i, co):
+            if dom[i] not in TORSO_BONES and not (dom[i].endswith("Shoulder") and abs(co.x) < strap):
+                return False
+            if co.z > armpit and abs(co.x) > strap:
+                return False  # deep arm holes: only straps above the armpit
+            return waist - 0.05 < co.z < neck
+
+        out.append(_cut_garment(body, rig, "TankTop", keep_tank, lambda co: 0.007,
+                                _pbr("tank", garments["tank"], 0.8)))
+    # Board shorts replace the model's own trunks.
+    if "shorts" in garments:
+        for ob in [o for o in pieces if o.get("hd_key") == "trunks"]:
+            bpy.data.objects.remove(ob, do_unlink=True)
+            pieces.remove(ob)
+    return out

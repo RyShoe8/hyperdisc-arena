@@ -179,8 +179,9 @@ def build_model(cid):
     spec = M.MODELS[cid]
     pieces, lm = M.load_model(spec, 0, style="model")
     props = M.add_aviators(spec, lm, 0, style="model") if "aviators" in spec.get("props", []) else []
-    rig, _joints = M.rig_model(pieces, lm, lambda: HumanService.create_human(macro_detail_dict=TEMPLATE_MACRO, scale=0.1),
-                               lambda h: HumanService.add_builtin_rig(h, "mixamo"))
+    rig, joints = M.rig_model(pieces, lm, lambda: HumanService.create_human(macro_detail_dict=TEMPLATE_MACRO, scale=0.1),
+                              lambda h: HumanService.add_builtin_rig(h, "mixamo"))
+    pieces = pieces + M.add_garments(spec, pieces, rig, joints)
     for pb in rig.pose.bones:
         pb.rotation_mode = "QUATERNION"
     rig["retarget"] = True
