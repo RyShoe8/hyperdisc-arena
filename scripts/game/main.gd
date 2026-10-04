@@ -88,7 +88,7 @@ func _ready() -> void:
 ## Developer shortcuts, passed after "--" on the command line:
 ##   --demo            CPU vs CPU match straight away (attract mode, screenshots)
 ##   --court=N --p1=N --p2=N --difficulty=N
-##   --screen=title|main|select|court|vs|options|results
+##   --screen=title|main|select|court|vs|options|results  (--tab=N picks the options tab)
 ##   --shots=60,240,600 --out=C:/path   save screenshots at those ticks, then quit
 ##   --speed=N         run N times faster
 func _read_args() -> void:
@@ -106,6 +106,8 @@ func _read_args() -> void:
 				difficulty = clampi(value, 0, 2)
 			"demo":
 				demo = true
+			"tab":
+				options_tab = clampi(value, 0, OPTION_TABS.size() - 1)
 			"speed":
 				# Fast-forward (for capturing late-match screens).
 				Engine.time_scale = maxf(1.0, value)
@@ -512,7 +514,8 @@ func _option_rows() -> Array:
 			]
 		"CONTROLS":
 			var rows := [["PLAYER", "P%d" % (bind_player + 1)],
-				["DEVICE", "CONTROLLER" if bind_device == 0 else "KEYBOARD"]]
+				["DEVICE", "CONTROLLER" if bind_device == 0 else "KEYBOARD"],
+				["BUTTON LABELS", _label_style_text()]]
 			var kind := "pad" if bind_device == 0 else "keys"
 			for action in Controls.ACTIONS:
 				var codes: Array = Controls.bindings[bind_player][kind][action]
@@ -593,15 +596,25 @@ func _options_input() -> void:
 				bind_player = posmod(bind_player + step, 2)
 			elif options_row == 1:
 				bind_device = posmod(bind_device + step, 2)
+			elif options_row == 2:
+				Settings.button_labels = posmod(Settings.button_labels + step, Settings.LABEL_STYLES.size())
 			elif options_row == rows.size() - 1:
 				if confirm:
 					Controls.reset_bindings()
 					toast_msg("CONTROLS RESET TO DEFAULTS")
 			elif confirm:
-				var action: String = Controls.ACTIONS[options_row - 2]
+				var action: String = Controls.ACTIONS[options_row - 3]
 				Controls.capture(bind_player, "pad" if bind_device == 0 else "keys", action)
 	Settings.save()
 	Sfx.play("menu_move", 1.15)
+
+
+## "AUTO (PLAYSTATION)" etc.: what Auto picked for this player's controller.
+func _label_style_text() -> String:
+	var style: String = Settings.LABEL_STYLES[Settings.button_labels]
+	if Settings.button_labels == 0:
+		style += "  (%s)" % ("PLAYSTATION" if Controls.is_playstation(bind_player) else "XBOX")
+	return style
 
 
 func _switch_tab(step: int) -> void:
@@ -875,7 +888,7 @@ func _draw_options() -> void:
 		UI.slant_panel(self, area, Color(0.07, 0.02, 0.16, 0.92), UI.PURPLE, 30, 4)
 		var rows := _option_rows()
 		for i in rows.size():
-			var y := area.position.y + 50 + i * 76
+			var y := area.position.y + 40 + i * 70
 			var on: bool = i == options_row
 			var row := Rect2(Vector2(area.position.x + 60, y), Vector2(area.size.x - 120, 64))
 			if on:
@@ -886,7 +899,7 @@ func _draw_options() -> void:
 			if Controls.capturing() and on:
 				value = "PRESS A %s..." % ("BUTTON" if bind_device == 0 else "KEY")
 			elif on and value != "":
-				value = "<  %s  >" % value if OPTION_TABS[options_tab] != "CONTROLS" or i < 2 else value
+				value = "<  %s  >" % value if OPTION_TABS[options_tab] != "CONTROLS" or i < 3 else value
 			UI.text(self, Vector2(row.end.x - 40, y + 44), value, 30, UI.YELLOW, UI.ui, 4,
 				HORIZONTAL_ALIGNMENT_RIGHT)
 		if OPTION_TABS[options_tab] == "GRAPHICS" and OS.has_feature("web"):

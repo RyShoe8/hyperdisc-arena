@@ -8,6 +8,7 @@ const PATH := "user://settings.cfg"
 const WINDOW_MODES := ["WINDOWED", "FULLSCREEN", "BORDERLESS"]
 const SHAKE_LEVELS := ["OFF", "LOW", "FULL"]
 const EFFECT_LEVELS := ["LOW", "HIGH"]
+const LABEL_STYLES := ["AUTO", "XBOX", "PLAYSTATION"]
 
 var window_mode := 0
 var vsync := true
@@ -16,6 +17,8 @@ var effects := 1
 var scanlines := false
 var show_fps := false
 var show_catch_zones := false
+## Button names in prompts: 0 follows the controller, 1 Xbox, 2 PlayStation.
+var button_labels := 0
 var master_volume := 0.9
 var sfx_volume := 0.9
 
@@ -45,6 +48,7 @@ func load_settings() -> void:
 	scanlines = bool(cfg.get_value("graphics", "scanlines", scanlines))
 	show_fps = bool(cfg.get_value("graphics", "show_fps", show_fps))
 	show_catch_zones = bool(cfg.get_value("graphics", "show_catch_zones", show_catch_zones))
+	button_labels = int(cfg.get_value("controls", "button_labels", button_labels))
 	master_volume = float(cfg.get_value("audio", "master", master_volume))
 	sfx_volume = float(cfg.get_value("audio", "sfx", sfx_volume))
 	var bindings = cfg.get_value("controls", "bindings", null)
@@ -61,6 +65,7 @@ func save() -> void:
 	cfg.set_value("graphics", "scanlines", scanlines)
 	cfg.set_value("graphics", "show_fps", show_fps)
 	cfg.set_value("graphics", "show_catch_zones", show_catch_zones)
+	cfg.set_value("controls", "button_labels", button_labels)
 	cfg.set_value("audio", "master", master_volume)
 	cfg.set_value("audio", "sfx", sfx_volume)
 	cfg.set_value("controls", "bindings", Controls.get_bindings())

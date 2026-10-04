@@ -60,6 +60,7 @@ func _init() -> void:
 		"test_cpu_match_finishes",
 		"test_cpu_matches_finish_on_every_court",
 		"test_stick_snaps_to_8_directions",
+		"test_playstation_controllers_detected",
 	]:
 		current = test
 		call(test)
@@ -554,3 +555,14 @@ func test_stick_snaps_to_8_directions() -> void:
 	for v in cases:
 		var got := ControlsScript.snap8(v)
 		check(got == cases[v], "snap8(%s) = %s, expected %s" % [v, got, cases[v]])
+
+
+func test_playstation_controllers_detected() -> void:
+	# Browser ids, desktop (SDL) names and the Sony vendor id all count.
+	check(ControlsScript.looks_like_playstation(
+		"Standard Gamepad Mapping DualSense Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 0ce6)"),
+		"DualSense in a browser")
+	check(ControlsScript.looks_like_playstation("PS5 Controller"), "DualSense on desktop")
+	check(ControlsScript.looks_like_playstation("Standard Gamepad Mapping", 0x054C), "any Sony vendor id")
+	check(not ControlsScript.looks_like_playstation("Xbox Series X Controller", 0x045E), "Xbox pad")
+	check(not ControlsScript.looks_like_playstation("Standard Gamepad Mapping"), "unknown pad")

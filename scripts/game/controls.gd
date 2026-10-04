@@ -303,14 +303,54 @@ static func button_name(button: int, playstation: bool) -> String:
 	return names.get(button, "BUTTON %d" % button)
 
 
+## True when prompts for this player should use PlayStation names (Cross,
+## Circle...). Follows Options > Controls > Button labels, and on Auto looks
+## at the controller actually plugged into the player's slot.
 func is_playstation(player: int) -> bool:
-	if not has_pad(player):
-		return false
-	var name := Input.get_joy_name(pads[player]).to_lower()
-	for hint in ["playstation", "dualsense", "dualshock", "ps4", "ps5", "sony", "wireless controller"]:
-		if hint in name:
+	# Looked up at runtime: the headless tests load this script without the
+	# Settings autoload.
+	var settings := get_node_or_null("/root/Settings")
+	var style: int = settings.button_labels if settings != null else 0
+	if style != 0:
+		return style == 2
+	return has_pad(player) and _is_playstation_pad(pads[player])
+
+
+## Controller detection is cached per device; it's cleared on hot-plug.
+var _playstation_cache := {}
+
+
+func _is_playstation_pad(device: int) -> bool:
+	if not _playstation_cache.has(device):
+		var info := Input.get_joy_info(device)
+		var vendor := int(info.get("vendor_id", 0))
+		var name := Input.get_joy_name(device) + " " + _browser_pad_id(device)
+		_playstation_cache[device] = looks_like_playstation(name, vendor)
+	return _playstation_cache[device]
+
+
+const SONY_VENDOR := 0x054C
+
+
+static func looks_like_playstation(name: String, vendor_id := 0) -> bool:
+	if vendor_id == SONY_VENDOR:
+		return true
+	var n := name.to_lower()
+	for hint in ["playstation", "dualsense", "dualshock", "ps3", "ps4", "ps5", "sony",
+			"wireless controller", "054c"]:
+		if hint in n:
 			return true
 	return false
+
+
+## In a web build Godot reports a generic "Standard Gamepad Mapping" name, so
+## ask the browser for the controller's real id (it includes the vendor).
+func _browser_pad_id(device: int) -> String:
+	if not OS.has_feature("web"):
+		return ""
+	var id = JavaScriptBridge.eval(
+		"(function(){var p=navigator.getGamepads()[%d];return p?p.id:'';})()" % device, true)
+	return str(id) if id != null else ""
 
 
 # --- Sampling --------------------------------------------------------------
@@ -401,6 +441,7 @@ static func snap8(v: Vector2) -> Vector2i:
 # --- Hot-plugging ----------------------------------------------------------
 
 func _on_joy_connection_changed(device: int, connected: bool) -> void:
+	_playstation_cache.erase(device)
 	if connected:
 		_assign(device, true)
 		return
