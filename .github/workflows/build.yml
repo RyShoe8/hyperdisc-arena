@@ -68,7 +68,7 @@ jobs:
           cp -r build/web/* public/play/
           cp site/logo.png public/
           sed -e "s|__COMMIT__|${GITHUB_SHA::7}|" \
-              -e "s|__DATE__|$(date -u '+%Y-%m-%d %H:%M UTC')|" \
+              -e "s|__DATE__|$(date -u '+%Y-%m-%dT%H:%M:%SZ')|g" \
               -e "s|__RELEASE__|https://github.com/${GITHUB_REPOSITORY}/releases/download/latest-build|" \
               site/index.html > public/index.html
 

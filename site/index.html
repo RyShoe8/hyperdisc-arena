@@ -28,7 +28,7 @@
 <body>
 <main>
   <h1><img src="logo.png" alt="HyperDisc Arena" width="1200" height="520"></h1>
-  <p class="sub">Test build <code>__COMMIT__</code> · __DATE__</p>
+  <p class="sub">Test build <code>__COMMIT__</code> · <time id="built" datetime="__DATE__">__DATE__</time></p>
   <a class="play" href="play/">▶ Play in browser</a>
   <div class="downloads">
     <a href="__RELEASE__/HyperDiscArena-windows.zip">Windows</a>
@@ -38,5 +38,16 @@
   <p class="note">Controllers: plug in, then press a button so the browser detects it.
     Desktop downloads give the lowest input lag. On macOS the build is unsigned: right-click the app and choose Open the first time.</p>
 </main>
+<script>
+  // The build stamps a UTC ISO time; show it in the visitor's own time zone.
+  const t = document.getElementById("built");
+  const d = new Date(t.dateTime);
+  if (!isNaN(d)) {
+    t.textContent = d.toLocaleString(undefined, {
+      year: "numeric", month: "short", day: "numeric",
+      hour: "numeric", minute: "2-digit", timeZoneName: "short",
+    });
+  }
+</script>
 </body>
 </html>
