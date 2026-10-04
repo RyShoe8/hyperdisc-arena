@@ -1,0 +1,10 @@
+{
+  "screen_width": 1920,
+  "screen_height": 1080,
+  "scale": 1.19,
+  "pitch_degrees": 60,
+  "floor_centre_screen_y": 560,
+  "air_scale": 1.1,
+  "wall_height": 70,
+  "goal_panel_depth": 64
+}
