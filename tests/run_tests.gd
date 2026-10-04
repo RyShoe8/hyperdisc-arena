@@ -702,6 +702,32 @@ func test_online_lobby_to_match_and_rematch() -> void:
 			host.request_rematch()
 			phase = 4
 	check(phase == 4, "lobby reached a match and a rematch (phase %d)" % phase)
+	# match_settled() must turn true once a finished match is confirmed, even
+	# though the opponent's inputs always trail the current frame.
+	var link2 := LoopbackTransport.pair(5, 2, 0.05, 21)
+	var h2 := OnlineMatch.new(link2[0], balance, true, "A")
+	var g2 := OnlineMatch.new(link2[1], balance, false, "B")
+	var pair2 := [h2, g2]
+	var settled := [false, false]
+	for t in 60 * 20:
+		for i in [0, 1]:
+			link2[i].advance()
+			pair2[i].poll({})
+		if t == 30:
+			h2.set_pick(0, true)
+			g2.set_pick(0, true)
+		if t == 60:
+			h2.start()
+		if t == 200:
+			# Force both sims to the brink: one more set ends the match.
+			for om in pair2:
+				if om.sim != null:
+					om.sim.sets_won = [1, 0] as Array[int]
+					om.sim.set_number = 2
+					om.sim.set_ticks_left = 30
+		for i in [0, 1]:
+			settled[i] = settled[i] or pair2[i].match_settled()
+	check(settled[0] and settled[1], "both peers see the finished match as settled (%s)" % [settled])
 	check(guest.court == 4, "the guest got the host's court")
 	check(host.state == OnlineMatch.State.LOBBY and guest.state == OnlineMatch.State.LOBBY,
 		"both went back to the lobby for the rematch (%d, %d)" % [host.state, guest.state])

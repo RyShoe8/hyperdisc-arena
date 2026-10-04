@@ -123,8 +123,7 @@ func leave() -> void:
 
 ## True once the match is over and no late input can change the result.
 func match_settled() -> bool:
-	return session != null and sim.phase == MatchSim.Phase.MATCH_OVER \
-		and session.last_remote_frame >= session.frame - 1
+	return session != null and session.confirmed_phase() == MatchSim.Phase.MATCH_OVER
 
 
 # --- Messages ---------------------------------------------------------------

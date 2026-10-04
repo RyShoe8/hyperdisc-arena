@@ -70,6 +70,17 @@ func connected() -> bool:
 	return _quiet_ticks < TIMEOUT_TICKS
 
 
+## The match phase as of the last frame both players' inputs are known for,
+## which rollback can no longer change.
+func confirmed_phase() -> int:
+	var f := last_remote_frame + 1
+	if f >= frame:
+		return sim.phase
+	if states.has(f):
+		return int(states[f].phase)
+	return -1
+
+
 ## Advances the match by at most one frame. Returns the sim events of the
 ## newly simulated frame (events from re-simulated frames already played).
 func tick(local_input: Dictionary) -> Array[Dictionary]:
