@@ -1,0 +1,109 @@
+name: Build
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: 4.5.1
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Godot and export templates
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}
+
+      - name: Install Godot
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          base=https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable
+          mkdir -p ~/godot
+          curl -sSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip -d ~/godot
+          mv ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot/godot
+          curl -sSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          dest=~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          mkdir -p "$dest"
+          unzip -qj templates.tpz templates/version.txt templates/web_nothreads_release.zip \
+            templates/windows_release_x86_64.exe templates/linux_release.x86_64 \
+            templates/macos.zip -d "$dest"
+
+      - name: Import project
+        run: ~/godot/godot --headless --import
+
+      - name: Run tests
+        run: ~/godot/godot --headless --script res://tests/run_tests.gd
+
+      - name: Export all platforms
+        run: |
+          mkdir -p build/web build/windows build/linux build/macos
+          touch build/.gdignore
+          for preset in Web Windows Linux macOS; do
+            ~/godot/godot --headless --export-release "$preset"
+          done
+          (cd build/windows && zip -q ../HyperdiscArena-windows.zip *)
+          (cd build/linux && zip -q ../HyperdiscArena-linux.zip *)
+          cp build/macos/HyperdiscArena.zip build/HyperdiscArena-macos.zip
+
+      - name: Assemble site
+        run: |
+          mkdir -p public/play
+          cp -r build/web/* public/play/
+          sed -e "s|__COMMIT__|${GITHUB_SHA::7}|" \
+              -e "s|__DATE__|$(date -u '+%Y-%m-%d %H:%M UTC')|" \
+              -e "s|__RELEASE__|https://github.com/${GITHUB_REPOSITORY}/releases/download/latest-build|" \
+              site/index.html > public/index.html
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: builds
+          path: build/HyperdiscArena-*.zip
+          retention-days: 14
+
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: public
+
+      - name: Publish downloads to the latest-build release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest-build --yes --cleanup-tag || true
+          gh release create latest-build build/HyperdiscArena-*.zip \
+            --prerelease --target "$GITHUB_SHA" --title "Latest test build" \
+            --notes "Automatic build of ${GITHUB_SHA::7}. Play in the browser: https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/"
+
+    permissions:
+      contents: write
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
