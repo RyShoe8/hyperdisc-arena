@@ -166,7 +166,7 @@ Character animation is the one place to spend real money; everything else can co
 | Courts (background + floor + walls) | 6 | Asset packs, recoloured; or the same artist |
 | Disc, trails, impact and power-shot effects | About 15 | Godot particles + free effect packs |
 | UI: menus, score, timer, fonts | 1 set | Kenney UI pack + one display font |
-| Logo | 1 | Commission |
+| Logo | 1 | Blender, scripted in `tools/blender/make_logo.py` |
 | Sound effects (throw, catch, bounce, goal, crowd) | About 30 | Sonniss GDC bundles, freesound.org |
 | Music (menu + one per court) | 5 tracks | Licensed royalty-free or a commissioned chiptune artist |
 | Announcer lines ("Point!", "Power shot!") | About 20 | Voice actor on Fiverr |
