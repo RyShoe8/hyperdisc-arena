@@ -5,6 +5,7 @@ extends SceneTree
 
 const MatchSim := preload("res://scripts/sim/match_sim.gd")
 const CpuPlayer := preload("res://scripts/sim/cpu_player.gd")
+const ControlsScript := preload("res://scripts/game/controls.gd")
 
 const IDLE := {"x": 0, "y": 0, "a": false, "b": false}
 
@@ -31,6 +32,7 @@ func _init() -> void:
 		"test_tied_match_goes_to_sudden_death",
 		"test_cpu_match_is_deterministic",
 		"test_cpu_match_finishes",
+		"test_stick_snaps_to_8_directions",
 	]:
 		current = test
 		call(test)
@@ -260,3 +262,18 @@ func test_cpu_match_finishes() -> void:
 	var sim := cpu_match(7, 60 * 60 * 10)
 	check(sim.phase == MatchSim.Phase.MATCH_OVER, "a CPU-vs-CPU match should finish within 10 minutes")
 	print("cpu match: winner %d, sets %s, ticks %d" % [sim.winner, sim.sets_won, sim.tick])
+
+
+func test_stick_snaps_to_8_directions() -> void:
+	var cases := {
+		Vector2(1, 0): Vector2i(1, 0),
+		Vector2(0.9, 0.45): Vector2i(1, 1),  # 26 degrees: diagonal wins over a strict axis check
+		Vector2(0.95, 0.2): Vector2i(1, 0),
+		Vector2(-0.7, -0.7): Vector2i(-1, -1),
+		Vector2(0, -1): Vector2i(0, -1),
+		Vector2(-0.3, 0.95): Vector2i(0, 1),
+		Vector2.ZERO: Vector2i.ZERO,
+	}
+	for v in cases:
+		var got := ControlsScript.snap8(v)
+		check(got == cases[v], "snap8(%s) = %s, expected %s" % [v, got, cases[v]])

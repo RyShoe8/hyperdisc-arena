@@ -16,7 +16,7 @@ config/features=PackedStringArray("4.5", "GL Compatibility")
 
 [autoload]
 
-InputSetup="*res://scripts/game/input_setup.gd"
+Controls="*res://scripts/game/controls.gd"
 
 [display]
 
@@ -34,3 +34,4 @@ common/max_physics_steps_per_frame=8
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
