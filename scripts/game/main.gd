@@ -850,7 +850,13 @@ func _draw() -> void:
 		net.draw_invite()
 	_draw_toast()
 	if screen in [Screen.MATCH, Screen.PAUSED] and not Mixtape.now_playing.is_empty():
-		UI.text(self, Vector2(45, 1020), "NOW PLAYING  %s - %s" % [str(Mixtape.now_playing.get("title", "")).left(35), str(Mixtape.now_playing.get("artist", "")).left(25)], 22, UI.CYAN, null, 0, HORIZONTAL_ALIGNMENT_LEFT)
+		# Bottom centre, between the two power throw meters.
+		var song := "NOW PLAYING  %s - %s" % [str(Mixtape.now_playing.get("title", "")).left(32),
+			str(Mixtape.now_playing.get("artist", "")).left(22)]
+		var size := 22
+		while size > 14 and UI.text_width(song, size) > 900:
+			size -= 1
+		UI.text(self, Vector2(960, 1052), song, size, UI.CYAN)
 	if Settings.scanlines:
 		UI.scanlines(self, SCREEN)
 	if Settings.show_fps:
@@ -1039,8 +1045,8 @@ func _move_list() -> Array:
 		["LOB", "%s (hold longer = shorter)" % b], ["JUMP / AIR CATCH", j], ["SMASH", "%s IN THE AIR" % a],
 		["BLOCK (POP UP)", "%s STANDING STILL AS IT ARRIVES" % a], ["SLAP SHOT", "%s AS IT ARRIVES" % s],
 		["DROP SHOT", "%s AS IT ARRIVES" % b], ["SPECIAL", "STAND ON THE MARKER, CATCH, %s" % a],
-		["SUPER LOB", "WHEN CHARGED, %s" % b], ["EX SHOT", "EX GAUGE FULL, %s" % s],
-		["POWER TOSS", "EX GAUGE FULL, %s + %s" % [a, b]],
+		["SUPER LOB", "WHEN CHARGED, %s" % b], ["POWER THROW", "POWER METER FULL, %s" % s],
+		["POWER TOSS", "POWER METER FULL, %s + %s" % [a, b]],
 	]
 
 

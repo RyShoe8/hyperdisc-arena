@@ -547,7 +547,7 @@ func _draw_hud(ci: CanvasItem) -> void:
 		UI.text(ci, Vector2(name_x, frame_rect.position.y + 88), str(who.name).to_upper(), 20, Color.WHITE,
 			UI.ui, 3, HORIZONTAL_ALIGNMENT_LEFT, 152)
 
-	# EX gauges along the bottom.
+	# Power throw meters along the bottom.
 	for side in [0, 1]:
 		var left: bool = side == 0
 		var r := Rect2(Vector2(40 if left else 1880 - 420, 1032), Vector2(420, 26))
@@ -555,7 +555,7 @@ func _draw_hud(ci: CanvasItem) -> void:
 		var full: bool = amount >= 1.0
 		var col := UI.YELLOW if not full else (Color.WHITE if (frame / 6) % 2 == 0 else UI.PINK)
 		UI.meter(ci, r, amount, col, 10)
-		var label := "EX MAX!" if full else "EX"
+		var label := "POWER THROW READY!" if full else "POWER THROW"
 		UI.text(ci, Vector2(r.position.x + (0.0 if left else r.size.x), r.position.y - 8), label, 28,
 			col if full else Color.WHITE, UI.display, 4,
 			HORIZONTAL_ALIGNMENT_LEFT if left else HORIZONTAL_ALIGNMENT_RIGHT)
@@ -642,6 +642,6 @@ func _draw_cutin(ci: CanvasItem) -> void:
 		var px := 220.0 if left else 1700.0
 		var face := Rect2(Vector2(px - 150, y - 20), Vector2(300, 260))
 		ci.draw_texture_rect_region(art.portrait, face, PORTRAIT_BUST, Color(1, 1, 1, out))
-		var label: String = ("EX " if cutin.ex else "") + str(cutin.name) + "!"
+		var label: String = ("POWER " if cutin.ex else "") + str(cutin.name) + "!"
 		UI.text(ci, Vector2(1030 if left else 890, y + 150), label, 110, Color(c, out), UI.display, 9,
 			HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)

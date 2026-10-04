@@ -31,7 +31,7 @@ can be rebound per player, for controller and keyboard, under
 | Throw (holding), dash (moving), block (standing still) | A / Cross | J | Numpad 1 |
 | Lob (holding), drop shot (as it arrives) | B / Circle | K | Numpad 2 |
 | Jump (catch lobs in the air) | X / Square | L | Numpad 3 |
-| Slap shot (as it arrives), EX shot (holding, gauge full) | Y / Triangle or RB / R1 | I | Numpad 5 |
+| Slap shot (as it arrives), power throw (holding, meter full) | Y / Triangle or RB / R1 | I | Numpad 5 |
 | Pause | Start / Options | Esc or Enter | Backspace |
 
 Moves that combine buttons:
@@ -42,7 +42,7 @@ Moves that combine buttons:
 - **Special:** stand on the landing marker of an airborne disc until it
   charges, catch it, then throw. Lob instead for a super lob that lands and
   spins on like a buzzsaw.
-- **Power toss:** EX gauge full, press throw and lob together as the disc
+- **Power toss:** power meter full, press throw and lob together as the disc
   comes in to flip it up over yourself.
 
 The pause menu has the full move list, using your current buttons.

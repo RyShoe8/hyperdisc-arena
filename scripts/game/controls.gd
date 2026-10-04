@@ -23,7 +23,7 @@ const VIRTUAL_BASE := 1000
 const ACTIONS := ["a", "b", "jump", "slap", "start"]
 const ACTION_NAMES := {
 	"a": "THROW / DASH / BLOCK", "b": "LOB / DROP SHOT", "jump": "JUMP",
-	"slap": "SLAP / EX SHOT", "start": "PAUSE",
+	"slap": "SLAP / POWER THROW", "start": "PAUSE",
 }
 const MOVE_KEYS := [
 	{"up": KEY_W, "down": KEY_S, "left": KEY_A, "right": KEY_D},
