@@ -34,6 +34,14 @@ Menu: up/down picks a row, left/right changes it, A or Enter starts. In
 "VS PLAYER 2" mode, player 2 picks their own character with their stick.
 Catches, goals and supersonic throws rumble the controller.
 
+## Art and sound
+
+All placeholder assets are CC0 from [Kenney](https://kenney.nl) (see
+`assets/LICENSE-kenney.txt`): Sports Pack (players, disc; court colours sampled
+from its ground sheets), UI Pack (buttons, panels, arrows, stars, Kenney Future
+font) and Interface Sounds (every sound effect). Assets are stored as normal
+git files while they are small; move them to Git LFS once real art arrives.
+
 ## Layout
 
 | Path | What it is |
@@ -41,7 +49,9 @@ Catches, goals and supersonic throws rumble the controller.
 | `data/balance.json` | Every gameplay number: court, scoring, throws, lobs, knockback, characters, CPU difficulty |
 | `scripts/sim/match_sim.gd` | The rules. Fixed 60 Hz ticks, no nodes or rendering, so matches can be re-simulated for rollback netcode later |
 | `scripts/sim/cpu_player.gd` | CPU opponent; produces the same inputs a controller would |
-| `scripts/game/main.gd` | Menu, match loop, pause and placeholder drawing |
+| `scripts/game/main.gd` | Menu, match loop, pause, drawing, effects and sound cues |
+| `scripts/game/sfx.gd` | Sound effect player (autoload `Sfx`) |
+| `assets/` | Sprites, UI, font and sounds |
 | `scripts/game/controls.gd` | Controller and keyboard input: player slots, hot-plugging, deadzone, 8-way stick, rumble |
 | `export_presets.cfg`, `.github/workflows/build.yml` | Web, Windows, macOS and Linux exports, built on every push |
 | `site/index.html` | Test-build landing page with the Play button |

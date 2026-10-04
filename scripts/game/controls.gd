@@ -32,6 +32,14 @@ var using_pad: Array[bool] = [false, false]
 
 var _now: Array[Dictionary] = [{}, {}]
 var _prev: Array[Dictionary] = [{}, {}]
+## Every connected controller's state, slotted or not, by device id.
+## Menus read these so any controller can drive them.
+var _pad_now := {}
+var _pad_prev := {}
+## Controllers seen sending input, even if the platform never announced them.
+var _seen := {}
+## Last raw controller event, shown on the menu for troubleshooting.
+var last_raw := "none yet"
 
 
 func _ready() -> void:
@@ -43,9 +51,45 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	_pad_prev = _pad_now
+	_pad_now = {}
+	var devices := Input.get_connected_joypads()
+	for device in _seen:
+		if device not in devices:
+			devices.append(device)
+	for device in devices:
+		_pad_now[device] = _pad_state(device)
 	for i in PLAYERS:
 		_prev[i] = _now[i]
 		_now[i] = _sample(i)
+
+
+## Some platforms (notably browsers) deliver controller input without ever
+## announcing the controller. Register any controller the moment it sends
+## something, so it still gets a player slot.
+func _input(event: InputEvent) -> void:
+	if event is InputEventJoypadButton:
+		last_raw = "device %d button %d %s" % [event.device, event.button_index,
+			"down" if event.pressed else "up"]
+	elif event is InputEventJoypadMotion and absf(event.axis_value) > 0.5:
+		last_raw = "device %d axis %d %.2f" % [event.device, event.axis, event.axis_value]
+	else:
+		return
+	if not _seen.has(event.device):
+		_seen[event.device] = true
+		_assign(event.device, true)
+
+
+## One line describing detected controllers, for the menu.
+func diagnostics() -> String:
+	var names := []
+	for device in _pad_now:
+		var slot := pads.find(device)
+		names.append("%s [%s]" % [Input.get_joy_name(device),
+			"P%d" % (slot + 1) if slot >= 0 else "no slot"])
+	if names.is_empty():
+		names.append("no controllers detected")
+	return "Controllers: %s   |   last input: %s" % [", ".join(names), last_raw]
 
 
 # --- Queries ---------------------------------------------------------------
@@ -78,6 +122,53 @@ func any_pressed(button: String) -> bool:
 	return false
 
 
+## A direction just pushed on any keyboard or any controller (for menus).
+## With only_player_one, player 2's slot is left out (they pick separately).
+func menu_nudged(only_player_one := false) -> Vector2i:
+	for i in [0] if only_player_one else range(PLAYERS):
+		var n := nudged(i)
+		if n != Vector2i.ZERO:
+			return n
+	for device in _pad_now:
+		if only_player_one and device == pads[1]:
+			continue
+		var now: Dictionary = _pad_now[device]
+		var prev: Dictionary = _pad_prev.get(device, {})
+		var x: int = now.x if now.x != prev.get("x", 0) else 0
+		var y: int = now.y if now.y != prev.get("y", 0) else 0
+		if x != 0 or y != 0:
+			return Vector2i(x, y)
+	return Vector2i.ZERO
+
+
+## The controller that just pressed this button, -2 for a keyboard, or -1
+## if nothing did. Lets any controller confirm in menus.
+func menu_pressed(button: String) -> int:
+	for device in _pad_now:
+		if _pad_now[device].get(button, false) and not _pad_prev.get(device, {}).get(button, false):
+			return device
+	for i in PLAYERS:
+		if _keys_pressed(i, button):
+			return -2
+	return -1
+
+
+## Makes this controller player 1, moving any previous player-1 controller
+## to player 2. Called with the controller that starts a match.
+func make_player_one(device: int) -> void:
+	if device < 0 or pads[0] == device:
+		return
+	var old := pads[0]
+	if pads[1] == device:
+		pads[1] = old
+	elif pads[1] < 0:
+		pads[1] = old
+	pads[0] = device
+	using_pad[0] = true
+	_prev[0] = {}
+	_now[0] = {}
+
+
 func has_pad(player: int) -> bool:
 	return pads[player] >= 0
 
@@ -93,12 +184,25 @@ func rumble(player: int, weak: float, strong: float, seconds: float) -> void:
 
 
 ## Button labels for prompts, following the device the player last used.
+## PlayStation controllers get Cross/Circle/Options instead of A/B/Start.
 func label(player: int, button: String) -> String:
 	if using_pad[player]:
+		if is_playstation(player):
+			return {"a": "Cross", "b": "Circle", "start": "Options", "move": "Stick"}[button]
 		return {"a": "A", "b": "B", "start": "Start", "move": "Stick"}[button]
 	if player == 0:
 		return {"a": "J", "b": "K", "start": "Esc", "move": "WASD"}[button]
 	return {"a": "Num1", "b": "Num2", "start": "Backspace", "move": "Arrows"}[button]
+
+
+func is_playstation(player: int) -> bool:
+	if not has_pad(player):
+		return false
+	var name := Input.get_joy_name(pads[player]).to_lower()
+	for hint in ["playstation", "dualsense", "dualshock", "ps4", "ps5", "sony", "wireless controller"]:
+		if hint in name:
+			return true
+	return false
 
 
 # --- Sampling --------------------------------------------------------------
@@ -113,37 +217,48 @@ func _sample(player: int) -> Dictionary:
 	var kb_start := Input.is_physical_key_pressed(keys.start) \
 		or Input.is_physical_key_pressed(keys.start2)
 
-	var stick := Vector2.ZERO
-	var pad_a := false
-	var pad_b := false
-	var pad_start := false
-	var device := pads[player]
-	if device >= 0:
-		stick = Vector2(Input.get_joy_axis(device, JOY_AXIS_LEFT_X),
-			Input.get_joy_axis(device, JOY_AXIS_LEFT_Y))
-		if stick.length() < DEADZONE:
-			stick = Vector2.ZERO
-		var dpad := Vector2(
-			int(Input.is_joy_button_pressed(device, JOY_BUTTON_DPAD_RIGHT))
-				- int(Input.is_joy_button_pressed(device, JOY_BUTTON_DPAD_LEFT)),
-			int(Input.is_joy_button_pressed(device, JOY_BUTTON_DPAD_DOWN))
-				- int(Input.is_joy_button_pressed(device, JOY_BUTTON_DPAD_UP)))
-		if dpad != Vector2.ZERO:
-			stick = dpad
-		for b in PAD_A:
-			pad_a = pad_a or Input.is_joy_button_pressed(device, b)
-		for b in PAD_B:
-			pad_b = pad_b or Input.is_joy_button_pressed(device, b)
-		pad_start = Input.is_joy_button_pressed(device, JOY_BUTTON_START)
+	var pad: Dictionary = _pad_now.get(pads[player], {}) if pads[player] >= 0 else {}
+	var stick := Vector2(pad.get("x", 0), pad.get("y", 0))
+	var pad_a: bool = pad.get("a", false)
+	var pad_b: bool = pad.get("b", false)
+	var pad_start: bool = pad.get("start", false)
 
 	if stick != Vector2.ZERO or pad_a or pad_b or pad_start:
 		using_pad[player] = true
 	elif kb != Vector2.ZERO or kb_a or kb_b or kb_start:
 		using_pad[player] = false
 
-	var dir := snap8(stick if stick != Vector2.ZERO else kb)
+	var dir := Vector2i(stick) if stick != Vector2.ZERO else snap8(kb)
 	return {"x": dir.x, "y": dir.y, "a": pad_a or kb_a, "b": pad_b or kb_b,
-		"start": pad_start or kb_start}
+		"start": pad_start or kb_start, "kb_a": kb_a, "kb_b": kb_b, "kb_start": kb_start}
+
+
+func _pad_state(device: int) -> Dictionary:
+	var stick := Vector2(Input.get_joy_axis(device, JOY_AXIS_LEFT_X),
+		Input.get_joy_axis(device, JOY_AXIS_LEFT_Y))
+	if stick.length() < DEADZONE:
+		stick = Vector2.ZERO
+	var dpad := Vector2(
+		int(Input.is_joy_button_pressed(device, JOY_BUTTON_DPAD_RIGHT))
+			- int(Input.is_joy_button_pressed(device, JOY_BUTTON_DPAD_LEFT)),
+		int(Input.is_joy_button_pressed(device, JOY_BUTTON_DPAD_DOWN))
+			- int(Input.is_joy_button_pressed(device, JOY_BUTTON_DPAD_UP)))
+	if dpad != Vector2.ZERO:
+		stick = dpad
+	var dir := snap8(stick)
+	var a := false
+	var b := false
+	for button in PAD_A:
+		a = a or Input.is_joy_button_pressed(device, button)
+	for button in PAD_B:
+		b = b or Input.is_joy_button_pressed(device, button)
+	return {"x": dir.x, "y": dir.y, "a": a, "b": b,
+		"start": Input.is_joy_button_pressed(device, JOY_BUTTON_START)}
+
+
+func _keys_pressed(player: int, button: String) -> bool:
+	var key := "kb_" + button
+	return _now[player].get(key, false) and not _prev[player].get(key, false)
 
 
 ## Snaps an analog direction to one of 8 directions by angle, so diagonals
