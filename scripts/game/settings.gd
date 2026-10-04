@@ -20,6 +20,11 @@ var show_catch_zones := false
 ## Button names in prompts: 0 follows the controller, 1 Xbox, 2 PlayStation.
 var button_labels := 0
 var master_volume := 0.9
+## Online display name (until PlayBound accounts provide one).
+var player_name := "PLAYER"
+## Last address typed into Join, and the port used to host.
+var last_address := ""
+var host_port := 7777
 var sfx_volume := 0.9
 
 
@@ -50,6 +55,9 @@ func load_settings() -> void:
 	show_catch_zones = bool(cfg.get_value("graphics", "show_catch_zones", show_catch_zones))
 	button_labels = int(cfg.get_value("controls", "button_labels", button_labels))
 	master_volume = float(cfg.get_value("audio", "master", master_volume))
+	player_name = str(cfg.get_value("online", "name", player_name)).left(16)
+	last_address = str(cfg.get_value("online", "last_address", last_address))
+	host_port = int(cfg.get_value("online", "host_port", host_port))
 	sfx_volume = float(cfg.get_value("audio", "sfx", sfx_volume))
 	var bindings = cfg.get_value("controls", "bindings", null)
 	if bindings is Dictionary:
@@ -67,6 +75,9 @@ func save() -> void:
 	cfg.set_value("graphics", "show_catch_zones", show_catch_zones)
 	cfg.set_value("controls", "button_labels", button_labels)
 	cfg.set_value("audio", "master", master_volume)
+	cfg.set_value("online", "name", player_name)
+	cfg.set_value("online", "last_address", last_address)
+	cfg.set_value("online", "host_port", host_port)
 	cfg.set_value("audio", "sfx", sfx_volume)
 	cfg.set_value("controls", "bindings", Controls.get_bindings())
 	cfg.save(PATH)

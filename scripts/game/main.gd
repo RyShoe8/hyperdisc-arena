@@ -10,6 +10,7 @@ const MatchSim := preload("res://scripts/sim/match_sim.gd")
 const CpuPlayer := preload("res://scripts/sim/cpu_player.gd")
 const UI := preload("res://scripts/game/ui/theme.gd")
 const MatchView := preload("res://scripts/game/view/match_view.gd")
+const OnlineScreens := preload("res://scripts/game/online_screens.gd")
 
 const BALANCE_PATH := "res://data/balance.json"
 const SCREEN := Vector2(1920, 1080)
@@ -26,7 +27,8 @@ const COURT_NOTES := {
 	"stadium": "LARGE COURT  -  THE 5-ZONE GROWS WITH EVERY STRAIGHT POINT",
 }
 
-enum Screen { TITLE, MAIN, SELECT, COURT, VS, MATCH, PAUSED, OPTIONS, RESULTS }
+enum Screen { TITLE, MAIN, SELECT, COURT, VS, MATCH, PAUSED, OPTIONS, RESULTS,
+	ONLINE, ONLINE_WAIT, ONLINE_JOIN, ONLINE_LOBBY }
 
 var balance: Dictionary
 var sim: MatchSim
@@ -36,6 +38,9 @@ var screen: int = Screen.TITLE
 var screen_ticks := 0
 var frame := 0
 var versus := false
+## True while playing (or in the results of) an online match.
+var online := false
+var net: OnlineScreens
 
 # Menu state
 var main_index := 0
@@ -76,6 +81,7 @@ func _ready() -> void:
 	RenderingServer.set_default_clear_color(UI.NIGHT)
 	UI.load_fonts()
 	Controls.changed.connect(_on_controls_changed)
+	net = OnlineScreens.new(self)
 	logo = load("res://assets/logo/logo.png")
 	for c in balance.courts:
 		court_thumbs.append(load("res://assets/art/courts/%s.webp" % c.id))
@@ -91,7 +97,11 @@ func _ready() -> void:
 ##   --screen=title|main|select|court|vs|options|results  (--tab=N picks the options tab)
 ##   --shots=60,240,600 --out=C:/path   save screenshots at those ticks, then quit
 ##   --speed=N         run N times faster
+##   --host[=port] / --join=address   start online play straight away
+##   --bot             the CPU plays this side online and picks automatically
+##   --name=NAME --netlag=MS --netloss=PERCENT --quit-after-match
 func _read_args() -> void:
+	var online_start := ""
 	for arg in OS.get_cmdline_user_args():
 		var kv: PackedStringArray = arg.trim_prefix("--").split("=")
 		var value := int(kv[1]) if kv.size() > 1 and kv[1].is_valid_int() else 0
@@ -106,6 +116,24 @@ func _read_args() -> void:
 				difficulty = clampi(value, 0, 2)
 			"demo":
 				demo = true
+			"host":
+				online_start = "host"
+				if value > 0:
+					Settings.host_port = value
+			"join":
+				online_start = "join"
+				Settings.last_address = arg.trim_prefix("--join=")
+			"bot":
+				net.bot = true
+				net.bot_court = court
+			"name":
+				Settings.player_name = arg.trim_prefix("--name=").to_upper().left(16)
+			"netlag":
+				net.net_lag = value
+			"netloss":
+				net.net_loss = value / 100.0
+			"quit-after-match":
+				net.quit_after_match = true
 			"tab":
 				options_tab = clampi(value, 0, OPTION_TABS.size() - 1)
 			"speed":
@@ -119,11 +147,17 @@ func _read_args() -> void:
 				shots_dir = arg.trim_prefix("--out=")
 			"screen":
 				var names := {"title": Screen.TITLE, "main": Screen.MAIN, "select": Screen.SELECT,
-					"court": Screen.COURT, "vs": Screen.VS, "options": Screen.OPTIONS}
+					"court": Screen.COURT, "vs": Screen.VS, "options": Screen.OPTIONS, "online": Screen.ONLINE}
 				if kv.size() > 1 and names.has(kv[1]):
 					_go(names[kv[1]])
 	if demo:
 		_start_match()
+	if net.bot:
+		net.bot_court = court
+	if online_start == "host":
+		net.host()
+	elif online_start == "join":
+		net._connect(Settings.last_address)
 
 
 func _physics_process(_delta: float) -> void:
@@ -142,16 +176,37 @@ func _physics_process(_delta: float) -> void:
 		Screen.COURT:
 			_court_input()
 		Screen.VS:
-			_vs_input()
+			if online:
+				net.vs_tick()
+			else:
+				_vs_input()
 		Screen.MATCH:
-			_match_tick()
+			if online:
+				net.match_tick()
+			else:
+				_match_tick()
 		Screen.PAUSED:
 			_pause_input()
 		Screen.OPTIONS:
 			_options_input()
 		Screen.RESULTS:
-			_results_input()
+			if online:
+				net.results_input()
+			else:
+				_results_input()
+		Screen.ONLINE:
+			net.menu_input()
+		Screen.ONLINE_WAIT:
+			net.wait_input()
+		Screen.ONLINE_JOIN:
+			net.join_input()
+		Screen.ONLINE_LOBBY:
+			net.lobby_input()
 	queue_redraw()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	net.handle_text(event)
 
 
 func _take_shot(tick: int) -> void:
@@ -191,7 +246,9 @@ func _title_input() -> void:
 
 
 func _main_items() -> Array:
-	var items := ["VS CPU", "VS PLAYER 2", "OPTIONS"]
+	var items := ["VS CPU", "VS PLAYER 2", "ONLINE", "OPTIONS"]
+	if OS.has_feature("web"):
+		items.erase("ONLINE")  # browsers can't open UDP sockets
 	if not OS.has_feature("web"):
 		items.append("QUIT")
 	return items
@@ -217,6 +274,9 @@ func _main_input() -> void:
 		"VS PLAYER 2":
 			versus = true
 			_open_select()
+		"ONLINE":
+			net.menu_index = 1
+			_go(Screen.ONLINE)
 		"OPTIONS":
 			_open_options(Screen.MAIN)
 		"QUIT":
@@ -326,6 +386,7 @@ func _names() -> Array[String]:
 
 
 func _start_match() -> void:
+	online = false
 	var characters: Array = balance.characters
 	var seed_value := int(Time.get_ticks_usec())
 	cpu = null if versus else CpuPlayer.new(MatchSim.RIGHT, balance.cpu[DIFFICULTIES[difficulty]], seed_value)
@@ -633,7 +694,10 @@ func _on_controls_changed(message: String) -> void:
 	Sfx.play("disconnect" if message.ends_with("disconnected") else "connect")
 	# A controller dropping out mid-match pauses the game until it is back.
 	if screen == Screen.MATCH and message.ends_with("disconnected"):
-		_pause(0)
+		if online:
+			net.leave_menu = true  # online matches can't pause
+		else:
+			_pause(0)
 
 
 # --- Drawing ---------------------------------------------------------------
@@ -652,6 +716,8 @@ func _draw() -> void:
 			_draw_vs()
 		Screen.MATCH:
 			view.draw(self)
+			if online and net.leave_menu:
+				net.draw_leave_menu()
 		Screen.PAUSED:
 			view.draw(self)
 			_draw_pause()
@@ -664,6 +730,14 @@ func _draw() -> void:
 			_draw_options()
 		Screen.RESULTS:
 			_draw_results()
+		Screen.ONLINE:
+			net.draw_menu()
+		Screen.ONLINE_WAIT:
+			net.draw_wait()
+		Screen.ONLINE_JOIN:
+			net.draw_join()
+		Screen.ONLINE_LOBBY:
+			net.draw_lobby()
 	_draw_toast()
 	if Settings.scanlines:
 		UI.scanlines(self, SCREEN)
@@ -940,7 +1014,9 @@ func _draw_results() -> void:
 	UI.text(self, Vector2(960, 470), "SET COUNTS", 44, Color.WHITE, UI.display, 5)
 	UI.text(self, Vector2(960, 590), "%d - %d" % [sim.sets_won[0], sim.sets_won[1]], 130, UI.YELLOW,
 		UI.ui, 10, HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)
-	if t > 40:
+	if online:
+		net.draw_results_menu()
+	elif t > 40:
 		for i in RESULT_OPTIONS.size():
 			UI.button(self, Rect2(Vector2(760, 660 + i * 84), Vector2(400, 68)), RESULT_OPTIONS[i],
 				i == result_index, frame, 28)
