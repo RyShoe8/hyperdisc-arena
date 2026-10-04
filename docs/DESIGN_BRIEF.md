@@ -4,7 +4,7 @@ Oct 4, 2026 · @Ryan
 
 ## Name
 
-Decided: **HyperDisc Arena**. Earlier shortlist below, kept for reference; the first pick was Overspin. It names the signature move (the curve shot), is one short word, and reads well as a logo and a verb ("get overspun"). No trademark or Steam search has been done yet; clear the shortlist before committing.
+Locked: **HyperDisc Arena** (written with a capital D). The earlier shortlist is kept below for reference only; the first pick was Overspin.
 
 | Name | Why it works | Watch-out |
 |---|---|---|
@@ -258,7 +258,7 @@ Target: a local-play launch in about 10 weeks, with online play after launch. We
 
 **Open questions:**
 
-- [ ] Final name, after a trademark and Steam search
+- [x] Final name: HyperDisc Arena (locked)
 - [x] Art budget and which artist: no budget; art is made in-house with Blender (installed at `D:\Blender`) plus CC0 packs, so the commission rows in Art and audio no longer apply
 - [ ] Setting: on hold until the separate lore document is written
 - [x] Is 2v2 a launch feature or post-launch? Launch (local 2v2)
