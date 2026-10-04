@@ -332,9 +332,9 @@ func _update_player(p: PlayerState, input: Dictionary) -> void:
 			elif input.get("b", false):
 				_lob(p, input)
 			return
-		var drift := Vector2(input.get("x", 0), input.get("y", 0))
+		var drift := move_dir(input)
 		if drift != Vector2.ZERO:
-			p.pos += drift.normalized() * float(pc.run_speed) * float(p.character.speed) \
+			p.pos += drift * float(pc.run_speed) * float(p.character.speed) \
 				* float(pc.air_control)
 		_clamp_to_half(p)
 		return
@@ -380,14 +380,13 @@ func _update_player(p: PlayerState, input: Dictionary) -> void:
 	elif p.recovery_ticks > 0:
 		p.recovery_ticks -= 1
 	else:
-		var move := Vector2(input.get("x", 0), input.get("y", 0))
+		var move := move_dir(input)
 		if input.get("jump", false):
 			p.vz = float(pc.jump_velocity)
 			p.z = 0.001
 			_act(p, Act.JUMP)
 			events.append({"type": "jump", "side": p.side})
 		elif move != Vector2.ZERO:
-			move = move.normalized()
 			if input.get("a", false):
 				p.dash_dir = move
 				p.dash_ticks = int(pc.dash_ticks)
@@ -400,6 +399,17 @@ func _update_player(p: PlayerState, input: Dictionary) -> void:
 			_act(p, Act.WHIFF)
 	_update_charge(p)
 	_clamp_to_half(p)
+
+
+## Movement direction (unit vector, or zero): the analog stick's angle when
+## there is one ("ma"), else the 8-way x/y. Aiming always uses x/y.
+static func move_dir(input: Dictionary) -> Vector2:
+	var ma := int(input.get("ma", 0))
+	if ma > 0:
+		var a := float(ma - 1) * TAU / 48.0
+		return Vector2(cos(a), sin(a))
+	var v := Vector2(input.get("x", 0), input.get("y", 0))
+	return v.normalized() if v != Vector2.ZERO else Vector2.ZERO
 
 
 ## Block, slap, drop shot and power toss. Returns true if one happened.

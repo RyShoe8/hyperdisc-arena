@@ -12,7 +12,7 @@ const RollbackSession := preload("res://scripts/net/rollback_session.gd")
 enum State { CONNECTING, LOBBY, PLAYING, ENDED, FAILED }
 
 ## Bump when the wire format or the rules change incompatibly.
-const PROTOCOL := 2
+const PROTOCOL := 3  # 3: analog movement angle in the input
 const PKT_LOBBY := 1
 const RESEND_TICKS := 20
 const TIMEOUT_TICKS := 600

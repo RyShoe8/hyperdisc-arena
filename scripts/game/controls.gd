@@ -181,7 +181,7 @@ func diagnostics() -> String:
 ## The sim input for this tick.
 func input(player: int) -> Dictionary:
 	var s := _now[player]
-	return {"x": s.get("x", 0), "y": s.get("y", 0),
+	return {"x": s.get("x", 0), "y": s.get("y", 0), "ma": s.get("ma", 0),
 		"a": pressed(player, "a"), "b": pressed(player, "b"),
 		"jump": pressed(player, "jump"), "slap": pressed(player, "slap"),
 		"a_down": s.get("a", false), "b_down": s.get("b", false)}
@@ -431,6 +431,9 @@ func _sample(player: int) -> Dictionary:
 	var dir := Vector2i(stick) if stick != Vector2.ZERO else snap8(kb)
 	out["x"] = dir.x
 	out["y"] = dir.y
+	# The analog stick also moves freely (any angle); D-pad and keys stay 8-way.
+	var raw: Vector2 = pad.get("analog", Vector2.ZERO)
+	out["ma"] = angle_step(raw) if stick != Vector2.ZERO else 0
 	return out
 
 
@@ -456,6 +459,7 @@ func _pad_state(device: int) -> Dictionary:
 			- int(Input.is_joy_button_pressed(device, JOY_BUTTON_DPAD_UP)))
 	if dpad != Vector2.ZERO:
 		stick = dpad
+	var analog := stick if dpad == Vector2.ZERO else Vector2.ZERO
 	var dir := snap8(stick)
 	var buttons := {}
 	for b in [JOY_BUTTON_A, JOY_BUTTON_B, JOY_BUTTON_X, JOY_BUTTON_Y, JOY_BUTTON_LEFT_SHOULDER,
@@ -464,7 +468,7 @@ func _pad_state(device: int) -> Dictionary:
 		buttons[b] = Input.is_joy_button_pressed(device, b)
 	# Menus use the default layout on any controller, whatever the bindings:
 	# bottom face button confirms, right face button goes back.
-	return {"x": dir.x, "y": dir.y, "buttons": buttons,
+	return {"x": dir.x, "y": dir.y, "analog": analog, "buttons": buttons,
 		"a": buttons[JOY_BUTTON_A], "b": buttons[JOY_BUTTON_B], "jump": buttons[JOY_BUTTON_X],
 		"slap": buttons[JOY_BUTTON_Y], "start": buttons[JOY_BUTTON_START]}
 
@@ -482,15 +486,24 @@ func _virtual_state(device: int) -> Dictionary:
 		int(b.get(JOY_BUTTON_DPAD_DOWN, false)) - int(b.get(JOY_BUTTON_DPAD_UP, false)))
 	if dpad != Vector2.ZERO:
 		stick = dpad
+	var analog := stick if dpad == Vector2.ZERO else Vector2.ZERO
 	var dir := snap8(stick)
 	var buttons := {}
 	for k in [JOY_BUTTON_A, JOY_BUTTON_B, JOY_BUTTON_X, JOY_BUTTON_Y, JOY_BUTTON_LEFT_SHOULDER,
 			JOY_BUTTON_RIGHT_SHOULDER, JOY_BUTTON_START, JOY_BUTTON_BACK, JOY_BUTTON_LEFT_STICK,
 			JOY_BUTTON_RIGHT_STICK]:
 		buttons[k] = b.get(k, false)
-	return {"x": dir.x, "y": dir.y, "buttons": buttons,
+	return {"x": dir.x, "y": dir.y, "analog": analog, "buttons": buttons,
 		"a": buttons[JOY_BUTTON_A], "b": buttons[JOY_BUTTON_B], "jump": buttons[JOY_BUTTON_X],
 		"slap": buttons[JOY_BUTTON_Y], "start": buttons[JOY_BUTTON_START]}
+
+
+## Movement angle step (1..48) for a stick vector, 0 when centred. Matches
+## InputCodec.MOVE_ANGLES so it survives the network unchanged.
+static func angle_step(v: Vector2) -> int:
+	if v == Vector2.ZERO:
+		return 0
+	return posmod(int(round(v.angle() / (TAU / 48.0))), 48) + 1
 
 
 func _keys_pressed(player: int, button: String) -> bool:

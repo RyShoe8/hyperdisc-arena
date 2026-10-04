@@ -67,6 +67,7 @@ func _init() -> void:
 		"test_cpu_matches_finish_on_every_court",
 		"test_save_and_load_state_replays_identically",
 		"test_input_codec_round_trips",
+		"test_analog_stick_moves_at_any_angle",
 		"test_rollback_peers_stay_in_sync_over_a_bad_network",
 		"test_rollback_matches_offline_result",
 		"test_online_lobby_to_match_and_rematch",
@@ -603,11 +604,12 @@ func test_save_and_load_state_replays_identically() -> void:
 
 func test_input_codec_round_trips() -> void:
 	var samples := [{"x": -1, "y": 1, "a": true, "b": false, "jump": true, "slap": false,
-		"a_down": true, "b_down": false}, {"x": 0, "y": 0}, {"x": 1, "y": -1, "slap": true, "b_down": true}]
+		"a_down": true, "b_down": false, "ma": 48}, {"x": 0, "y": 0}, {"x": 1, "y": -1, "slap": true, "b_down": true,
+		"ma": 7}]
 	for input in samples:
 		var back := InputCodec.decode(InputCodec.encode(input))
-		for k in ["x", "y"] + InputCodec.BUTTONS:
-			check(back[k] == input.get(k, 0 if k in ["x", "y"] else false), "codec keeps %s in %s" % [k, input])
+		for k in ["x", "y", "ma"] + InputCodec.BUTTONS:
+			check(back[k] == input.get(k, 0 if k in ["x", "y", "ma"] else false), "codec keeps %s in %s" % [k, input])
 	check(InputCodec.encode({}) == InputCodec.IDLE, "an empty input encodes as idle")
 
 
@@ -787,3 +789,19 @@ func test_phone_tap_between_ticks_still_counts() -> void:
 	controls.remove_virtual_pad(device)
 	check(device not in controls.pads, "leaving frees the slot")
 	controls.free()
+
+
+func test_analog_stick_moves_at_any_angle() -> void:
+	# 30 degrees below the horizontal (down-right): between the 8-way steps.
+	var stick := Vector2(cos(deg_to_rad(30.0)), sin(deg_to_rad(30.0)))
+	var ma := InputCodec.angle_step(stick)
+	check(ma == ControlsScript.angle_step(stick), "controls and codec agree on the angle step")
+	var dir := MatchSim.move_dir({"x": 1, "y": 1, "ma": ma})
+	check(absf(rad_to_deg(dir.angle()) - 30.0) < 4.0, "movement follows the stick (%.1f deg)" % rad_to_deg(dir.angle()))
+	check(MatchSim.move_dir({"x": 1, "y": 1}).is_equal_approx(Vector2(1, 1).normalized()),
+		"keyboard and d-pad stay 8-way")
+	check(MatchSim.move_dir({}) == Vector2.ZERO, "no input, no movement")
+	# Exact straights and diagonals survive the quantisation.
+	for deg in [0.0, 45.0, 90.0, 135.0, 180.0, -90.0]:
+		var v := Vector2(cos(deg_to_rad(deg)), sin(deg_to_rad(deg)))
+		check(MatchSim.move_dir({"ma": InputCodec.angle_step(v)}).is_equal_approx(v), "%d degrees is exact" % deg)
