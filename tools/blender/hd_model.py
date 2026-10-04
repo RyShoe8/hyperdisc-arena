@@ -6,6 +6,7 @@ props measured from the model itself (e.g. aviators from the eye meshes).
 """
 
 import math
+import os
 
 import bmesh
 import bpy
@@ -13,9 +14,12 @@ from mathutils import Matrix, Vector
 
 import common as C
 
+# Supplied models live outside the repo (licensed assets), beside the Mixamo files.
+MODEL_DIR = os.environ.get("MODEL_DIR", os.path.join(C.ROOT, "..", "refs", "models"))
+
 MODELS = {
     "mick": {
-        "file": r"C:\Users\rysho\Downloads\MascularMale.glb",
+        "file": os.path.join(MODEL_DIR, "MascularMale.glb"),
         "height": 1.85,
         # Part name in the model -> colour key.
         "parts": {"Body": "skin", "EyeBraws": "eyebrows", "Eyes": "eyes", "Hair": "hair", "Trunks": "trunks"},
