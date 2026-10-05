@@ -92,7 +92,7 @@ Six characters on one speed-versus-power line: two speed, two balanced, two powe
 | Power A (Scott, USA) | Low | High |
 | Power B (Wessel, Germany) | Very low | Very high |
 
-Our six get new names, looks and nationalities; the stat line is kept. From the lore: Mick Magnum (balanced, special "Danger Zone" loop), Tiffany Seasons (speed, "Riptide" snake shot) and Pete Pelican (power, "Pelican Dive" ricochet). The other three slots are disc-gang placeholders until the lore document names them.
+Our six get new names, looks and nationalities; the stat line is kept. From the lore: Mick Magnum (power leaning: speed 1.00, power 1.15; special "Danger Zone" loop), Tiffany Seasons (speed, "Riptide" snake shot) and Pete Pelican (speed leaning: speed 1.15, power 1.00; "Pelican Dive" ricochet). The other three slots are disc-gang placeholders until the lore document names them.
 
 ### Scoring and match rules
 
@@ -265,3 +265,4 @@ Target: a local-play launch in about 10 weeks, with online play after launch. We
 - [x] Art budget and which artist: no budget; art is made in-house with Blender (installed at `D:\Blender`) plus CC0 packs, so the commission rows in Art and audio no longer apply
 - [ ] Setting: on hold until the separate lore document is written
 - [x] Is 2v2 a launch feature or post-launch? Launch (local 2v2)
+

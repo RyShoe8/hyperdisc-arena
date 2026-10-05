@@ -150,9 +150,9 @@
     "special_catch_ticks": 9
   },
   "characters": [
-    { "id": "mick", "name": "Mick Magnum", "archetype": "Balanced", "speed": 1.1, "power": 1.0, "weight": 1.0, "special": "loop", "special_name": "DANGER ZONE" },
+    { "id": "mick", "name": "Mick Magnum", "archetype": "Power", "speed": 1.0, "power": 1.15, "weight": 1.0, "special": "loop", "special_name": "DANGER ZONE" },
     { "id": "tiffany", "name": "Tiffany Seasons", "archetype": "Speed", "speed": 1.4, "power": 0.7, "weight": 0.75, "special": "snake", "special_name": "RIPTIDE" },
-    { "id": "pete", "name": "Pete Pelican", "archetype": "Power", "speed": 0.95, "power": 1.2, "weight": 1.15, "special": "ricochet", "special_name": "PELICAN DIVE" },
+    { "id": "pete", "name": "Pete Pelican", "archetype": "Speed", "speed": 1.15, "power": 1.0, "weight": 1.15, "special": "ricochet", "special_name": "PELICAN DIVE" },
     { "id": "speed_b", "name": "Speed B", "archetype": "Speed", "speed": 1.25, "power": 0.85, "weight": 0.85, "special": "wallburn", "special_name": "WALL BURNER" },
     { "id": "balanced_b", "name": "Balanced B", "archetype": "Balanced", "speed": 1.1, "power": 1.0, "weight": 1.0, "special": "zigzag", "special_name": "ZIGZAG" },
     { "id": "power_b", "name": "Power B", "archetype": "Power", "speed": 0.85, "power": 1.35, "weight": 1.3, "special": "cannon", "special_name": "CANNON" }
