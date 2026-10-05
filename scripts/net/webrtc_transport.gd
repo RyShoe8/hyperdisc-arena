@@ -28,6 +28,10 @@ var _offered := false
 var _answered := false
 var _started_ms := 0
 var _opened := false
+var _closed := false
+var _next_heartbeat_ms := 0
+var _heartbeat_busy := false
+var _remote_description_set := false
 var _pending_candidates: Array = []
 
 
@@ -73,6 +77,9 @@ func receive() -> Array[PackedByteArray]:
 	var out: Array[PackedByteArray] = []
 	peer.poll()
 	var now := Time.get_ticks_msec()
+	if not _closed and role == "host" and now >= _next_heartbeat_ms and not _heartbeat_busy:
+		_next_heartbeat_ms = now + 20000
+		_heartbeat()
 	if has_peer():
 		_opened = true
 	elif failure == "":
@@ -97,9 +104,26 @@ func receive() -> Array[PackedByteArray]:
 
 
 func close() -> void:
+	_closed = true
 	if channel != null:
 		channel.close()
 	peer.close()
+	if role == "host":
+		api.call_api(HTTPClient.METHOD_DELETE, "/api/multiplayer/%s/sessions/%s/heartbeat" % [GAME_SLUG, session_id], null, true, session_token)
+
+
+func _heartbeat() -> void:
+	_heartbeat_busy = true
+	var res: Dictionary = await api.call_api(HTTPClient.METHOD_POST,
+		"/api/multiplayer/%s/sessions/%s/heartbeat" % [GAME_SLUG, session_id], {}, true, session_token)
+	_heartbeat_busy = false
+	if _closed:
+		return
+	if not res._ok:
+		if res._status in [401, 404]:
+			failure = "ROOM EXPIRED - CREATE A NEW ROOM"
+		else:
+			_next_heartbeat_ms = Time.get_ticks_msec() + 3000
 
 
 # --- Signaling through PlayBound Connect --------------------------------------
@@ -114,7 +138,17 @@ func _post(body: Dictionary) -> void:
 	# Signals are fire-and-forget; a lost one is covered by ICE retries and
 	# the guest's repeated join.
 	var path := "/api/multiplayer/%s/sessions/%s/signal" % [GAME_SLUG, session_id]
-	await api.call_api(HTTPClient.METHOD_POST, path, body, true, session_token)
+	for attempt in range(3):
+		if _closed:
+			return
+		var res: Dictionary = await api.call_api(HTTPClient.METHOD_POST, path, body, true, session_token)
+		if res._ok:
+			return
+		if res._status in [400, 401, 404]:
+			failure = "PLAYBOUND SIGNALING FAILED: " + str(res.get("error", res._status)).to_upper()
+			return
+	if not _closed:
+		failure = "COULDN'T SEND CONNECTION DETAILS TO PLAYBOUND"
 
 
 func _poll_signals() -> void:
@@ -124,7 +158,11 @@ func _poll_signals() -> void:
 	var path := "/api/multiplayer/%s/sessions/%s/signal?forRole=%s&since=%d" % [GAME_SLUG, session_id, role, maxi(0, _since - 1)]
 	var res: Dictionary = await api.call_api(HTTPClient.METHOD_GET, path, null, true, session_token)
 	_poll_busy = false
+	if _closed:
+		return
 	if not res._ok:
+		if res._status in [401, 404]:
+			failure = "ROOM EXPIRED - CREATE A NEW ROOM"
 		return
 	for m in res.get("messages", []):
 		_since = maxi(_since, int(m.get("timestamp", 0)))
@@ -143,17 +181,19 @@ func _on_signal(msg: Dictionary) -> void:
 		"join":
 			# A guest arrived: the host makes the offer (again, if the guest
 			# missed the first one).
-			if role == "host":
+			if role == "host" and not _offered:
 				_offered = true
 				peer.create_offer()
 		"sdp":
 			var kind := str(msg.get("type", ""))
-			if role == "client" and kind == "offer":
+			if role == "client" and kind == "offer" and not _answered:
 				_answered = true
 				peer.set_remote_description(kind, str(msg.get("sdp", "")))
+				_remote_description_set = true
 				_flush_candidates()
-			elif role == "host" and kind == "answer":
+			elif role == "host" and kind == "answer" and not _remote_description_set:
 				peer.set_remote_description(kind, str(msg.get("sdp", "")))
+				_remote_description_set = true
 				_flush_candidates()
 		"ice":
 			var c := [str(msg.get("media", "")), int(msg.get("index", 0)), str(msg.get("name", ""))]
@@ -164,7 +204,7 @@ func _on_signal(msg: Dictionary) -> void:
 
 
 func _remote_ready() -> bool:
-	return (role == "client" and _answered) or (role == "host" and _offered)
+	return _remote_description_set
 
 
 func _flush_candidates() -> void:

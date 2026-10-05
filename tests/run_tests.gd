@@ -923,7 +923,7 @@ func test_pixel_mick_frames_and_reverse_run() -> void:
 
 func test_pixel_crowd_event_reactions() -> void:
 	var spectators = load("res://scripts/game/view/pixel_crowd.gd").new()
-	check(spectators.sheet != null, "spectator atlas loads")
+	check(spectators.frames.watch != null, "arena crowd frame loads")
 	spectators.handle({"type":"catch"})
 	check(spectators.reaction == "clap", "rally catch gets applause")
 	spectators.handle({"type":"special"})

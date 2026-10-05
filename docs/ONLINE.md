@@ -160,3 +160,9 @@ overlay directly; `HYPERDISC_PHONE_DEBUG=1` logs button changes.
 - Matchmaking queue that ends in the same room flow.
 - Recording match results and ratings (both peers report, server reconciles).
 - Reporting desyncs with the frame number and build, to catch bugs.
+
+## v0.2.4 connection fixes
+Hosted Connect rooms send a keepalive every 20 seconds and are deleted on close. Failed signaling requests retry and surface errors; duplicate guest announcements no longer recreate offers, and ICE waits for the remote description. Presence registration retries after failures, and failed heartbeats retry after five seconds. Account privacy settings still control visibility.
+
+Run tests/test_playbound_presence.gd for registration and heartbeat recovery. Opt-in tests/test_live_connect.gd creates an anonymous live room, waits 65 seconds, then connects native WebRTC peers and verifies packet delivery; it does not use player accounts. This does not replace testing two players on separate networks.
+

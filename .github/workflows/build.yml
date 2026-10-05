@@ -68,6 +68,7 @@ jobs:
         run: |
           ~/godot/godot --headless --script res://tests/run_tests.gd
           ~/godot/godot --headless --script res://tests/test_mixtape.gd
+          ~/godot/godot --headless --script res://tests/test_playbound_presence.gd
 
       - name: Export all platforms
         run: |

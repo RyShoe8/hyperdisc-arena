@@ -31,6 +31,7 @@ var _next_invites_ms := 0
 var _presence_session := ""
 var _next_heartbeat_ms := 0
 var _presence_status := "online"
+var _next_presence_start_ms := 0
 var _seen_invites := {}
 var _busy := {}
 
@@ -186,10 +187,10 @@ func poll() -> void:
 	if now >= _next_invites_ms and not _busy.has("invites"):
 		_next_invites_ms = now + INVITES_REFRESH_MS
 		_refresh_invites()
-	if _presence_session != "" and now >= _next_heartbeat_ms:
-		_next_heartbeat_ms = now + 60000
-		api.call_api(HTTPClient.METHOD_POST, "/api/presence/heartbeat",
-			{"sessionId": _presence_session, "status": _presence_status, "gameId": GAME_SLUG})
+	if _presence_session == "" and now >= _next_presence_start_ms and not _busy.has("presence"):
+		_start_presence()
+	elif _presence_session != "" and now >= _next_heartbeat_ms and not _busy.has("presence"):
+		_heartbeat_presence()
 
 
 func refresh_friends_now() -> void:
@@ -204,6 +205,7 @@ func _refresh_friends() -> void:
 		_session_expired()
 		return
 	if not res._ok:
+		error.emit("COULDN'T REFRESH FRIENDS: " + str(res.get("error", "PLAYBOUND UNREACHABLE")).to_upper())
 		return
 	var list: Array[Dictionary] = []
 	for f in res.get("friends", []):
@@ -269,11 +271,32 @@ func set_presence(status: String) -> void:
 
 
 func _start_presence() -> void:
+	if _busy.has("presence"):
+		return
+	_busy["presence"] = true
+	_next_presence_start_ms = Time.get_ticks_msec() + 5000
 	var res: Dictionary = await api.call_api(HTTPClient.METHOD_POST, "/api/presence/start",
 		{"status": _presence_status, "gameId": GAME_SLUG})
+	_busy.erase("presence")
+	if not is_signed_in():
+		return
 	if res._ok:
 		_presence_session = str(res.get("sessionId", ""))
 		_next_heartbeat_ms = Time.get_ticks_msec() + int(res.get("heartbeatIntervalMs", 60000))
+	elif res._status == 401:
+		_session_expired()
+
+
+func _heartbeat_presence() -> void:
+	_busy["presence"] = true
+	var res: Dictionary = await api.call_api(HTTPClient.METHOD_POST, "/api/presence/heartbeat",
+		{"sessionId": _presence_session, "status": _presence_status, "gameId": GAME_SLUG})
+	_busy.erase("presence")
+	_next_heartbeat_ms = Time.get_ticks_msec() + (60000 if res._ok else 5000)
+	if res._status == 401:
+		_session_expired()
+	elif res._status == 404:
+		_presence_session = ""
 
 
 func _end_presence() -> void:
