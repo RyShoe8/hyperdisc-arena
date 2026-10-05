@@ -7,6 +7,7 @@ const MatchSim := preload("res://scripts/sim/match_sim.gd")
 const UI := preload("res://scripts/game/ui/theme.gd")
 const CourtProjection := preload("res://scripts/game/view/projection.gd")
 const CharacterArt := preload("res://scripts/game/view/character_art.gd")
+const PixelCrowd := preload("res://scripts/game/view/pixel_crowd.gd")
 
 const SPRITE_SCALE := 0.72
 ## Regions of the 640px portrait renders: the face, and head and shoulders.
@@ -34,6 +35,8 @@ var proj: CourtProjection
 var arts: Array = []
 var names: Array[String] = ["P1", "CPU"]
 var court_bg: Texture2D
+var pixel_court := false
+var pixel_spectators: PixelCrowd
 var crowd: Array[Texture2D] = []
 
 var frame := 0
@@ -42,8 +45,11 @@ var effects: Array[Dictionary] = []
 var trail: Array[Vector2] = []
 var trail_color := Color.WHITE
 var disc_spin := 0.0
+var disc_art: Texture2D
+var disc_region := Rect2()
 var last_pos: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
 var moving: Array[bool] = [false, false]
+var run_phase: Array[int] = [0, 0]
 var cheer_ticks := 0
 var zone_flash := {}  # "side:index" -> ticks left
 var overlay := {}     # current big overlay: {kind, ticks, ...}
@@ -63,18 +69,26 @@ func _init(match_sim: MatchSim, character_ids: Array, player_names: Array[String
 		arts.append(CharacterArt.new(id))
 	names = player_names
 	var cid: String = sim.court.id
-	court_bg = load("res://assets/art/courts/%s.webp" % cid)
+	var pixel_path := "res://assets/art/courts/%s_pixel.png" % cid
+	pixel_court = ResourceLoader.exists(pixel_path)
+	court_bg = load(pixel_path if pixel_court else "res://assets/art/courts/%s.webp" % cid)
+	if pixel_court:
+		pixel_spectators = PixelCrowd.new()
 	crowd = [load("res://assets/art/courts/%s_crowd_a.webp" % cid),
 		load("res://assets/art/courts/%s_crowd_b.webp" % cid)]
 	for p in sim.players:
 		last_pos[p.side] = p.pos
 	referee = CharacterArt.new("referee")
+	disc_art = load("res://assets/art/disc/hyperdisc.png")
+	disc_region = Rect2(disc_art.get_image().get_used_rect())
 
 
 # --- Per-tick updates ------------------------------------------------------
 
 func tick() -> void:
 	frame += 1
+	if pixel_spectators != null:
+		pixel_spectators.tick()
 	ref_ticks += 1
 	if ref_anim != "idle" and ref_ticks > 70:
 		ref_anim = "idle"
@@ -98,6 +112,10 @@ func tick() -> void:
 	effects = effects.filter(func(e): return e.age < e.life)
 	for p in sim.players:
 		moving[p.side] = p.pos.distance_to(last_pos[p.side]) > 0.5
+		if moving[p.side]:
+			var dx: float = p.pos.x - last_pos[p.side].x
+			var backwards := dx < -0.1 if p.side == MatchSim.LEFT else dx > 0.1
+			run_phase[p.side] += -1 if backwards else 1
 		last_pos[p.side] = p.pos
 		if p.dash_ticks > 0 and frame % 3 == 0 and Settings.high_effects():
 			_dust(p.pos, 0.7)
@@ -122,6 +140,8 @@ func _update_trail() -> void:
 ## Turns sim events into effects and overlays. Returns nothing; sounds and
 ## rumble are handled by the caller from the same events.
 func handle(e: Dictionary) -> void:
+	if pixel_spectators != null:
+		pixel_spectators.handle(e)
 	var s := Settings.shake_scale()
 	match e.type:
 		"ready":
@@ -235,7 +255,7 @@ func draw(ci: CanvasItem) -> void:
 	var off := Vector2(randf_range(-shake, shake), randf_range(-shake, shake)) * 0.6
 	_current_offset = off
 	ci.draw_set_transform(off)
-	ci.draw_texture(court_bg, Vector2.ZERO)
+	ci.draw_texture_rect(court_bg, Rect2(Vector2.ZERO, proj.screen), false)
 	_draw_crowd(ci)
 	_draw_goal_lights(ci)
 	_draw_markers(ci)
@@ -250,6 +270,11 @@ func draw(ci: CanvasItem) -> void:
 
 
 func _draw_crowd(ci: CanvasItem) -> void:
+	# Pixel spectators belong to the new environment; the old 3D crowd
+	# overlay would obscure its terraces and lighting.
+	if pixel_court:
+		pixel_spectators.draw(ci)
+		return
 	var cheering := cheer_ticks > 0
 	var tex := crowd[1] if cheering and (frame / 7) % 2 == 0 else crowd[0]
 	var bob := sin(frame * (0.5 if cheering else 0.06)) * (5.0 if cheering else 1.5)
@@ -388,7 +413,7 @@ func _anim_for(p: MatchSim.PlayerState) -> Array:
 	if p.charge > 0:
 		return ["charge", frame]
 	if moving[p.side]:
-		return ["run", frame]
+		return ["run", run_phase[p.side]]
 	return ["idle", frame]
 
 
@@ -441,6 +466,17 @@ func _draw_disc(ci: CanvasItem, centre: Vector2, z: float, scale := 1.0) -> void
 		core = trail_color
 	elif d.supersonic and d.state == MatchSim.Disc.FLYING:
 		core = UI.ORANGE
+	if disc_art != null:
+		var tint := Color.WHITE
+		if d.pattern != MatchSim.Pattern.NONE or (d.supersonic and d.state == MatchSim.Disc.FLYING):
+			tint = core.lerp(Color.WHITE, 0.55)
+		ci.draw_set_transform(centre + _current_offset, 0.0, Vector2(1.0, squash))
+		# Rotate within the squashed plane so height still controls the silhouette.
+		var transform := Transform2D(disc_spin, Vector2.ZERO)
+		ci.draw_set_transform_matrix(Transform2D(0.0, Vector2(1.0,squash),0.0,centre+_current_offset) * transform)
+		ci.draw_texture_rect_region(disc_art,Rect2(Vector2(-r-4,-r-4),Vector2.ONE*(r+4)*2),disc_region,tint)
+		ci.draw_set_transform(_current_offset)
+		return
 	ci.draw_set_transform(centre + _current_offset, 0.0, Vector2(1.0, squash))
 	ci.draw_circle(Vector2.ZERO, r + 4, UI.INK)
 	ci.draw_circle(Vector2.ZERO, r, rim)

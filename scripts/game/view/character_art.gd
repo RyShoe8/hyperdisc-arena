@@ -12,6 +12,7 @@ var columns := 8
 var anchor := Vector2(160, 258)
 var frames: Array = []
 var animations := {}
+var pixel_art := false
 
 
 func _init(character_id: String) -> void:
@@ -28,6 +29,7 @@ func _init(character_id: String) -> void:
 	anchor = Vector2(meta.anchor[0], meta.anchor[1])
 	frames = meta.frames
 	animations = meta.animations
+	pixel_art = bool(meta.get("pixel_art", false))
 
 
 ## Frame index for an animation `ticks` physics ticks after it started.
@@ -37,7 +39,7 @@ func frame_for(anim: String, ticks: int) -> int:
 		return int(a.start) + _held_frame(a.ticks, ticks, a.loop)
 	var count := int(a.count)
 	var step := int(floor(ticks * float(a.fps) / 60.0))
-	var i := step % count if a.loop else mini(step, count - 1)
+	var i := posmod(step, count) if a.loop else clampi(step, 0, count - 1)
 	return int(a.start) + i
 
 
@@ -47,7 +49,7 @@ static func _held_frame(holds: Array, ticks: int, loop: bool) -> int:
 	var total := 0
 	for h in holds:
 		total += int(h)
-	var t := ticks % total if loop else mini(ticks, total - 1)
+	var t := posmod(ticks, total) if loop else clampi(ticks, 0, total - 1)
 	for i in holds.size():
 		t -= int(holds[i])
 		if t < 0:

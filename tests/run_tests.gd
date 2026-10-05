@@ -32,6 +32,9 @@ func _init() -> void:
 			quit(1)
 			return
 	for test in [
+		"test_pixel_referee_and_disc_assets",
+		"test_pixel_crowd_event_reactions",
+		"test_pixel_mick_frames_and_reverse_run",
 		"test_recorded_move_inputs_complete_every_lesson",
 		"test_tutorial_all_drills_are_completable",
 		"test_tutorial_does_not_skip_failed_drills",
@@ -903,3 +906,51 @@ func test_analog_aim_is_continuous() -> void:
 	check(is_equal_approx(at.call(45.0), 1.0) and is_equal_approx(at.call(90.0), 1.0), "45 degrees and steeper is the full angle")
 	check(at.call(-30.0) < -0.5, "upward aims up")
 	check(MatchSim.aim_y({"y": -1}) == -1.0, "keys keep the 8-way aim")
+
+
+func test_pixel_mick_frames_and_reverse_run() -> void:
+	var art = load("res://scripts/game/view/character_art.gd").new("mick")
+	check(art.pixel_art, "Mick uses the pixel atlas")
+	check(art.frame_for("run", -1) == art.frame_for("run", 31), "backward run wraps to last pose")
+	check(art.frame_for("run", -32) == art.frame_for("run", 0), "negative full cycle wraps to first pose")
+	for name in ["idle", "run", "hold", "throw", "lob", "catch", "block", "slap", "jump", "knock", "charge", "special", "win", "lose", "dash"]:
+		check(art.animations.has(name), "%s has a pixel pose mapping" % name)
+		for tick in range(0, 61):
+			var f: int = art.frame_for(name, tick)
+			check(f >= 0 and f < art.frames.size(), "%s resolves a valid frame" % name)
+			check(Rect2(Vector2.ZERO,art.sheet.get_size()).encloses(art.region(f)), "%s stays inside the atlas" % name)
+
+
+func test_pixel_crowd_event_reactions() -> void:
+	var spectators = load("res://scripts/game/view/pixel_crowd.gd").new()
+	check(spectators.sheet != null, "spectator atlas loads")
+	spectators.handle({"type":"catch"})
+	check(spectators.reaction == "clap", "rally catch gets applause")
+	spectators.handle({"type":"special"})
+	check(spectators.reaction == "surprise", "power play surprises spectators")
+	spectators.handle({"type":"point"})
+	check(spectators.reaction == "cheer", "goal gets cheering")
+	spectators.handle({"type":"throw"})
+	check(spectators.reaction == "cheer", "rally event cannot interrupt a goal celebration")
+	spectators.handle({"type":"match_over"})
+	check(spectators.reaction == "victory" and spectators.ticks_left == 480, "match win gets extended celebration")
+	var seen := {}
+	for tick in 480:
+		seen[spectators.pose_for(0)] = true
+		spectators.tick()
+	check(seen.has(1) and seen.has(2), "celebration animates clap and raised arms")
+	check(spectators.reaction == "watch" and spectators.priority == 0, "crowd settles after reaction")
+
+
+func test_pixel_referee_and_disc_assets() -> void:
+	var art = load("res://scripts/game/view/character_art.gd").new("referee")
+	check(art.pixel_art and art.frames.size() == 6, "referee uses six original pixel poses")
+	for name in ["idle", "lob", "win"]:
+		for tick in range(0, 100):
+			var f: int = art.frame_for(name, tick)
+			check(f >= 0 and f < 6, "%s referee animation stays in atlas" % name)
+	var disc: Texture2D = load("res://assets/art/disc/hyperdisc.png")
+	check(disc != null, "pixel disc imports")
+	var img := disc.get_image()
+	check(img.get_pixel(0, 0).a == 0, "disc has transparent corners")
+	check(img.get_used_rect().size.x > 0, "disc has visible artwork")

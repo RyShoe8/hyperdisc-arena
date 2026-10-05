@@ -101,7 +101,8 @@ func _ready() -> void:
 	move_preview = MovePreview.new(self)
 	logo = load("res://assets/logo/logo.png")
 	for c in balance.courts:
-		court_thumbs.append(load("res://assets/art/courts/%s.webp" % c.id))
+		var pixel_path := "res://assets/art/courts/%s_pixel.png" % c.id
+		court_thumbs.append(load(pixel_path if ResourceLoader.exists(pixel_path) else "res://assets/art/courts/%s.webp" % c.id))
 	for c in balance.characters:
 		portraits.append(load("res://assets/art/characters/%s_portrait.webp" % c.id))
 		select_art.append(load("res://assets/art/characters/%s_select.webp" % c.id))
