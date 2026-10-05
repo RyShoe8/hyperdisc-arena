@@ -61,6 +61,14 @@ static func text_width(s: String, size: int, font: Font = null) -> float:
 	return f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 
 
+## The largest size (up to `size`) at which `s` fits in `max_width`.
+static func fit_size(s: String, size: int, max_width: float, font: Font = null) -> int:
+	var w := text_width(s, size, font)
+	if w <= max_width:
+		return size
+	return maxi(10, int(floor(size * max_width / w)))
+
+
 ## Parallelogram panel slanted like 80s sports graphics.
 static func slant_panel(ci: CanvasItem, rect: Rect2, fill: Color, edge := Color.TRANSPARENT,
 		slant := 18.0, border := 4.0) -> void:

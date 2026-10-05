@@ -540,12 +540,17 @@ func _draw_hud(ci: CanvasItem) -> void:
 		UI.slant_panel(ci, frame_rect, Color("120826"), c, 24, 4)
 		var face := Rect2(frame_rect.position + Vector2(10 if left else 300 - 130, 6), Vector2(120, 104))
 		ci.draw_texture_rect_region(art.portrait, face, PORTRAIT_FACE)
-		var name_x := frame_rect.position.x + (140.0 if left else 14.0)
-		UI.text(ci, Vector2(name_x, frame_rect.position.y + 46), names[side], 34, c, UI.display, 4,
-			HORIZONTAL_ALIGNMENT_LEFT, 150)
+		# Text box between the portrait and the panel's slanted edge.
+		var name_x := frame_rect.position.x + (140.0 if left else 30.0)
+		var room := 128.0
+		var tag: String = names[side]
+		var tag_size := UI.fit_size(tag, 34, room, UI.display)
+		UI.text(ci, Vector2(name_x, frame_rect.position.y + 46), tag, tag_size, c, UI.display, 4,
+			HORIZONTAL_ALIGNMENT_LEFT)
 		var who: Dictionary = sim.players[side].character
-		UI.text(ci, Vector2(name_x, frame_rect.position.y + 88), str(who.name).to_upper(), 20, Color.WHITE,
-			UI.ui, 3, HORIZONTAL_ALIGNMENT_LEFT, 152)
+		var who_name := str(who.name).to_upper()
+		UI.text(ci, Vector2(name_x, frame_rect.position.y + 88), who_name, UI.fit_size(who_name, 20, room, UI.ui),
+			Color.WHITE, UI.ui, 3, HORIZONTAL_ALIGNMENT_LEFT)
 
 	# Power throw meters along the bottom.
 	for side in [0, 1]:
