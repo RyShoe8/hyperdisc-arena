@@ -46,6 +46,10 @@ Moves that combine buttons:
   comes in to flip it up over yourself.
 
 The pause menu has the full move list, using your current buttons.
+**Options > Moves** and **Pause > Move list** also have a looping video for
+every move. Use up/down to pick one; the bot's input and timing captions
+follow your current controller or keyboard labels. Clips are included in
+the download, so playback also works offline.
 
 ## Tutorial
 
@@ -63,6 +67,14 @@ reopen the tutorial. Start / Options / Escape exits at any time.
 
 For visual checks, `--tutorial=N` after Godot's `--` opens a particular
 exercise (zero-based), and works with the existing `--shots` / `--out` flags.
+
+To regenerate the 20 move clips after a rules or art change:
+
+1. Run Godot with `--path . --script tools/capture_moves.gd -- --out=ABSOLUTE_DIR`.
+2. Run Godot with `--headless --path . --script tools/build_move_timelines.gd -- --out=ABSOLUTE_DIR`.
+3. Run `python tools/encode_moves.py ABSOLUTE_DIR` (requires `imageio-ffmpeg`,
+   or pass `--ffmpeg PATH`). This writes silent 640x360, 30 fps Theora clips
+   and their input timelines to `assets/moves`. Clip files use Git LFS.
 
 ## Online play (Windows)
 

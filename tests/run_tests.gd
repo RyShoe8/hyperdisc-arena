@@ -13,6 +13,7 @@ const OnlineMatch := preload("res://scripts/net/online_match.gd")
 const QrCode := preload("res://scripts/game/ui/qr_code.gd")
 const PhoneControllers := preload("res://scripts/net/phone_controllers.gd")
 const TutorialSession := preload("res://scripts/game/tutorial_session.gd")
+const MoveDemo := preload("res://scripts/game/move_demo.gd")
 
 const IDLE := {"x": 0, "y": 0, "a": false, "b": false}
 
@@ -25,12 +26,13 @@ func _init() -> void:
 	balance = JSON.parse_string(FileAccess.get_file_as_string("res://data/balance.json"))
 	# A script that fails to compile can't be instantiated; without this guard
 	# every test would just log errors and the run would still "pass".
-	for script in [MatchSim, CpuPlayer, ControlsScript, RollbackSession, LoopbackTransport, InputCodec, OnlineMatch, QrCode, PhoneControllers, TutorialSession]:
+	for script in [MatchSim, CpuPlayer, ControlsScript, RollbackSession, LoopbackTransport, InputCodec, OnlineMatch, QrCode, PhoneControllers, TutorialSession, MoveDemo]:
 		if not script.can_instantiate():
 			printerr("FAIL: %s does not compile" % script.resource_path)
 			quit(1)
 			return
 	for test in [
+		"test_recorded_move_inputs_complete_every_lesson",
 		"test_tutorial_all_drills_are_completable",
 		"test_tutorial_does_not_skip_failed_drills",
 		"test_tutorial_idle_never_completes_an_action",
@@ -132,6 +134,17 @@ func test_tutorial_all_drills_are_completable() -> void:
 			check(training.advance(), "successful move unlocks exactly one lesson")
 		else:
 			check(not training.advance(), "last lesson does not overflow")
+
+
+func test_recorded_move_inputs_complete_every_lesson() -> void:
+	var training := TutorialSession.new(balance)
+	for lesson in TutorialSession.LESSONS.size():
+		training.lesson = lesson
+		training.reset()
+		for t in range(1, 240):
+			training.step(MoveDemo.input(training, t))
+			if training.passed or training.failed: break
+		check(training.passed, "recorded bot must perform %s: %s" % [TutorialSession.LESSONS[lesson][0], training.feedback])
 
 
 func test_tutorial_does_not_skip_failed_drills() -> void:

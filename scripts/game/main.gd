@@ -14,6 +14,7 @@ const OnlineScreens := preload("res://scripts/game/online_screens.gd")
 const QrCode := preload("res://scripts/game/ui/qr_code.gd")
 const MixtapeScreen := preload("res://scripts/game/mixtape_screen.gd")
 const Tutorial := preload("res://scripts/game/tutorial.gd")
+const MovePreview := preload("res://scripts/game/move_preview.gd")
 ## Options > Controls rows before the per-action bindings.
 const CONTROL_HEADER_ROWS := 4
 
@@ -48,6 +49,7 @@ var online := false
 var net: OnlineScreens
 var tapes: MixtapeScreen
 var tutorial: Tutorial
+var move_preview: MovePreview
 
 # Menu state
 var main_index := 0
@@ -96,6 +98,7 @@ func _ready() -> void:
 	net = OnlineScreens.new(self)
 	tapes = MixtapeScreen.new(self)
 	tutorial = Tutorial.new(self)
+	move_preview = MovePreview.new(self)
 	logo = load("res://assets/logo/logo.png")
 	for c in balance.courts:
 		court_thumbs.append(load("res://assets/art/courts/%s.webp" % c.id))
@@ -204,6 +207,7 @@ func _read_args() -> void:
 
 func _physics_process(_delta: float) -> void:
 	frame += 1
+	move_preview.tick(((screen == Screen.PAUSED and show_moves) or (screen == Screen.OPTIONS and OPTION_TABS[options_tab] == "MOVES")) and not net.invite_modal_active() and not phone_overlay)
 	if not shots.is_empty() and frame >= shots[0]:
 		_take_shot(shots.pop_front())
 	screen_ticks += 1
@@ -278,6 +282,8 @@ func _take_shot(tick: int) -> void:
 
 
 func _go(to: int) -> void:
+	if move_preview != null:
+		move_preview.tick(false)
 	if tutorial != null and to != Screen.TUTORIAL:
 		tutorial.arena.hide()
 	screen = to
@@ -590,6 +596,9 @@ func _pause(player: int) -> void:
 
 func _pause_input() -> void:
 	if show_moves:
+		var move_direction := Controls.nudged(paused_by)
+		if move_direction.y != 0:
+			move_preview.select_move(move_direction.y)
 		if Controls.pressed(paused_by, "b") or Controls.pressed(paused_by, "a") or Controls.pressed(paused_by, "start"):
 			show_moves = false
 			Sfx.play("menu_back")
@@ -700,6 +709,9 @@ func _options_input() -> void:
 		_switch_tab(1)
 		return
 	if n.y != 0:
+		if OPTION_TABS[options_tab] == "MOVES":
+			move_preview.select_move(n.y)
+			return
 		var count := rows.size() + 1  # row -1 is the tab bar
 		options_row = posmod(options_row + 1 + n.y, count) - 1
 		Sfx.play("menu_move")
@@ -718,6 +730,8 @@ func _options_input() -> void:
 	if step == 0:
 		return
 	match OPTION_TABS[options_tab]:
+		"MOVES":
+			move_preview.replay()
 		"GRAPHICS":
 			match options_row:
 				0:
@@ -884,7 +898,7 @@ func _draw() -> void:
 	if net.invite_modal_active():
 		net.draw_invite()
 	_draw_toast()
-	if screen in [Screen.MATCH, Screen.PAUSED] and not Mixtape.now_playing.is_empty():
+	if screen in [Screen.MATCH, Screen.PAUSED] and not (screen == Screen.PAUSED and show_moves) and not Mixtape.now_playing.is_empty():
 		# Bottom centre, between the two power throw meters.
 		var song := "NOW PLAYING  %s - %s" % [str(Mixtape.now_playing.get("title", "")).left(32),
 			str(Mixtape.now_playing.get("artist", "")).left(22)]
@@ -1060,7 +1074,7 @@ func _draw_vs() -> void:
 func _draw_pause() -> void:
 	draw_rect(Rect2(Vector2.ZERO, SCREEN), Color(0.03, 0.0, 0.1, 0.65))
 	if show_moves:
-		_draw_move_list(Rect2(Vector2(360, 140), Vector2(1200, 800)))
+		_draw_move_list(Rect2(Vector2(160, 160), Vector2(1600, 800)))
 		_hint("%s / %s BACK" % [_a(), _b()])
 		return
 	UI.text(self, Vector2(960, 330), "PAUSED", 110, UI.YELLOW, UI.display, 9, HORIZONTAL_ALIGNMENT_CENTER,
@@ -1072,34 +1086,8 @@ func _draw_pause() -> void:
 			i == pause_index, frame, 36)
 
 
-func _move_list() -> Array:
-	var a := Controls.label(0, "a")
-	var b := Controls.label(0, "b")
-	var j := Controls.label(0, "jump")
-	var s := Controls.label(0, "slap")
-	var mv := Controls.label(0, "move")
-	return [
-		["MOVE", mv], ["DASH / DIVE", "%s + %s" % [mv, a]], ["THROW", "%s (aim up / down)" % a],
-		["CURVE", "QUARTER-CIRCLE + %s" % a], ["SUPERSONIC", "THROW THE INSTANT YOU CATCH"],
-		["LOB", "%s (hold longer = shorter)" % b], ["JUMP / AIR CATCH", j], ["SMASH", "%s IN THE AIR" % a],
-		["BLOCK (POP UP)", "%s STANDING STILL AS IT ARRIVES" % a], ["SLAP SHOT", "%s AS IT ARRIVES" % s],
-		["DROP SHOT", "%s AS IT ARRIVES" % b], ["SPECIAL", "STAND ON THE MARKER, CATCH, %s" % a],
-		["SUPER LOB", "WHEN CHARGED, %s" % b], ["POWER THROW", "POWER METER FULL, %s" % s],
-		["POWER TOSS", "POWER METER FULL, %s + %s" % [a, b]],
-	]
-
-
 func _draw_move_list(area: Rect2) -> void:
-	UI.slant_panel(self, area, Color("120826"), UI.CYAN, 30, 5)
-	UI.text(self, Vector2(area.get_center().x, area.position.y + 76), "MOVE LIST", 64, UI.YELLOW,
-		UI.display, 6)
-	var moves := _move_list()
-	for i in moves.size():
-		var y := area.position.y + 136 + i * 42
-		UI.text(self, Vector2(area.position.x + 80, y), moves[i][0], 26, UI.CYAN, UI.ui, 3,
-			HORIZONTAL_ALIGNMENT_LEFT)
-		UI.text(self, Vector2(area.position.x + 450, y), moves[i][1], 26, Color.WHITE, UI.ui, 3,
-			HORIZONTAL_ALIGNMENT_LEFT)
+	move_preview.draw(area)
 
 
 func _draw_options() -> void:
@@ -1114,7 +1102,7 @@ func _draw_options() -> void:
 			Color.WHITE if on else UI.DIM, UI.ui, 4)
 	var area := Rect2(Vector2(360, 250), Vector2(1200, 740))
 	if OPTION_TABS[options_tab] == "MOVES":
-		_draw_move_list(area)
+		_draw_move_list(Rect2(160, 250, 1600, 740))
 	else:
 		UI.slant_panel(self, area, Color(0.07, 0.02, 0.16, 0.92), UI.PURPLE, 30, 4)
 		var rows := _option_rows()
@@ -1144,6 +1132,9 @@ func _draw_options() -> void:
 				24, UI.DIM, UI.ui, 3)
 	if phone_overlay:
 		_draw_phone_overlay()
+		return
+	if OPTION_TABS[options_tab] == "MOVES":
+		_hint("UP / DOWN PICK MOVE     %s REPLAY     %s / %s SWITCH TAB     %s BACK" % [_a(), Controls.label(0, "jump"), Controls.label(0, "slap"), _b()])
 		return
 	_hint("%s / %s SWITCH TAB     %s CHANGE     %s BACK" % [Controls.label(0, "jump"),
 		Controls.label(0, "slap"), _a(), _b()])

@@ -1,0 +1,6502 @@
+[
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 66,
+    "lesson": 0,
+    "name": "MOVE"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {
+          "a": true,
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 66,
+    "lesson": 1,
+    "name": "DASH"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 76,
+    "lesson": 2,
+    "name": "CATCH"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {
+          "a": true,
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 69,
+    "lesson": 3,
+    "name": "AIMED THROW"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "a": true,
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": -1
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 75,
+    "lesson": 4,
+    "name": "WALL SHOT"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": 1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 0,
+          "y": 1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 1,
+          "y": 1
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "x": 1,
+          "y": 1
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {
+          "a": true,
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 70,
+    "lesson": 5,
+    "name": "CURVE THROW"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {
+          "b": true
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 69,
+    "lesson": 6,
+    "name": "LOB"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {
+          "jump": true
+        }
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 83,
+    "lesson": 7,
+    "name": "JUMP"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  483 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  450 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  416 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  383 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  350 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  316 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  283 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  250 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  216 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  183 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  150 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  116 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  83 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  50 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  16 ms",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {
+          "jump": true
+        }
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {}
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {}
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {}
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {}
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 88,
+    "lesson": 8,
+    "name": "AIR CATCH"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  483 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  450 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  416 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  383 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  350 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  316 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  283 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  250 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  216 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  183 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  150 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  116 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  83 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  50 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  16 ms",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {
+          "jump": true
+        }
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {}
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {}
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {}
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {}
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {}
+      },
+      {
+        "cue": "SMASH NOW - STILL AIRBORNE",
+        "input": {
+          "a": true
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 89,
+    "lesson": 9,
+    "name": "AIR SMASH"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "WAIT FOR THE CATCH",
+        "input": {}
+      },
+      {
+        "cue": "CATCH! BRACE FOR THE RETURN",
+        "input": {}
+      },
+      {
+        "cue": "CATCH! BRACE FOR THE RETURN",
+        "input": {}
+      },
+      {
+        "cue": "CATCH! BRACE FOR THE RETURN",
+        "input": {}
+      },
+      {
+        "cue": "CATCH! BRACE FOR THE RETURN",
+        "input": {}
+      },
+      {
+        "cue": "CATCH! BRACE FOR THE RETURN",
+        "input": {}
+      },
+      {
+        "cue": "CATCH! BRACE FOR THE RETURN",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {
+          "a": true
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 82,
+    "lesson": 10,
+    "name": "QUICK RETURN"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  416 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  383 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  350 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  316 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  283 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  250 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  216 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  183 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  150 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  116 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  83 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  50 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  16 ms",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {
+          "a": true
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 73,
+    "lesson": 11,
+    "name": "BLOCK"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  400 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  366 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  333 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  300 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  266 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  233 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  200 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  166 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  133 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  100 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  66 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  33 ms",
+        "input": {}
+      },
+      {
+        "cue": "PRESS NOW",
+        "input": {
+          "slap": true
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 73,
+    "lesson": 12,
+    "name": "SLAP"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  400 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  366 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  333 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  300 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  266 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  233 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  200 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  166 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  133 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  100 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  66 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  33 ms",
+        "input": {}
+      },
+      {
+        "cue": "PRESS NOW",
+        "input": {
+          "b": true
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 73,
+    "lesson": 13,
+    "name": "DROP SHOT"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {
+          "a": true
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 90,
+    "lesson": 14,
+    "name": "CHARGED SPECIAL"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "STAY IN THE LANDING RING",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "CHARGE READY - STAY",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {
+          "b": true
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 90,
+    "lesson": 15,
+    "name": "SUPER LOB"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "YOUR TURN",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {
+          "slap": true
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 69,
+    "lesson": 16,
+    "name": "POWER THROW"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  116 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  83 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  50 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  16 ms",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {
+          "a": true,
+          "b": true
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 64,
+    "lesson": 17,
+    "name": "POWER TOSS"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  816 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  783 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  750 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  716 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  683 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  650 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  616 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  583 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  550 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  516 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  483 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  450 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  416 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  383 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  350 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  316 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  283 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  250 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  216 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  183 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  150 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  116 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  83 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  50 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  16 ms",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {
+          "b": true
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 85,
+    "lesson": 18,
+    "name": "SHORT LOB"
+  },
+  {
+    "captions": [
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WATCH THE BOT",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  483 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  450 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  416 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  383 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  350 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  316 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  283 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  250 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  216 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  183 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  150 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  116 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  83 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  50 ms",
+        "input": {}
+      },
+      {
+        "cue": "WAIT  16 ms",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "JUMP NOW",
+        "input": {}
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {
+          "jump": true
+        }
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {}
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {}
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {}
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {}
+      },
+      {
+        "cue": "AIRBORNE - WAIT FOR CATCH",
+        "input": {}
+      },
+      {
+        "cue": "LOB NOW - STILL AIRBORNE",
+        "input": {
+          "b": true
+        }
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      },
+      {
+        "cue": "MOVE COMPLETE",
+        "input": {}
+      }
+    ],
+    "fps": 30.0,
+    "frames": 89,
+    "lesson": 19,
+    "name": "AIR LOB"
+  }
+]
