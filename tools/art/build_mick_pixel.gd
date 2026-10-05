@@ -56,9 +56,25 @@ func _initialize() -> void:
 		animations[name] = animations.idle.duplicate(true)
 	animations.knock = animations.dash.duplicate(true)
 	atlas.save_webp("res://assets/art/characters/mick.webp", true)
-	var meta := {"frame_size":CELL,"columns":8,"anchor":[ANCHOR.x,ANCHOR.y],"frames":frames,"animations":animations,"pixel_art":true}
+	var meta := {"frame_size":CELL,"columns":8,"anchor":[ANCHOR.x,ANCHOR.y],"frames":frames,"animations":animations,"pixel_art":true,"portrait_face":[180,84,360,313],"portrait_bust":[100,40,520,440]}
 	var file := FileAccess.open("res://assets/art/characters/mick.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(meta," "))
+	# Character select uses a separate full-body asset, not the match atlas.
+	var idle_source := Image.load_from_file(BASE + "idle-v2-strip.png")
+	var idle_part: Dictionary = masks["idle-v2"][0]
+	var b: Array = idle_part.bounds
+	var body := Image.create(b[2]-b[0]+1,b[3]-b[1]+1,false,Image.FORMAT_RGBA8)
+	for run in idle_part.runs:
+		body.blit_rect(idle_source,Rect2i(run[1],run[0],run[2],1),Vector2i(run[1]-b[0],run[0]-b[1]))
+	var body_factor := 560.0 / maxf(body.get_width(),body.get_height())
+	body.resize(roundi(body.get_width()*body_factor),roundi(body.get_height()*body_factor),Image.INTERPOLATE_NEAREST)
+	var selected := Image.create(640,640,false,Image.FORMAT_RGBA8)
+	selected.blit_rect(body,Rect2i(Vector2i.ZERO,body.get_size()),Vector2i((640-body.get_width())/2,600-body.get_height()))
+	assert(selected.save_webp("res://assets/art/characters/mick_select.webp",true)==OK)
+	if FileAccess.file_exists(BASE + "portrait-v1.png"):
+		var portrait := Image.load_from_file(BASE + "portrait-v1.png")
+		portrait.resize(640,640,Image.INTERPOLATE_NEAREST)
+		assert(portrait.save_webp("res://assets/art/characters/mick_portrait.webp",true)==OK)
 	print("Packed Mick pixel atlas: ", frames.size(), " frames")
 	quit()
 

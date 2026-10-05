@@ -10,9 +10,6 @@ const CharacterArt := preload("res://scripts/game/view/character_art.gd")
 const PixelCrowd := preload("res://scripts/game/view/pixel_crowd.gd")
 
 const SPRITE_SCALE := 0.72
-## Regions of the 640px portrait renders: the face, and head and shoulders.
-const PORTRAIT_FACE := Rect2(140, 84, 360, 313)
-const PORTRAIT_BUST := Rect2(80, 40, 480, 416)
 const DISC_RADIUS := 21.0
 ## Flying discs are drawn at waist height with their shadow on the floor
 ## marking the real position, so a throw passing behind a player is seen to
@@ -472,11 +469,21 @@ func _draw_disc(ci: CanvasItem, centre: Vector2, z: float, scale := 1.0) -> void
 		var tint := Color.WHITE
 		if d.pattern != MatchSim.Pattern.NONE or (d.supersonic and d.state == MatchSim.Disc.FLYING):
 			tint = core.lerp(Color.WHITE, 0.55)
-		ci.draw_set_transform(centre + _current_offset, 0.0, Vector2(1.0, squash))
-		# Rotate within the squashed plane so height still controls the silhouette.
+		# Extrude the rim toward the camera. Depth is in screen pixels, so
+		# spinning the face never rotates the sidewall or its lighting.
+		var depth := maxf(2.0, 4.0 * grow * (1.0 - squash * 0.45))
+		var face_rect := Rect2(Vector2(-r-4,-r-4),Vector2.ONE*(r+4)*2)
 		var transform := Transform2D(disc_spin, Vector2.ZERO)
+		for layer in [1.0, 0.65, 0.3]:
+			var side_tint := Color("302044").lerp(Color("a692bc"), 1.0-layer)
+			ci.draw_set_transform_matrix(Transform2D(0.0, Vector2(1.0,squash),0.0,centre+_current_offset+Vector2(0,depth*layer)) * transform)
+			ci.draw_texture_rect_region(disc_art,face_rect,disc_region,side_tint)
+		# Rotate the markings inside the squashed plane.
 		ci.draw_set_transform_matrix(Transform2D(0.0, Vector2(1.0,squash),0.0,centre+_current_offset) * transform)
-		ci.draw_texture_rect_region(disc_art,Rect2(Vector2(-r-4,-r-4),Vector2.ONE*(r+4)*2),disc_region,tint)
+		ci.draw_texture_rect_region(disc_art,face_rect,disc_region,tint)
+		# A short upper-left bevel glint stays aligned with arena light.
+		ci.draw_set_transform(centre+_current_offset,0.0,Vector2(1.0,squash))
+		ci.draw_arc(Vector2.ZERO,r-2,PI*1.20,PI*1.40,5,Color(1.0,0.98,0.88,0.75),maxf(1.0,1.0*grow),false)
 		ci.draw_set_transform(_current_offset)
 		return
 	ci.draw_set_transform(centre + _current_offset, 0.0, Vector2(1.0, squash))
@@ -582,7 +589,7 @@ func _draw_hud(ci: CanvasItem) -> void:
 		var c := UI.P1 if left else UI.P2
 		UI.slant_panel(ci, frame_rect, Color("120826"), c, 24, 4)
 		var face := Rect2(frame_rect.position + Vector2(10 if left else 300 - 130, 6), Vector2(120, 104))
-		ci.draw_texture_rect_region(art.portrait, face, PORTRAIT_FACE)
+		ci.draw_texture_rect_region(art.portrait, face, art.portrait_face)
 		# Text box between the portrait and the panel's slanted edge.
 		var name_x := frame_rect.position.x + (140.0 if left else 30.0)
 		var room := 128.0
@@ -689,7 +696,7 @@ func _draw_cutin(ci: CanvasItem) -> void:
 		var art = arts[cutin.side]
 		var px := 220.0 if left else 1700.0
 		var face := Rect2(Vector2(px - 150, y - 20), Vector2(300, 260))
-		ci.draw_texture_rect_region(art.portrait, face, PORTRAIT_BUST, Color(1, 1, 1, out))
+		ci.draw_texture_rect_region(art.portrait, face, art.portrait_bust, Color(1, 1, 1, out))
 		var label: String = ("POWER " if cutin.ex else "") + str(cutin.name) + "!"
 		UI.text(ci, Vector2(1030 if left else 890, y + 150), label, 110, Color(c, out), UI.display, 9,
 			HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)

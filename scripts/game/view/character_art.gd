@@ -13,6 +13,8 @@ var anchor := Vector2(160, 258)
 var frames: Array = []
 var animations := {}
 var pixel_art := false
+var portrait_face := Rect2(140,84,360,313)
+var portrait_bust := Rect2(80,40,480,416)
 
 
 func _init(character_id: String) -> void:
@@ -30,6 +32,12 @@ func _init(character_id: String) -> void:
 	frames = meta.frames
 	animations = meta.animations
 	pixel_art = bool(meta.get("pixel_art", false))
+	if meta.has("portrait_face"):
+		var crop: Array = meta.portrait_face
+		portrait_face = Rect2(crop[0],crop[1],crop[2],crop[3])
+	if meta.has("portrait_bust"):
+		var crop: Array = meta.portrait_bust
+		portrait_bust = Rect2(crop[0],crop[1],crop[2],crop[3])
 
 
 ## Frame index for an animation `ticks` physics ticks after it started.
