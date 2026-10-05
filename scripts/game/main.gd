@@ -851,6 +851,7 @@ func _on_controls_changed(message: String) -> void:
 # --- Drawing ---------------------------------------------------------------
 
 func _draw() -> void:
+	preload("res://scripts/game/view/pixel_crowd.gd").hide_all()
 	match screen:
 		Screen.TUTORIAL:
 			tutorial.draw()

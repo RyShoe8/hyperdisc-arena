@@ -940,7 +940,13 @@ func test_pixel_crowd_event_reactions() -> void:
 		spectators.tick()
 	check(seen.has(1) and seen.has(2), "celebration animates clap and raised arms")
 	check(spectators.reaction == "watch" and spectators.priority == 0, "crowd settles after reaction")
-
+	for court in ["beach","lawn","tiled","concrete","clay","stadium"]:
+		var crowd = load("res://scripts/game/view/pixel_crowd.gd").new(court)
+		check(crowd.sections.size() >= 4, "%s animates top, sides and near audience" % court)
+		for pose in ["watch","clap","cheer","surprise"]:
+			check(crowd.frames[pose] != null, "%s %s crowd frame loads" % [court,pose])
+		for area in crowd.sections:
+			check(not area.intersects(Rect2(300,250,1320,590)), "crowd reaction never covers central playing surface")
 
 func test_pixel_referee_and_disc_assets() -> void:
 	var art = load("res://scripts/game/view/character_art.gd").new("referee")
@@ -954,3 +960,4 @@ func test_pixel_referee_and_disc_assets() -> void:
 	var img := disc.get_image()
 	check(img.get_pixel(0, 0).a == 0, "disc has transparent corners")
 	check(img.get_used_rect().size.x > 0, "disc has visible artwork")
+

@@ -73,7 +73,7 @@ func _init(match_sim: MatchSim, character_ids: Array, player_names: Array[String
 	pixel_court = ResourceLoader.exists(pixel_path)
 	court_bg = load(pixel_path if pixel_court else "res://assets/art/courts/%s.webp" % cid)
 	if pixel_court:
-		pixel_spectators = PixelCrowd.new()
+		pixel_spectators = PixelCrowd.new(cid)
 	crowd = [load("res://assets/art/courts/%s_crowd_a.webp" % cid),
 		load("res://assets/art/courts/%s_crowd_b.webp" % cid)]
 	for p in sim.players:
@@ -89,6 +89,7 @@ func tick() -> void:
 	frame += 1
 	if pixel_spectators != null:
 		pixel_spectators.tick()
+		pixel_spectators.rally_x = clampf(float(sim.disc.pos.x)/float(sim.court_width()),0.0,1.0)
 	ref_ticks += 1
 	if ref_anim != "idle" and ref_ticks > 70:
 		ref_anim = "idle"
@@ -255,7 +256,8 @@ func draw(ci: CanvasItem) -> void:
 	var off := Vector2(randf_range(-shake, shake), randf_range(-shake, shake)) * 0.6
 	_current_offset = off
 	ci.draw_set_transform(off)
-	ci.draw_texture_rect(court_bg, Rect2(Vector2.ZERO, proj.screen), false)
+	if pixel_spectators == null:
+		ci.draw_texture_rect(court_bg, Rect2(Vector2.ZERO, proj.screen), false)
 	_draw_crowd(ci)
 	_draw_goal_lights(ci)
 	_draw_markers(ci)
@@ -273,7 +275,7 @@ func _draw_crowd(ci: CanvasItem) -> void:
 	# Pixel spectators belong to the new environment; the old 3D crowd
 	# overlay would obscure its terraces and lighting.
 	if pixel_court:
-		pixel_spectators.draw(ci)
+		pixel_spectators.draw(ci,_current_offset)
 		return
 	var cheering := cheer_ticks > 0
 	var tex := crowd[1] if cheering and (frame / 7) % 2 == 0 else crowd[0]
