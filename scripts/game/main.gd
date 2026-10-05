@@ -59,6 +59,7 @@ var paused_by := 0
 var result_index := 0
 var options_tab := 0
 var options_row := 0
+var _crowd_on := false
 ## The phone controller QR overlay is open (Options > Controls).
 var phone_overlay := false
 var _qr  # QrCode for the current join link
@@ -198,6 +199,10 @@ func _physics_process(_delta: float) -> void:
 	if not shots.is_empty() and frame >= shots[0]:
 		_take_shot(shots.pop_front())
 	screen_ticks += 1
+	var crowd := screen in [Screen.VS, Screen.MATCH, Screen.PAUSED]
+	if crowd != _crowd_on:
+		_crowd_on = crowd
+		Sfx.set_crowd(crowd)
 	toast_ticks = maxi(0, toast_ticks - 1)
 	if net.invite_modal_active():
 		net.invite_input()
@@ -484,45 +489,49 @@ func _count(e: Dictionary) -> void:
 
 
 func _sound_for(e: Dictionary) -> void:
+	var pan := _side_pan(int(e.get("side", 0)))
 	match e.type:
 		"ready":
 			Sfx.play("countdown", 0.8)
 		"go":
-			Sfx.play("menu_confirm", 1.2)
+			Sfx.play("whistle", 1.15, -6.0)
 		"throw":
 			if e.supersonic or e.smash:
-				Sfx.play("supersonic", 1.1 if e.smash else 1.0)
+				Sfx.play("supersonic", 1.08 if e.smash else 1.0, 0.0, pan)
 				_rumble(e.side, 0.3, 0.0, 0.08)
 			else:
-				Sfx.play("throw", randf_range(0.95, 1.1))
+				Sfx.play("throw", 1.0, 0.0, pan)
 		"special":
-			Sfx.play("supersonic", 0.7)
-			Sfx.play("goal", 1.4, -6.0)
+			Sfx.play("special", 1.0, 0.0, pan)
 			_rumble(e.side, 0.6, 0.6, 0.25)
 		"lob", "drop":
-			Sfx.play("lob", 0.85 if e.type == "drop" else 1.0)
+			Sfx.play("lob", 0.8 if e.type == "drop" else 0.95, 0.0, pan)
 		"slap":
-			Sfx.play("supersonic", 1.3)
+			Sfx.play("slap", 1.0, 0.0, pan)
 		"block", "power_toss":
-			Sfx.play("catch", 1.3)
+			Sfx.play("block", 1.0, 0.0, pan)
 		"jump":
-			Sfx.play("lob", 1.5, -8.0)
+			Sfx.play("lob", 1.4, -10.0, pan)
 		"land":
-			Sfx.play("bounce", 0.7, -10.0)
+			Sfx.play("land", 1.0, 0.0, pan)
 		"catch":
+			# Harder catches (more knockback) hit harder.
 			var knock := absf(sim.players[e.side].knock_vel)
-			Sfx.play("catch", randf_range(0.9, 1.1), -2.0 + minf(knock, 6.0))
+			Sfx.play("catch", 1.0 - minf(knock, 6.0) * 0.02, -3.0 + minf(knock, 6.0), pan)
 			_rumble(e.side, 0.4, clampf(knock / 8.0, 0.1, 1.0), 0.12)
-		"bounce", "barrier":
-			Sfx.play("bounce", randf_range(0.9, 1.2), -6.0)
+		"bounce":
+			Sfx.play("bounce", 1.0, -2.0, _court_pan(sim.disc.pos.x))
+		"barrier":
+			Sfx.play("net", 1.0, 0.0, _court_pan(sim.disc.pos.x))
 		"charge_ready":
-			Sfx.play("connect", 1.3)
+			Sfx.play("connect", 1.3, -4.0, pan)
 		"ex_ready":
-			Sfx.play("menu_confirm", 1.4, -4.0)
+			Sfx.play("menu_confirm", 1.4, -4.0, pan)
 		"buzzsaw":
-			Sfx.play("supersonic", 0.6)
+			Sfx.play("power_whoosh", 0.7, -2.0, pan)
 		"point":
-			Sfx.play("miss" if e.reason == "miss" else "goal")
+			# e.side scored: the disc went in on the other side.
+			Sfx.play("miss" if e.reason == "miss" else "goal", 1.0, 0.0, _side_pan(1 - int(e.side)) * 0.5)
 			_rumble(1 - e.side, 0.6, 0.8, 0.3)
 		"set_end":
 			Sfx.play("set_end")
@@ -530,6 +539,16 @@ func _sound_for(e: Dictionary) -> void:
 		"match_over":
 			Sfx.play("match_win")
 			_rumble(e.winner, 0.5, 0.5, 0.6)
+
+
+## Stereo position of a player's side of the court.
+func _side_pan(side: int) -> float:
+	return -0.6 if side == MatchSim.LEFT else 0.6
+
+
+## Stereo position of a point on the court (x in court units).
+func _court_pan(x: float) -> float:
+	return clampf(x / maxf(sim.court_width(), 1.0) * 2.0 - 1.0, -1.0, 1.0) * 0.8
 
 
 func _countdown_beeps() -> void:
