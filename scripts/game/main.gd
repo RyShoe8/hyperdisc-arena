@@ -911,7 +911,8 @@ func _draw_title() -> void:
 
 func _draw_main() -> void:
 	UI.outrun_background(self, SCREEN, frame / 60.0, 0.25)
-	var size := logo.get_size() * 0.55
+	# Keep the full logo above the first button, including its transparent canvas.
+	var size := logo.get_size() * minf(1320.0 / logo.get_width(), 420.0 / logo.get_height())
 	draw_texture_rect(logo, Rect2(Vector2((SCREEN.x - size.x) / 2.0, 40), size), false)
 	var items := _main_items()
 	for i in items.size():

@@ -57,6 +57,7 @@ const CUES := {
 
 const POOL_SIZE := 16
 const BED_DB := -20.0
+const EFFECTS_GAIN_DB := 4.0
 
 var _streams := {}
 var _players: Array[AudioStreamPlayer2D] = []
@@ -66,6 +67,15 @@ var _bed: AudioStreamPlayer
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	var effects_bus := AudioServer.get_bus_index("Effects")
+	if effects_bus == -1:
+		AudioServer.add_bus()
+		effects_bus = AudioServer.bus_count - 1
+		AudioServer.set_bus_name(effects_bus, "Effects")
+		AudioServer.set_bus_send(effects_bus, "Master")
+		var limiter := AudioEffectLimiter.new()
+		limiter.ceiling_db = -1.0
+		AudioServer.add_bus_effect(effects_bus, limiter)
 	for key in SOUNDS:
 		var takes: Array = []
 		for file in SOUNDS[key]:
@@ -74,6 +84,7 @@ func _ready() -> void:
 		_streams[key] = takes
 	for i in POOL_SIZE:
 		var p := AudioStreamPlayer2D.new()
+		p.bus = "Effects"
 		# Panning only: no fall-off with distance.
 		p.attenuation = 0.0
 		p.max_distance = 100000.0
@@ -81,6 +92,7 @@ func _ready() -> void:
 		add_child(p)
 		_players.append(p)
 	_bed = AudioStreamPlayer.new()
+	_bed.bus = "Effects"
 	add_child(_bed)
 	if ResourceLoader.exists(DIR + "crowd_bed.wav"):
 		var bed: AudioStreamWAV = load(DIR + "crowd_bed.wav").duplicate()
@@ -103,7 +115,7 @@ func play(sound: String, pitch := 1.0, volume_db := 0.0, pan := 0.0) -> void:
 		p.stream = takes[randi() % takes.size()]
 		p.pitch_scale = pitch * (1.0 + randf_range(-layer[2], layer[2]))
 		p.volume_db = volume_db + float(layer[1]) + randf_range(-1.0, 1.0) * (1.0 if layer[2] > 0.0 else 0.0) \
-			+ linear_to_db(maxf(Settings.sfx_volume, 0.0001))
+			+ EFFECTS_GAIN_DB + linear_to_db(maxf(Settings.sfx_volume, 0.0001))
 		var size := get_viewport().get_visible_rect().size
 		p.position = Vector2(size.x * (0.5 + clampf(pan, -1.0, 1.0) * 0.45), size.y * 0.5)
 		p.play()

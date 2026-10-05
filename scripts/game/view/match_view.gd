@@ -375,7 +375,12 @@ func _anim_for(p: MatchSim.PlayerState) -> Array:
 		if not (p.action == MatchSim.Act.CATCH and not p.holding):
 			return [a[0], p.action_ticks]
 	if p.z > 0.0:
-		return ["jump", 6 if p.vz > 2.0 else 30]
+		# Follow physical flight progress; don't snap from a frozen takeoff to landing.
+		var flight := clampf((float(sim.cfg.player.jump_velocity) - p.vz) \
+			/ (2.0 * float(sim.cfg.player.jump_velocity)), 0.0, 1.0)
+		return ["jump", mini(19, int(flight * 20.0))]
+	if p.recovery_ticks > 0 and p.action == MatchSim.Act.JUMP:
+		return ["jump", 19]
 	if p.dash_ticks > 0:
 		return ["dash", int(sim.cfg.player.dash_ticks) - p.dash_ticks + 4]
 	if p.holding:
