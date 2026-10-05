@@ -17,7 +17,7 @@ const DISC_RADIUS := 21.0
 const FLY_HEIGHT := 30.0
 const SPECIAL_COLORS := {
 	"mick": Color("ff2e88"), "tiffany": Color("2de2e6"), "pete": Color("ffd23f"),
-	"speed_b": Color("f15bb5"), "balanced_b": Color("9b5de5"), "power_b": Color("ff4d2e"),
+	"steve": Color("8ee6ad"), "vanessa": Color("2de2e6"), "keno": Color("ff4d2e"),
 }
 ## One-shot animations and how long each holds, in ticks.
 const ACTION_ANIMS := {

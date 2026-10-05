@@ -22,7 +22,7 @@ public class ComponentFrames {
 }
 '@
 
-foreach($characterId in @('pete','tiffany')) {
+foreach($characterId in @('pete','tiffany','keno','steve','vanessa')) {
  foreach($sequenceName in @('run','actions')) {
   $sourcePath = Join-Path $PSScriptRoot ($characterId+'_sources/'+$sequenceName+'-v1.png')
   $expectedCount = if($sequenceName -eq 'run'){6}else{9}

@@ -92,7 +92,7 @@ Six characters on one speed-versus-power line: two speed, two balanced, two powe
 | Power A (Scott, USA) | Low | High |
 | Power B (Wessel, Germany) | Very low | Very high |
 
-Our six get new names, looks and nationalities; the stat line is kept. From the lore: Mick Magnum (power leaning: speed 1.00, power 1.15; special "Danger Zone" loop), Tiffany Seasons (speed, "Riptide" snake shot) and Pete Pelican (speed leaning: speed 1.15, power 1.00; "Pelican Dive" ricochet). The other three slots are disc-gang placeholders until the lore document names them.
+Our six use original names and looks. Mick Magnum is power leaning (speed 1.00, power 1.15; special "Danger Zone" loop), Tiffany Seasons is a brunette lifeguard (speed, "Riptide" snake shot), and Pete Pelican is Mick's smart African American best friend (speed 1.15, power 1.00; "Pelican Dive" ricochet). The remaining characters are Keno Dice (Asian, huge muscular powerhouse who uses power in every situation), Steve Keeves (ginger, skeevy and tricky), and Vanessa Trunks (slim blonde upper body, full hips and powerful legs; power oriented rather than finesse). Vanessa might be dating Keno; this is deliberately unconfirmed. All six have playable pixel art in v0.2.3. Keno wears a burgundy singlet and favors maximum power; Steve wears a mint bowling shirt and cream trousers and favors speed and tricks; Vanessa wears an ivory/aqua jacket and charcoal leggings and favors leg-driven power. Their animation sheets are a first playable pass.
 
 ### Scoring and match rules
 
@@ -265,4 +265,5 @@ Target: a local-play launch in about 10 weeks, with online play after launch. We
 - [x] Art budget and which artist: no budget; art is made in-house with Blender (installed at `D:\Blender`) plus CC0 packs, so the commission rows in Art and audio no longer apply
 - [ ] Setting: on hold until the separate lore document is written
 - [x] Is 2v2 a launch feature or post-launch? Launch (local 2v2)
+
 

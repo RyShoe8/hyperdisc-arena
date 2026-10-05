@@ -6,7 +6,7 @@ const CELL := 512
 const ANCHOR := Vector2(256, 450)
 
 func _initialize() -> void:
-	for id in ["pete", "tiffany"]:
+	for id in ["pete", "tiffany", "keno", "steve", "vanessa"]:
 		pack_character(id)
 	quit()
 
@@ -15,7 +15,10 @@ func pack_character(id: String) -> void:
 	var atlas := Image.create(CELL * 8, CELL * 2, false, Image.FORMAT_RGBA8)
 	var frames: Array = []
 	var sources: Array[Image] = []
-	var master := Image.load_from_file(base + ("design-lifeguard-v2.png" if id == "tiffany" else "design-v1.png"))
+	var master_name := "design-v1.png" if id == "pete" else "design-v2.png"
+	if id == "tiffany": master_name = "design-lifeguard-v2.png"
+	var master := Image.load_from_file(base + master_name)
+	var target_height := 275.0 if id == "keno" else (260.0 if id == "steve" else 250.0)
 	sources.append(master.get_region(master.get_used_rect()))
 	for spec in [["run-v1.png", 2], ["actions-v1.png", 3]]:
 		var image := Image.load_from_file(base + spec[0])
@@ -33,11 +36,11 @@ func pack_character(id: String) -> void:
 			sheet_parts.append(crop)
 		# Common scale per sequence preserves crouching and jump articulation.
 		for crop in sheet_parts:
-			var scale_factor := 250.0 / tallest
+			var scale_factor := target_height / tallest
 			crop.resize(roundi(crop.get_width()*scale_factor), roundi(crop.get_height()*scale_factor), Image.INTERPOLATE_NEAREST)
 			sources.append(crop)
-	var factor := 250.0 / sources[0].get_height()
-	sources[0].resize(roundi(sources[0].get_width()*factor), 250, Image.INTERPOLATE_NEAREST)
+	var factor := target_height / sources[0].get_height()
+	sources[0].resize(roundi(sources[0].get_width()*factor), roundi(target_height), Image.INTERPOLATE_NEAREST)
 	for i in sources.size():
 		var image: Image = sources[i]
 		var size := Vector2(image.get_size())

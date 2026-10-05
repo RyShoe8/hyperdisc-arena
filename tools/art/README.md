@@ -1,2 +1,4 @@
 Mick pixel test assets. Rebuild with Godot --headless --path . --script tools/art/build_mick_pixel.gd. Sources are generated original artwork from the approved pixel studies. Atlas uses component masks to prevent neighboring-pose bleed. Jump is anchored to the feet because simulation supplies altitude. Hand anchors are fitted estimates for play testing. Lob/slap/special reuse throw; block reuses catch; charge/win/lose reuse idle; knock reuses dash. Pixel portraits and selection artwork are now packed for Mick, Pete and Tiffany. Dedicated lob/slap/special/celebration poses remain to be refined.
 
+
+All six roster characters now use pixel assets. Keno, Steve and Vanessa sources and prompts are documented in NEXT_CHARACTERS.md and THIRD_ROSTER_PROMPTS.md. Run inspect-roster.ps1, then build_roster_pixel.gd to reproduce the five newer atlases. Move-specific pose aliases are documented in NEXT_CHARACTERS.md.

@@ -309,7 +309,7 @@ func test_fast_disc_cannot_skip_the_catch_circle() -> void:
 
 func test_catch_knocks_light_player_back() -> void:
 	var distances := []
-	for c in [1, 5]:  # Tiffany (light) vs Power B (heavy)
+	for c in [1, 5]:  # Tiffany (light) vs Keno (heavy)
 		var sim := new_sim(0, c, c)
 		var p := sim.players[MatchSim.LEFT]
 		p.pos = Vector2(220, 300)
