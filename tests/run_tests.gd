@@ -12,6 +12,7 @@ const InputCodec := preload("res://scripts/net/input_codec.gd")
 const OnlineMatch := preload("res://scripts/net/online_match.gd")
 const QrCode := preload("res://scripts/game/ui/qr_code.gd")
 const PhoneControllers := preload("res://scripts/net/phone_controllers.gd")
+const TutorialSession := preload("res://scripts/game/tutorial_session.gd")
 
 const IDLE := {"x": 0, "y": 0, "a": false, "b": false}
 
@@ -24,12 +25,15 @@ func _init() -> void:
 	balance = JSON.parse_string(FileAccess.get_file_as_string("res://data/balance.json"))
 	# A script that fails to compile can't be instantiated; without this guard
 	# every test would just log errors and the run would still "pass".
-	for script in [MatchSim, CpuPlayer, ControlsScript, RollbackSession, LoopbackTransport, InputCodec, OnlineMatch, QrCode, PhoneControllers]:
+	for script in [MatchSim, CpuPlayer, ControlsScript, RollbackSession, LoopbackTransport, InputCodec, OnlineMatch, QrCode, PhoneControllers, TutorialSession]:
 		if not script.can_instantiate():
 			printerr("FAIL: %s does not compile" % script.resource_path)
 			quit(1)
 			return
 	for test in [
+		"test_tutorial_all_drills_are_completable",
+		"test_tutorial_does_not_skip_failed_drills",
+		"test_tutorial_idle_never_completes_an_action",
 		"test_courts_are_bigger_than_before",
 		"test_set_opens_with_referee_toss",
 		"test_centre_goal_scores_5",
@@ -89,6 +93,76 @@ func check(condition: bool, message: String) -> void:
 	if not condition:
 		failures += 1
 		printerr("FAIL %s: %s" % [current, message])
+
+
+func test_tutorial_all_drills_are_completable() -> void:
+	var training := TutorialSession.new(balance)
+	for lesson in TutorialSession.LESSONS.size():
+		check(training.lesson == lesson, "lesson progression must be sequential")
+		for t in range(1, 240):
+			var p := training.sim.players[0]
+			var input := {}
+			match lesson:
+				0: input = {"x": 1 if p.pos.x < training.target.x else 0}
+				1: input = {"x": 1, "a": t == 1}
+				2: input = {"y": -1 if p.pos.y > 305 else 0}
+				3, 4: input = {"y": -1, "a": t == 1}
+				5:
+					input = {"y": 1 if t < 3 else 0, "x": 1 if t > 1 else 0, "a": t == 3}
+				6: input = {"b": t == 1}
+				7: input = {"jump": t == 1}
+				8, 9, 19:
+					input = {"jump": t == (training.jump_window.x + training.jump_window.y) / 2,
+						"a": lesson == 9 and p.holding and p.z > 0,
+						"b": lesson == 19 and p.holding and p.z > 0}
+				10: input = {"a": p.holding and p.knock_ticks == 0}
+				11: input = {"a": training.timing().now}
+				12: input = {"slap": training.timing().now}
+				13: input = {"b": training.timing().now}
+				14: input = {"a": p.holding and p.charged}
+				15: input = {"b": p.holding and p.charged}
+				16: input = {"slap": t == 1}
+				17: input = {"a": training.timing().now, "b": training.timing().now, "a_down": true, "b_down": true}
+				18: input = {"b": p.hold_ticks + 1 >= int(balance.air.lob_shallow_after_ticks)}
+			training.step(input)
+			if training.passed or training.failed:
+				break
+		check(training.passed, "%s is completable: %s" % [TutorialSession.LESSONS[lesson][0], training.feedback])
+		if lesson < TutorialSession.LESSONS.size() - 1:
+			check(training.advance(), "successful move unlocks exactly one lesson")
+		else:
+			check(not training.advance(), "last lesson does not overflow")
+
+
+func test_tutorial_does_not_skip_failed_drills() -> void:
+	var training := TutorialSession.new(balance)
+	training.lesson = 5
+	training.reset()
+	training.step({"a": true}) # A straight throw is not a curve.
+	check(training.failed and not training.passed, "wrong throw fails curve exercise")
+	check(not training.advance() and training.lesson == 5, "failed move cannot advance")
+	training.reset()
+	check(not training.failed and training.sim.players[0].holding, "retry restores the exercise")
+	training.lesson = 10
+	training.reset()
+	for t in 100:
+		training.step({})
+	check(training.failed and not training.passed, "late return cannot earn quick-return completion")
+	training.lesson = 8
+	training.reset()
+	for t in 100:
+		training.step({})
+	check(training.failed and not training.passed, "grounded catch cannot earn air-catch completion")
+
+
+func test_tutorial_idle_never_completes_an_action() -> void:
+	var training := TutorialSession.new(balance)
+	for lesson in TutorialSession.LESSONS.size():
+		training.lesson = lesson
+		training.reset()
+		for t in 610:
+			training.step({})
+		check(not training.passed, "idle/automatic action cannot pass %s" % TutorialSession.LESSONS[lesson][0])
 
 
 func new_sim(court := 0, left := 0, right := 0) -> MatchSim:

@@ -13,6 +13,7 @@ const MatchView := preload("res://scripts/game/view/match_view.gd")
 const OnlineScreens := preload("res://scripts/game/online_screens.gd")
 const QrCode := preload("res://scripts/game/ui/qr_code.gd")
 const MixtapeScreen := preload("res://scripts/game/mixtape_screen.gd")
+const Tutorial := preload("res://scripts/game/tutorial.gd")
 ## Options > Controls rows before the per-action bindings.
 const CONTROL_HEADER_ROWS := 4
 
@@ -32,7 +33,7 @@ const COURT_NOTES := {
 }
 
 enum Screen { TITLE, MAIN, SELECT, COURT, VS, MATCH, PAUSED, OPTIONS, RESULTS,
-	ONLINE, ONLINE_WAIT, ONLINE_JOIN, ONLINE_LOBBY, ONLINE_SIGNIN, ONLINE_FRIENDS, ONLINE_ROOM, MIXTAPE }
+	ONLINE, ONLINE_WAIT, ONLINE_JOIN, ONLINE_LOBBY, ONLINE_SIGNIN, ONLINE_FRIENDS, ONLINE_ROOM, MIXTAPE, TUTORIAL }
 
 var balance: Dictionary
 var sim: MatchSim
@@ -46,6 +47,7 @@ var versus := false
 var online := false
 var net: OnlineScreens
 var tapes: MixtapeScreen
+var tutorial: Tutorial
 
 # Menu state
 var main_index := 0
@@ -93,6 +95,7 @@ func _ready() -> void:
 	Controls.changed.connect(_on_controls_changed)
 	net = OnlineScreens.new(self)
 	tapes = MixtapeScreen.new(self)
+	tutorial = Tutorial.new(self)
 	logo = load("res://assets/logo/logo.png")
 	for c in balance.courts:
 		court_thumbs.append(load("res://assets/art/courts/%s.webp" % c.id))
@@ -119,10 +122,13 @@ func _read_args() -> void:
 	var online_start := ""
 	var open_phone := false
 	var room := ""
+	var tutorial_lesson := -1
 	for arg in OS.get_cmdline_user_args():
 		var kv: PackedStringArray = arg.trim_prefix("--").split("=")
 		var value := int(kv[1]) if kv.size() > 1 and kv[1].is_valid_int() else 0
 		match kv[0]:
+			"tutorial":
+				tutorial_lesson = value
 			"court":
 				court = clampi(value, 0, balance.courts.size() - 1)
 			"p1":
@@ -177,6 +183,8 @@ func _read_args() -> void:
 					_go(names[kv[1]])
 	if demo:
 		_start_match()
+	if tutorial_lesson >= 0:
+		tutorial.open(tutorial_lesson)
 	if net.bot:
 		net.bot_court = court
 	if online_start == "host":
@@ -209,6 +217,8 @@ func _physics_process(_delta: float) -> void:
 		queue_redraw()
 		return
 	match screen:
+		Screen.TUTORIAL:
+			tutorial.tick()
 		Screen.TITLE:
 			_title_input()
 		Screen.MAIN:
@@ -268,6 +278,8 @@ func _take_shot(tick: int) -> void:
 
 
 func _go(to: int) -> void:
+	if tutorial != null and to != Screen.TUTORIAL:
+		tutorial.arena.hide()
 	screen = to
 	screen_ticks = 0
 	if to in [Screen.TITLE, Screen.MAIN, Screen.ONLINE, Screen.ONLINE_LOBBY, Screen.RESULTS]:
@@ -300,7 +312,7 @@ func _title_input() -> void:
 
 
 func _main_items() -> Array:
-	var items := ["VS CPU", "VS PLAYER 2", "ONLINE", "MIXTAPES", "OPTIONS"]
+	var items := ["VS CPU", "VS PLAYER 2", "TUTORIAL", "ONLINE", "MIXTAPES", "OPTIONS"]
 	if OS.has_feature("web"):
 		items.erase("ONLINE")  # browsers can't open UDP sockets
 	if not OS.has_feature("web"):
@@ -322,6 +334,8 @@ func _main_input() -> void:
 		return
 	Sfx.play("menu_confirm")
 	match items[main_index]:
+		"TUTORIAL":
+			tutorial.open()
 		"VS CPU":
 			versus = false
 			_open_select()
@@ -823,6 +837,8 @@ func _on_controls_changed(message: String) -> void:
 
 func _draw() -> void:
 	match screen:
+		Screen.TUTORIAL:
+			tutorial.draw()
 		Screen.TITLE:
 			_draw_title()
 		Screen.MAIN:
@@ -916,7 +932,7 @@ func _draw_main() -> void:
 	draw_texture_rect(logo, Rect2(Vector2((SCREEN.x - size.x) / 2.0, 40), size), false)
 	var items := _main_items()
 	for i in items.size():
-		var r := Rect2(Vector2(660, 510 + i * 82), Vector2(600, 68))
+		var r := Rect2(Vector2(660, 480 + i * 72), Vector2(600, 60))
 		UI.button(self, r, items[i], i == main_index, frame, 40)
 	_hint("%s SELECT     %s BACK" % [_a(), _b()])
 

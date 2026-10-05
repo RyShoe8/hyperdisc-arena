@@ -47,6 +47,23 @@ Moves that combine buttons:
 
 The pause menu has the full move list, using your current buttons.
 
+## Tutorial
+
+Choose **Tutorial** from the main menu for 20 interactive exercises. Each
+lesson explains one move, shows the controller buttons and stick motion,
+and verifies the move using the real match simulation before unlocking
+the next lesson. Prompts follow your controller labels and custom bindings;
+keyboard input switches prompts to your keys.
+
+Defensive drills show the actual move radius and a live **PRESS NOW** cue.
+Jump drills calculate their timing window from the simulation; quick
+returns show the remaining held-disc time. Failed attempts can be retried
+without advancing. Progress resumes at the next unlocked lesson when you
+reopen the tutorial. Start / Options / Escape exits at any time.
+
+For visual checks, `--tutorial=N` after Godot's `--` opens a particular
+exercise (zero-based), and works with the existing `--shots` / `--out` flags.
+
 ## Online play (Windows)
 
 **Online** in the main menu: **Host room** gives you a code to share and
