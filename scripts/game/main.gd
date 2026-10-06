@@ -933,7 +933,7 @@ func _b() -> String:
 func _draw_title() -> void:
 	UI.outrun_background(self, SCREEN, frame / 60.0)
 	var bob := sin(frame * 0.05) * 8.0
-	var size := logo.get_size() * 0.9
+	var size := logo.get_size() * minf(1560.0 / logo.get_width(), 560.0 / logo.get_height())
 	draw_texture_rect(logo, Rect2(Vector2((SCREEN.x - size.x) / 2.0, 110 + bob), size), false)
 	if (frame / 30) % 2 == 0:
 		UI.text(self, Vector2(960, 800), "PRESS ANY BUTTON", 64, UI.YELLOW, UI.display, 7,

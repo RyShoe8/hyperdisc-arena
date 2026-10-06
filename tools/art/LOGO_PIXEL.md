@@ -1,0 +1,9 @@
+# Mick pixel branding, v0.2.5
+
+Built-in imagegen created `assets/logo/logo-pixel-mick-v1.png`. Runtime uses `assets/logo/logo.png`; the download page uses `site/logo.png`. Original Blender logo preserved as `assets/logo/logo-3d-original.png`. Transparent output copied without repainting.
+
+References: original logo, Mick's portrait and selection sprite. Both title and home menu scale to bounded logo regions.
+
+## Final prompt
+
+Use case: logo-brand. Production logo update for original arcade game HyperDisc Arena. References: image1 old title for exact brand wording only; image2 and image3 exact Mick Magnum identity and pixel rendering. Create a polished horizontal transparent logo with exact readable text "HYPERDISC" dominant and "ARENA" smaller beneath. 1980s Outrun arcade pixel art, deliberate hard square pixel clusters and stepped shading, dark plum thick outlines, warm yellow to coral stepped bands on HYPER, icy cyan/blue on DISC, hot pink ARENA badge. Original distinctive slanted block lettering, no other text. Integrate one upper-body Mick Magnum on LEFT emerging behind the left end of the wordmark, raised confident shoulder, blond high flat-top/mullet, magenta aviator sunglasses, teal tank with ivory/pink diagonal stripes and dog tags EXACTLY as reference. Mick occupies about 25% width, text about75%, face unobscured, letters fully readable. Small tilted pixel flying disc with visible rim at upper right and restrained pixel speed streaks. Compact cohesive emblem, 80s sun stripe accent sparingly behind Mick, no scene, no rectangular background, no other characters, no gradients/blur/3D/smooth vector. Wide aspect ratio approximately 2.8:1, ample transparent margin, all art within bounds. Authentic crisp arcade branding matching the game sprites. Genuine transparent alpha background.
