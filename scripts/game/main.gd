@@ -16,7 +16,7 @@ const MixtapeScreen := preload("res://scripts/game/mixtape_screen.gd")
 const Tutorial := preload("res://scripts/game/tutorial.gd")
 const MovePreview := preload("res://scripts/game/move_preview.gd")
 ## Options > Controls rows before the per-action bindings.
-const CONTROL_HEADER_ROWS := 4
+const CONTROL_HEADER_ROWS := 5
 
 const BALANCE_PATH := "res://data/balance.json"
 const SCREEN := Vector2(1920, 1080)
@@ -202,7 +202,7 @@ func _read_args() -> void:
 	if open_phone:
 		_open_options(Screen.MAIN)
 		options_tab = OPTION_TABS.find("CONTROLS")
-		options_row = 3
+		options_row = 4
 		_open_phone_overlay()
 
 
@@ -524,15 +524,21 @@ func _sound_for(e: Dictionary) -> void:
 				_rumble(e.side, 0.3, 0.0, 0.08)
 			else:
 				Sfx.play("throw", 1.0, 0.0, pan, who)
+				_rumble(e.side, 0.25, 0.0, 0.05)
 		"special":
 			Sfx.play("special", 1.0, 0.0, pan, who)
 			_rumble(e.side, 0.6, 0.6, 0.25)
 		"lob", "drop":
 			Sfx.play("lob", 0.8 if e.type == "drop" else 0.95, 0.0, pan)
+			_rumble(e.side, 0.15, 0.0, 0.04)
 		"slap":
 			Sfx.play("slap", 1.0, 0.0, pan, who)
+			_rumble(e.side, 0.3, 0.2, 0.06)
 		"block", "power_toss":
 			Sfx.play("block", 1.0, 0.0, pan)
+			_rumble(e.side, 0.3, 0.4, 0.08)
+		"dash":
+			_rumble(e.side, 0.15, 0.0, 0.04)
 		"jump":
 			Sfx.play("lob", 1.4, -10.0, pan)
 		"land":
@@ -583,6 +589,8 @@ func _countdown_beeps() -> void:
 
 
 func _rumble(side: int, weak: float, strong: float, seconds: float) -> void:
+	if not Settings.rumble:
+		return
 	if side == MatchSim.LEFT or versus:
 		Controls.rumble(side, weak, strong, seconds)
 
@@ -658,7 +666,7 @@ func _option_rows() -> Array:
 		"GRAPHICS":
 			return [
 				["DISPLAY", Settings.WINDOW_MODES[Settings.window_mode]],
-				["VSYNC", "ON" if Settings.vsync else "OFF"],
+				["VSYNC", Settings.VSYNC_MODES[Settings.vsync_mode]],
 				["SCREEN SHAKE", Settings.SHAKE_LEVELS[Settings.shake]],
 				["EFFECTS", Settings.EFFECT_LEVELS[Settings.effects]],
 				["RETRO SCANLINES", "ON" if Settings.scanlines else "OFF"],
@@ -675,6 +683,7 @@ func _option_rows() -> Array:
 			var rows := [["PLAYER", "P%d" % (bind_player + 1)],
 				["DEVICE", "CONTROLLER" if bind_device == 0 else "KEYBOARD"],
 				["BUTTON LABELS", _label_style_text()],
+				["RUMBLE", "ON" if Settings.rumble else "OFF"],
 				["PHONE AS CONTROLLER", _phone_row_text()]]
 			var kind := "pad" if bind_device == 0 else "keys"
 			for action in Controls.ACTIONS:
@@ -740,7 +749,7 @@ func _options_input() -> void:
 				0:
 					Settings.window_mode = posmod(Settings.window_mode + step, Settings.WINDOW_MODES.size())
 				1:
-					Settings.vsync = not Settings.vsync
+					Settings.vsync_mode = posmod(Settings.vsync_mode + step, Settings.VSYNC_MODES.size())
 				2:
 					Settings.shake = posmod(Settings.shake + step, Settings.SHAKE_LEVELS.size())
 				3:
@@ -769,6 +778,10 @@ func _options_input() -> void:
 			elif options_row == 2:
 				Settings.button_labels = posmod(Settings.button_labels + step, Settings.LABEL_STYLES.size())
 			elif options_row == 3:
+				Settings.rumble = not Settings.rumble
+				if Settings.rumble:
+					Controls.rumble(bind_player, 0.4, 0.3, 0.15)
+			elif options_row == 4:
 				if confirm:
 					_open_phone_overlay()
 					return
@@ -1123,8 +1136,8 @@ func _draw_options() -> void:
 			if Controls.capturing() and on:
 				value = "PRESS A %s..." % ("BUTTON" if bind_device == 0 else "KEY")
 			elif on and value != "":
-				value = "<  %s  >" % value if OPTION_TABS[options_tab] != "CONTROLS" or i < 3 else value
-				if OPTION_TABS[options_tab] == "CONTROLS" and i == 3:
+				value = "<  %s  >" % value if OPTION_TABS[options_tab] != "CONTROLS" or i < 4 else value
+				if OPTION_TABS[options_tab] == "CONTROLS" and i == 4:
 					value = "%s  >" % rows[i][1]
 			UI.text(self, Vector2(row.end.x - 40, y + 44), value, 30, UI.YELLOW, UI.ui, 4,
 				HORIZONTAL_ALIGNMENT_RIGHT)

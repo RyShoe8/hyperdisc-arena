@@ -30,7 +30,10 @@ Transport interface (scripts/net/transport.gd)
   `load_state()` for rollback. Both peers must run the same build: the
   handshake compares a hash of `data/balance.json` plus a protocol number
   and refuses mismatches.
-- **Rollback.** Local input is delayed 2 frames, sent with every
+- **Rollback.** Local input is delayed by 1 to 3 frames. In the lobby the host
+  pings the guest and picks the delay from the median round trip: under 80 ms
+  gets 1 frame, under 160 ms gets 2, slower gets 3, and 2 if unmeasured. Each
+  input (32 bits) is sent with every
   unacknowledged input (so lost packets are covered by the next one), and the
   sim runs ahead on a prediction of the opponent's input (their last one).
   When the real input differs, the sim rewinds to the saved state and

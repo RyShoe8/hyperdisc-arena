@@ -31,7 +31,12 @@ var local_locked := false
 var remote_pick := -1
 var remote_locked := false
 var court := 0
+## Frames each player's input is held back. The host picks it at the start
+## of each match from the ping measured in the lobby: rollback covers the
+## rest, so good connections get 1 frame and only slow ones more.
 var input_delay := 2
+## Recent round trips to the guest, in milliseconds (host only).
+var ping_samples: Array[int] = []
 var sim: MatchSim
 var session: RollbackSession
 ## Which side this machine plays.
@@ -84,6 +89,8 @@ func poll(local_input: Dictionary) -> Array[Dictionary]:
 		State.LOBBY:
 			if _ticks % RESEND_TICKS == 1:
 				_send_pick()
+				if is_host:
+					_send({"t": "ping", "at": Time.get_ticks_msec()})
 				if is_host and _start_sent:
 					_send_start()
 		State.PLAYING:
@@ -118,6 +125,7 @@ func start() -> void:
 		return
 	_start_sent = true
 	mixtape_match_id = Crypto.new().generate_random_bytes(16).hex_encode()
+	input_delay = delay_for_ping(ping_ms())
 	_send_start()
 
 
@@ -165,6 +173,14 @@ func _on_message(msg) -> void:
 			_send_pick()
 		"reject":
 			_fail(str(msg.get("reason", "REJECTED")))
+		"ping":
+			if not is_host:
+				_send({"t": "pong", "at": msg.get("at", 0)})
+		"pong":
+			if is_host:
+				ping_samples.append(maxi(0, Time.get_ticks_msec() - int(msg.get("at", 0))))
+				if ping_samples.size() > 9:
+					ping_samples.pop_front()
 		"pick":
 			remote_pick = clampi(int(msg.get("character", 0)), 0, balance.characters.size() - 1)
 			remote_locked = bool(msg.get("locked", false))
@@ -191,6 +207,26 @@ func _on_message(msg) -> void:
 				state = State.ENDED
 			else:
 				_fail("OPPONENT LEFT")
+
+
+## Median round trip to the guest in milliseconds, or -1 if not measured.
+func ping_ms() -> int:
+	if ping_samples.is_empty():
+		return -1
+	var sorted := ping_samples.duplicate()
+	sorted.sort()
+	return sorted[sorted.size() / 2]
+
+
+## Input delay frames for a round trip: rollback hides the rest.
+static func delay_for_ping(rtt_ms: int) -> int:
+	if rtt_ms < 0:
+		return 2
+	if rtt_ms < 80:
+		return 1
+	if rtt_ms < 160:
+		return 2
+	return 3
 
 
 func _send_pick() -> void:

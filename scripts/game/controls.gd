@@ -75,6 +75,12 @@ var _key_latch := {}  # physical keycode -> true
 var _pad_latch := {}  # device -> {button: true}
 ## Whether each controller's stick is currently past the deadzone.
 var _stick_on := {}
+## Menu auto-repeat: holding a direction repeats it after REPEAT_DELAY
+## ticks, then every REPEAT_RATE ticks.
+const REPEAT_DELAY := 22
+const REPEAT_RATE := 6
+var _held := [[Vector2i.ZERO, 0], [Vector2i.ZERO, 0]]  # per player: [direction, ticks]
+var _pad_held := {}  # device -> [direction, ticks]
 
 
 func _init() -> void:
@@ -144,8 +150,21 @@ func _physics_process(_delta: float) -> void:
 	for i in PLAYERS:
 		_prev[i] = _now[i]
 		_now[i] = _sample(i)
+		_held[i] = _hold(_held[i], Vector2i(_now[i].get("x", 0), _now[i].get("y", 0)))
+	for device in _pad_now:
+		_pad_held[device] = _hold(_pad_held.get(device, [Vector2i.ZERO, 0]),
+			Vector2i(_pad_now[device].get("x", 0), _pad_now[device].get("y", 0)))
 	_key_latch.clear()
 	_pad_latch.clear()
+
+
+static func _hold(held: Array, dir: Vector2i) -> Array:
+	return [dir, held[1] + 1 if dir == held[0] and dir != Vector2i.ZERO else 0]
+
+
+static func _repeats(held: Array) -> bool:
+	var t: int = held[1]
+	return t >= REPEAT_DELAY and (t - REPEAT_DELAY) % REPEAT_RATE == 0
 
 
 ## Some platforms (notably browsers) deliver controller input without ever
@@ -214,8 +233,11 @@ func pressed(player: int, button: String) -> bool:
 	return _now[player].get(button, false) and not _prev[player].get(button, false)
 
 
-## A direction that was just pushed (for menus); zero otherwise.
+## A direction that was just pushed, or is held long enough to repeat (for
+## menus); zero otherwise.
 func nudged(player: int) -> Vector2i:
+	if _repeats(_held[player]):
+		return _held[player][0]
 	var x: int = _now[player].get("x", 0)
 	var y: int = _now[player].get("y", 0)
 	var px: int = _prev[player].get("x", 0)
@@ -247,6 +269,8 @@ func menu_nudged(only_player_one := false) -> Vector2i:
 
 
 func pad_nudged(device: int) -> Vector2i:
+	if _repeats(_pad_held.get(device, [Vector2i.ZERO, 0])):
+		return _pad_held[device][0]
 	var now: Dictionary = _pad_now.get(device, {})
 	var prev: Dictionary = _pad_prev.get(device, {})
 	var x: int = now.get("x", 0) if now.get("x", 0) != prev.get("x", 0) else 0

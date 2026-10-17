@@ -11,11 +11,17 @@ const EFFECT_LEVELS := ["LOW", "HIGH"]
 const LABEL_STYLES := ["AUTO", "XBOX", "PLAYSTATION"]
 
 var window_mode := 0
-var vsync := true
+## 0 = VSync on (smooth, a frame or two of delay), 1 = low latency (VSync
+## off, frame rate capped at twice the screen's refresh rate), 2 = off and
+## uncapped.
+var vsync_mode := 0
+const VSYNC_MODES := ["ON", "LOW LATENCY", "OFF"]
 var shake := 2
 var effects := 1
 var scanlines := false
 var show_fps := false
+## Controller vibration on catches, throws, dashes and blocks.
+var rumble := true
 var show_catch_zones := false
 ## Button names in prompts: 0 follows the controller, 1 Xbox, 2 PlayStation.
 var button_labels := 0
@@ -47,13 +53,17 @@ func load_settings() -> void:
 	if cfg.load(PATH) != OK:
 		return
 	window_mode = int(cfg.get_value("graphics", "window_mode", window_mode))
-	vsync = bool(cfg.get_value("graphics", "vsync", vsync))
+	if cfg.has_section_key("graphics", "vsync_mode"):
+		vsync_mode = clampi(int(cfg.get_value("graphics", "vsync_mode", vsync_mode)), 0, VSYNC_MODES.size() - 1)
+	elif cfg.has_section_key("graphics", "vsync"):
+		vsync_mode = 0 if bool(cfg.get_value("graphics", "vsync", true)) else 2
 	shake = int(cfg.get_value("graphics", "shake", shake))
 	effects = int(cfg.get_value("graphics", "effects", effects))
 	scanlines = bool(cfg.get_value("graphics", "scanlines", scanlines))
 	show_fps = bool(cfg.get_value("graphics", "show_fps", show_fps))
 	show_catch_zones = bool(cfg.get_value("graphics", "show_catch_zones", show_catch_zones))
 	button_labels = int(cfg.get_value("controls", "button_labels", button_labels))
+	rumble = bool(cfg.get_value("controls", "rumble", rumble))
 	master_volume = float(cfg.get_value("audio", "master", master_volume))
 	player_name = str(cfg.get_value("online", "name", player_name)).left(16)
 	last_address = str(cfg.get_value("online", "last_address", last_address))
@@ -67,13 +77,14 @@ func load_settings() -> void:
 func save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("graphics", "window_mode", window_mode)
-	cfg.set_value("graphics", "vsync", vsync)
+	cfg.set_value("graphics", "vsync_mode", vsync_mode)
 	cfg.set_value("graphics", "shake", shake)
 	cfg.set_value("graphics", "effects", effects)
 	cfg.set_value("graphics", "scanlines", scanlines)
 	cfg.set_value("graphics", "show_fps", show_fps)
 	cfg.set_value("graphics", "show_catch_zones", show_catch_zones)
 	cfg.set_value("controls", "button_labels", button_labels)
+	cfg.set_value("controls", "rumble", rumble)
 	cfg.set_value("audio", "master", master_volume)
 	cfg.set_value("online", "name", player_name)
 	cfg.set_value("online", "last_address", last_address)
@@ -95,7 +106,12 @@ func apply() -> void:
 			2:
 				DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 		DisplayServer.window_set_vsync_mode(
-			DisplayServer.VSYNC_ENABLED if vsync else DisplayServer.VSYNC_DISABLED)
+			DisplayServer.VSYNC_ENABLED if vsync_mode == 0 else DisplayServer.VSYNC_DISABLED)
+		# Low latency: no VSync queue, but no point drawing far more frames
+		# than the screen can show either.
+		var refresh := DisplayServer.screen_get_refresh_rate()
+		var cap := clampi(roundi((refresh if refresh > 0 else 60.0) * 2.0), 120, 360)
+		Engine.max_fps = cap if vsync_mode == 1 else 0
 	var bus := AudioServer.get_bus_index("Master")
 	AudioServer.set_bus_volume_db(bus, linear_to_db(maxf(master_volume, 0.0001)))
 	AudioServer.set_bus_mute(bus, master_volume <= 0.001)
