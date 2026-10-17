@@ -63,6 +63,8 @@ class PlayerState:
 
 
 class DiscState:
+	## Sideways drift per tick that steers an aimed power throw's pattern.
+	var drift := 0.0
 	var state: int = Disc.HELD
 	var owner := LEFT
 	var pos := Vector2.ZERO
@@ -273,7 +275,7 @@ static func _load_object(o: Object, d: Dictionary) -> void:
 # --- Simulation ------------------------------------------------------------
 
 ## Buttons that are buffered (see PlayerState.buffer).
-const BUFFERED := ["a", "b", "jump", "slap"]
+const BUFFERED := ["a", "b", "jump", "slap", "curve_high", "curve_low"]
 
 
 func step(inputs: Array) -> void:
@@ -377,14 +379,18 @@ func _update_player(p: PlayerState, input: Dictionary) -> void:
 		if phase == Phase.SERVE and p.hold_ticks < int(cfg.match.serve_delay_ticks):
 			return
 		if input.get("slap", false) and ex_full(p.side):
-			_special(p, true)
+			_special(p, true, input)
 		elif input.get("b", false):
 			_lob(p, input)
 		elif input.get("a", false):
 			if p.charged:
-				_special(p, false)
+				_special(p, false, input)
 			else:
 				_throw(p, input, false)
+		elif input.get("curve_high", false) or input.get("curve_low", false):
+			# One-button curve throws: high starts up and bends down (like
+			# 8-9-6), low starts down and bends up (like 2-3-6).
+			_throw(p, input, false, -1 if input.get("curve_high", false) else 1)
 		elif p.hold_ticks >= _hold_limit(p):
 			_throw(p, {"x": 0, "y": 0}, false)
 		return
@@ -519,10 +525,12 @@ func _update_flying() -> void:
 	if disc.pos.y < r:
 		disc.pos.y = r + (r - disc.pos.y)
 		disc.vel.y = absf(disc.vel.y)
+		disc.drift = absf(disc.drift)
 		_on_wall()
 	elif disc.pos.y > h - r:
 		disc.pos.y = (h - r) - (disc.pos.y - (h - r))
 		disc.vel.y = -absf(disc.vel.y)
+		disc.drift = -absf(disc.drift)
 		_on_wall()
 
 	for b in barriers:
@@ -564,6 +572,7 @@ func _move_by_pattern() -> void:
 		Pattern.SNAKE:
 			var amp := float(s.snake_amplitude) * court_height()
 			disc.pos.x += fwd * disc.speed
+			_drift_base()
 			var y := disc.base.y + amp * sin(t * float(s.snake_frequency))
 			disc.vel.y = y - disc.pos.y
 			disc.pos.y = clampf(y, r, court_height() - r)
@@ -581,10 +590,12 @@ func _move_by_pattern() -> void:
 			if t % int(s.zigzag_ticks) == 0:
 				disc.vel.y = -disc.vel.y
 			disc.pos += disc.vel
+			disc.pos.y += disc.drift
 		Pattern.LOOP:
 			var radius := float(s.loop_radius)
 			var a := t * float(s.loop_angular_speed)
 			disc.base.x += fwd * disc.speed * float(s.loop_forward_mult)
+			_drift_base()
 			var target := disc.base + Vector2(fwd * sin(a) * radius, -(1.0 - cos(a)) * radius * signf(disc.vel.y + 0.001))
 			target.y = clampf(target.y, r, court_height() - r)
 			disc.pos = target
@@ -595,6 +606,18 @@ func _move_by_pattern() -> void:
 		_:
 			disc.pos += disc.vel
 			disc.vel.y += disc.curve
+
+
+## Moves a weaving pattern's centre line by the aim drift, bouncing the
+## drift back off the walls.
+func _drift_base() -> void:
+	if disc.drift == 0.0:
+		return
+	var r := disc_radius()
+	disc.base.y += disc.drift
+	if disc.base.y < r or disc.base.y > court_height() - r:
+		disc.base.y = clampf(disc.base.y, r, court_height() - r)
+		disc.drift = -disc.drift
 
 
 func _on_wall() -> void:
@@ -683,10 +706,10 @@ func _catch(p: PlayerState) -> void:
 		phase_ticks = 0
 
 
-func _throw(p: PlayerState, input: Dictionary, smash: bool) -> void:
+func _throw(p: PlayerState, input: Dictionary, smash: bool, curve := 0) -> void:
 	var fwd := forward(p.side)
 	var t: Dictionary = cfg.throw
-	var curve_dir := 0 if p.serving or smash else _detect_curve(p)
+	var curve_dir := 0 if p.serving or smash else (curve if curve != 0 else _detect_curve(p))
 	var dir: Vector2
 	disc.curve = 0.0
 	if curve_dir != 0:
@@ -719,7 +742,7 @@ func _throw(p: PlayerState, input: Dictionary, smash: bool) -> void:
 
 
 ## The character's special throw; `ex` makes it the gauge-powered version.
-func _special(p: PlayerState, ex: bool) -> void:
+func _special(p: PlayerState, ex: bool, input: Dictionary) -> void:
 	var s: Dictionary = cfg.special
 	var fwd := forward(p.side)
 	var pattern: int = PATTERN_NAMES.get(p.character.get("special", "cannon"), Pattern.CANNON)
@@ -729,27 +752,40 @@ func _special(p: PlayerState, ex: bool) -> void:
 		speed *= float(s.ex_speed_mult)
 		knock = float(s.ex_knock_mult)
 		p.ex = 0
-	var aim := float(_stick_y(p))
+	# Aim with the stick as the throw goes (analog or 8-way, -1..1). Each
+	# pattern steers its own way: a drift across the court for the weaving
+	# ones, a real angle for the straight ones.
+	var aim := aim_y(input)
+	var side := signf(aim) if aim != 0.0 else 1.0
+	var drift := aim * tan(deg_to_rad(float(s.aim_drift_degrees)))
 	var dir := Vector2(fwd, 0)
 	match pattern:
 		Pattern.ZIGZAG:
 			var a := deg_to_rad(float(s.zigzag_angle_degrees))
-			dir = Vector2(fwd * cos(a), (aim if aim != 0.0 else 1.0) * sin(a))
+			dir = Vector2(fwd * cos(a), side * sin(a))
 		Pattern.WALLBURN:
-			var toward := aim if aim != 0.0 else (-1.0 if p.pos.y < court_height() / 2.0 else 1.0)
+			var toward := side if aim != 0.0 else (-1.0 if p.pos.y < court_height() / 2.0 else 1.0)
 			dir = Vector2(fwd * 0.55, toward * 0.83).normalized()
 		Pattern.RICOCHET:
 			speed *= float(s.ricochet_speed_mult)
-			var a := deg_to_rad(float(s.ricochet_angle_degrees))
-			dir = Vector2(fwd * cos(a), (aim if aim != 0.0 else 1.0) * sin(a))
+			# A light tilt gives a shallow bank, a full one the steep angle.
+			var steep := float(s.ricochet_angle_degrees)
+			var deg := steep if aim == 0.0 else lerpf(float(s.ricochet_min_angle_degrees), steep, absf(aim))
+			dir = Vector2(fwd * cos(deg_to_rad(deg)), side * sin(deg_to_rad(deg)))
 		Pattern.CANNON:
 			knock = maxf(knock, float(s.cannon_knock_mult))
-			dir = Vector2(fwd, aim * 0.15).normalized()
+			dir = Vector2(fwd, aim * tan(deg_to_rad(float(s.cannon_aim_degrees)))).normalized()
 			speed *= float(s.cannon_start_mult)
 		Pattern.LOOP:
-			dir = Vector2(fwd, aim if aim != 0.0 else -1.0)
+			# The loop circles away from its starting direction, so start
+			# opposite the aim to swing it the way the stick points.
+			dir = Vector2(fwd, -side if aim != 0.0 else -1.0)
 	_launch(p, dir * speed, speed, pattern)
 	disc.base = disc.pos
+	if pattern in [Pattern.SNAKE, Pattern.ZIGZAG]:
+		disc.drift = drift * speed
+	elif pattern == Pattern.LOOP:
+		disc.drift = drift * speed * float(s.loop_forward_mult)
 	disc.knock_mult = knock
 	disc.ex = ex
 	disc.supersonic = true
@@ -843,6 +879,7 @@ func _air(kind: int, from: Vector2, to: Vector2, from_z: float, by: int, flight:
 func _launch(p: PlayerState, vel: Vector2, speed: float, pattern: int) -> void:
 	disc.vel = vel
 	disc.curve = 0.0
+	disc.drift = 0.0
 	disc.pattern = pattern
 	disc.pattern_ticks = 0
 	disc.knock_mult = 1.0

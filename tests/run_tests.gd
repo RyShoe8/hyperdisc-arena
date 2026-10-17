@@ -33,6 +33,9 @@ func _init() -> void:
 			return
 	for test in [
 		"test_every_character_has_own_throw_sounds",
+		"test_shoulder_buttons_throw_curves",
+		"test_power_throws_follow_the_aim",
+		"test_old_saves_free_rb_for_curves",
 		"test_online_delay_follows_ping",
 		"test_menu_direction_repeats_when_held",
 		"test_soft_tilt_still_blocks",
@@ -1130,3 +1133,57 @@ func test_menu_direction_repeats_when_held() -> void:
 	check(fired.size() >= 3 and fired[0] >= ControlsScript.REPEAT_DELAY - 1, "holding a direction repeats after a pause (%s)" % [fired])
 	held = ControlsScript._hold(held, Vector2i.ZERO)
 	check(not ControlsScript._repeats(held), "letting go stops the repeat")
+
+func test_shoulder_buttons_throw_curves() -> void:
+	var low := new_sim()
+	var lp := hold(low, MatchSim.LEFT)
+	lp.pos = Vector2(200, low.court_height() / 2.0)
+	low.disc.pos = lp.pos
+	low.step([press({"curve_low": true}), IDLE])
+	check(low.disc.state == MatchSim.Disc.FLYING and low.disc.vel.y > 0.0 and low.disc.curve < 0.0,
+		"curve low starts down and bends up, like 2-3-6")
+	var high := new_sim()
+	var hp := hold(high, MatchSim.LEFT)
+	hp.pos = Vector2(200, high.court_height() / 2.0)
+	high.disc.pos = hp.pos
+	high.step([press({"curve_high": true}), IDLE])
+	check(high.disc.vel.y < 0.0 and high.disc.curve > 0.0, "curve high starts up and bends down, like 8-9-6")
+	var back := InputCodec.decode(InputCodec.encode({"curve_high": true, "curve_low": false}))
+	check(back.curve_high and not back.curve_low, "curve buttons survive the network")
+
+
+func test_power_throws_follow_the_aim() -> void:
+	# Patterns weave and bounce, so judge by where the disc spends its flight
+	# (average height) or, for bank shots, which way it first heads.
+	for c in balance.characters.size():
+		var mean := []
+		var first := []
+		for aim in [-1, 1]:
+			var sim := new_sim(0, c, 0)
+			var p := hold(sim, MatchSim.LEFT)
+			var mid := sim.court_height() / 2.0
+			p.pos = Vector2(200, mid)
+			sim.disc.pos = p.pos
+			p.ex = int(balance.ex.max)
+			sim.step([press({"slap": true, "y": aim}), IDLE])
+			var total := 0.0
+			var heading := 0.0
+			for i in 26:
+				sim.step([IDLE, IDLE])
+				total += sim.disc.pos.y
+				if heading == 0.0 and absf(sim.disc.pos.y - mid) > 20.0:
+					heading = signf(sim.disc.pos.y - mid)
+			mean.append(total / 26.0)
+			first.append(heading)
+		var follows: bool = mean[0] < mean[1] - 40.0 or (first[0] < 0.0 and first[1] > 0.0)
+		check(follows, "%s's power throw goes where it's aimed (mean up %.0f / down %.0f, heads %s)" % [balance.characters[c].id, mean[0], mean[1], first])
+
+
+func test_old_saves_free_rb_for_curves() -> void:
+	var controls = ControlsScript.new()
+	controls.set_bindings({"players": [
+		{"keys": {}, "pad": {"slap": [JOY_BUTTON_Y, JOY_BUTTON_RIGHT_SHOULDER]}},
+		{"keys": {}, "pad": {}}]})
+	check(JOY_BUTTON_RIGHT_SHOULDER not in controls.bindings[0].pad.slap, "RB comes off slap in old saves")
+	check(controls.bindings[0].pad.curve_low == [JOY_BUTTON_RIGHT_SHOULDER], "and becomes curve low")
+	controls.free()

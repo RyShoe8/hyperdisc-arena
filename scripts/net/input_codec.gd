@@ -6,9 +6,11 @@
 ## x/y), 1..MOVE_ANGLES = that angle step, so running follows the stick
 ## freely while throws keep their 8-way aim.
 ## Bit 16: "soft", the stick is only lightly tilted (a block still counts).
+## Bits 17-18: the curve-throw buttons (EXTRA_BUTTONS).
 extends RefCounted
 
 const BUTTONS := ["a", "b", "jump", "slap", "a_down", "b_down"]
+const EXTRA_BUTTONS := ["curve_high", "curve_low"]
 const IDLE := 5  # x = 0, y = 0, no buttons
 const MOVE_ANGLES := 48  # 7.5 degree steps: includes straight and exact diagonals
 
@@ -21,6 +23,9 @@ static func encode(input: Dictionary) -> int:
 	v |= clampi(int(input.get("ma", 0)), 0, MOVE_ANGLES) << 10
 	if input.get("soft", false):
 		v |= 1 << 16
+	for i in EXTRA_BUTTONS.size():
+		if input.get(EXTRA_BUTTONS[i], false):
+			v |= 1 << (17 + i)
 	return v
 
 
@@ -30,6 +35,8 @@ static func decode(v: int) -> Dictionary:
 		out[BUTTONS[i]] = (v >> (4 + i)) & 1 == 1
 	out["ma"] = (v >> 10) & 63
 	out["soft"] = (v >> 16) & 1 == 1
+	for i in EXTRA_BUTTONS.size():
+		out[EXTRA_BUTTONS[i]] = (v >> (17 + i)) & 1 == 1
 	return out
 
 

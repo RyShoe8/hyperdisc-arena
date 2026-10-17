@@ -9,7 +9,7 @@ const LESSONS := [
 	["CATCH", "Move your floor circle onto the disc's path.\nCatching is automatic: no button needed.", "move"],
 	["AIMED THROW", "With the disc, hold UP and tap {a}.\nYour stick aims the shot; you cannot move while holding.", "a"],
 	["WALL SHOT", "Hold UP and tap {a}.\nWatch your shot bounce off the side wall.", "a"],
-	["CURVE THROW", "Roll DOWN > DOWN-RIGHT > RIGHT, then tap {a}.\nFinish the quarter-circle in {curve_ms} ms.", "a"],
+	["CURVE THROW", "Tap {curve_high} to curve it high or {curve_low} to curve it low.\nOr roll DOWN > DOWN-RIGHT > RIGHT in {curve_ms} ms, then tap {a}.", "curve_low"],
 	["LOB", "With the disc, tap {b} to lob over your opponent.\nEarly = deep lob. Waiting {lob_ms} ms = short lob.", "b"],
 	["JUMP", "Empty-handed, tap {jump}.\nJump first; holding the button does not extend it.", "jump"],
 	["AIR CATCH", "Stay under the landing ring. Tap {jump} on JUMP NOW.\nCatch the descending disc before you land.", "jump"],
@@ -155,7 +155,7 @@ func step(input: Dictionary) -> void:
 			4:
 				if e.type == "throw" and input.get("a", false) and Sim.aim_y(input) < -0.5: stage = 1
 			5:
-				if e.type == "throw" and input.get("a", false) and e.curve: _success()
+				if e.type == "throw" and e.curve: _success()
 			6:
 				if e.type == "lob": _success()
 			7:

@@ -30,6 +30,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	DirAccess.make_dir_recursive_absolute(CACHE)
 	_player = AudioStreamPlayer.new()
+	_player.bus = _music_bus()
 	add_child(_player)
 	_player.finished.connect(_next)
 	var config := ConfigFile.new()
@@ -40,6 +41,23 @@ func _ready() -> void:
 			music_volume = 0.9
 	Online.playbound.profile_changed.connect(_account_changed)
 	refresh()
+
+## Music gets its own bus, lifted MUSIC_GAIN_DB to sit level with the
+## effects (which get a similar lift) and held under a limiter so loud
+## tracks can't clip.
+const MUSIC_GAIN_DB := 6.0
+func _music_bus() -> String:
+	if AudioServer.get_bus_index("Music") == -1:
+		AudioServer.add_bus()
+		var i := AudioServer.bus_count - 1
+		AudioServer.set_bus_name(i, "Music")
+		AudioServer.set_bus_send(i, "Master")
+		AudioServer.set_bus_volume_db(i, MUSIC_GAIN_DB)
+		var limiter := AudioEffectLimiter.new()
+		limiter.ceiling_db = -1.0
+		AudioServer.add_bus_effect(i, limiter)
+	return "Music"
+
 
 func _process(delta: float) -> void:
 	_player.volume_db = linear_to_db(maxf(0.0001, music_volume))

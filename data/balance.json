@@ -128,7 +128,7 @@
     "cannon_start_mult": 0.8,
     "cannon_accel": 1.045,
     "cannon_max_mult": 1.7,
-    "cannon_knock_mult": 2.8
+    "cannon_knock_mult": 2.8, "aim_drift_degrees": 22, "cannon_aim_degrees": 28, "ricochet_min_angle_degrees": 35
   },
   "ex": {
     "max": 100,

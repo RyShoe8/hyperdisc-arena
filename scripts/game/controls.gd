@@ -28,23 +28,27 @@ const SNAP_DEGREES := 8.0
 ## Device ids for virtual (phone) controllers; real pads are far below this.
 const VIRTUAL_BASE := 1000
 ## Rebindable actions, in the order the options menu lists them.
-const ACTIONS := ["a", "b", "jump", "slap", "start"]
+const ACTIONS := ["a", "b", "jump", "slap", "curve_high", "curve_low", "start"]
 const ACTION_NAMES := {
 	"a": "THROW / DASH / BLOCK", "b": "LOB / DROP SHOT", "jump": "JUMP",
-	"slap": "SLAP / POWER THROW", "start": "PAUSE",
+	"slap": "SLAP / POWER THROW", "curve_high": "CURVE THROW HIGH", "curve_low": "CURVE THROW LOW",
+	"start": "PAUSE",
 }
 const MOVE_KEYS := [
 	{"up": KEY_W, "down": KEY_S, "left": KEY_A, "right": KEY_D},
 	{"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT},
 ]
 const DEFAULT_KEYS := [
-	{"a": [KEY_J], "b": [KEY_K], "jump": [KEY_L], "slap": [KEY_I], "start": [KEY_ESCAPE, KEY_ENTER]},
-	{"a": [KEY_KP_1], "b": [KEY_KP_2], "jump": [KEY_KP_3], "slap": [KEY_KP_5],
-		"start": [KEY_BACKSPACE, KEY_KP_ENTER]},
+	{"a": [KEY_J], "b": [KEY_K], "jump": [KEY_L], "slap": [KEY_I], "curve_high": [KEY_U],
+		"curve_low": [KEY_O], "start": [KEY_ESCAPE, KEY_ENTER]},
+	{"a": [KEY_KP_1], "b": [KEY_KP_2], "jump": [KEY_KP_3], "slap": [KEY_KP_5], "curve_high": [KEY_KP_4],
+		"curve_low": [KEY_KP_6], "start": [KEY_BACKSPACE, KEY_KP_ENTER]},
 ]
+## The shoulders throw curves: left bends it high, right bends it low.
 const DEFAULT_PAD := {
 	"a": [JOY_BUTTON_A], "b": [JOY_BUTTON_B], "jump": [JOY_BUTTON_X],
-	"slap": [JOY_BUTTON_Y, JOY_BUTTON_RIGHT_SHOULDER], "start": [JOY_BUTTON_START],
+	"slap": [JOY_BUTTON_Y], "curve_high": [JOY_BUTTON_LEFT_SHOULDER],
+	"curve_low": [JOY_BUTTON_RIGHT_SHOULDER], "start": [JOY_BUTTON_START],
 }
 
 ## Controller device id per player slot, or -1 when the slot has none.
@@ -116,6 +120,12 @@ func set_bindings(data: Dictionary) -> void:
 			for action in ACTIONS:
 				if src is Dictionary and src.get(action) is Array and not src[action].is_empty():
 					bindings[i][kind][action] = src[action].duplicate()
+			# Saves from before the curve buttons had RB on slap: it's a curve
+			# button now, so take it off slap unless that would leave it empty.
+			if kind == "pad" and src is Dictionary and not src.has("curve_low"):
+				var slap: Array = bindings[i].pad.slap
+				if slap.size() > 1:
+					slap.erase(JOY_BUTTON_RIGHT_SHOULDER)
 
 
 ## Starts capturing the next key ("keys") or controller button ("pad") for
@@ -225,7 +235,8 @@ func input(player: int) -> Dictionary:
 	return {"x": s.get("x", 0), "y": s.get("y", 0), "ma": s.get("ma", 0),
 		"a": pressed(player, "a"), "b": pressed(player, "b"),
 		"jump": pressed(player, "jump"), "slap": pressed(player, "slap"),
-		"a_down": s.get("a", false), "b_down": s.get("b", false), "soft": s.get("soft", false)}
+		"a_down": s.get("a", false), "b_down": s.get("b", false), "soft": s.get("soft", false),
+		"curve_high": pressed(player, "curve_high"), "curve_low": pressed(player, "curve_low")}
 
 
 ## True on the tick a button goes down.

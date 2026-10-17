@@ -21,7 +21,8 @@ var effects := 1
 var scanlines := false
 var show_fps := false
 ## Controller vibration on catches, throws, dashes and blocks.
-var rumble := true
+var rumble_level := 1
+const RUMBLE_LEVELS := ["OFF", "NORMAL", "STRONG"]
 var show_catch_zones := false
 ## Button names in prompts: 0 follows the controller, 1 Xbox, 2 PlayStation.
 var button_labels := 0
@@ -63,7 +64,10 @@ func load_settings() -> void:
 	show_fps = bool(cfg.get_value("graphics", "show_fps", show_fps))
 	show_catch_zones = bool(cfg.get_value("graphics", "show_catch_zones", show_catch_zones))
 	button_labels = int(cfg.get_value("controls", "button_labels", button_labels))
-	rumble = bool(cfg.get_value("controls", "rumble", rumble))
+	if cfg.has_section_key("controls", "rumble_level"):
+		rumble_level = clampi(int(cfg.get_value("controls", "rumble_level", 1)), 0, RUMBLE_LEVELS.size() - 1)
+	elif cfg.has_section_key("controls", "rumble"):
+		rumble_level = 1 if bool(cfg.get_value("controls", "rumble", true)) else 0
 	master_volume = float(cfg.get_value("audio", "master", master_volume))
 	player_name = str(cfg.get_value("online", "name", player_name)).left(16)
 	last_address = str(cfg.get_value("online", "last_address", last_address))
@@ -84,7 +88,7 @@ func save() -> void:
 	cfg.set_value("graphics", "show_fps", show_fps)
 	cfg.set_value("graphics", "show_catch_zones", show_catch_zones)
 	cfg.set_value("controls", "button_labels", button_labels)
-	cfg.set_value("controls", "rumble", rumble)
+	cfg.set_value("controls", "rumble_level", rumble_level)
 	cfg.set_value("audio", "master", master_volume)
 	cfg.set_value("online", "name", player_name)
 	cfg.set_value("online", "last_address", last_address)
