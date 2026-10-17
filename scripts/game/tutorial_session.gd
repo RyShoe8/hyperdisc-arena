@@ -5,7 +5,7 @@ extends RefCounted
 const Sim := preload("res://scripts/sim/match_sim.gd")
 const LESSONS := [
 	["MOVE", "Move into the cyan ring.", "move"],
-	["DASH", "Hold a direction, then tap {a} while empty-handed.", "a"],
+	["DIVE", "Hold a direction, then tap {a} while empty-handed.\nReach for the disc, then recover to your feet.", "a"],
 	["CATCH", "Move your floor circle onto the disc's path.\nCatching is automatic: no button needed.", "move"],
 	["AIMED THROW", "With the disc, hold UP and tap {a}.\nYour stick aims the shot; you cannot move while holding.", "a"],
 	["WALL SHOT", "Hold UP and tap {a}.\nWatch your shot bounce off the side wall.", "a"],

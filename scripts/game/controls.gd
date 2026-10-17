@@ -30,7 +30,7 @@ const VIRTUAL_BASE := 1000
 ## Rebindable actions, in the order the options menu lists them.
 const ACTIONS := ["a", "b", "jump", "slap", "curve_high", "curve_low", "start"]
 const ACTION_NAMES := {
-	"a": "THROW / DASH / BLOCK", "b": "LOB / DROP SHOT", "jump": "JUMP",
+	"a": "THROW / DIVE / BLOCK", "b": "LOB / DROP SHOT", "jump": "JUMP",
 	"slap": "SLAP / POWER THROW", "curve_high": "CURVE THROW HIGH", "curve_low": "CURVE THROW LOW",
 	"start": "PAUSE",
 }

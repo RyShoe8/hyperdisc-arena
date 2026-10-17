@@ -11,10 +11,10 @@ const PixelCrowd := preload("res://scripts/game/view/pixel_crowd.gd")
 
 const SPRITE_SCALE := 0.72
 const DISC_RADIUS := 21.0
-## Flying discs are drawn at waist height with their shadow on the floor
+## Flying discs are drawn at chest height with their shadow on the floor
 ## marking the real position, so a throw passing behind a player is seen to
 ## go behind them rather than through their body.
-const FLY_HEIGHT := 30.0
+const FLY_HEIGHT := 85.0
 const SPECIAL_COLORS := {
 	"mick": Color("ff2e88"), "tiffany": Color("2de2e6"), "pete": Color("ffd23f"),
 	"steve": Color("8ee6ad"), "vanessa": Color("2de2e6"), "keno": Color("ff4d2e"),
@@ -52,6 +52,7 @@ var run_phase: Array[int] = [0, 0]
 var vel: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
 var last_z: Array[float] = [0.0, 0.0]
 var land_ticks: Array[int] = [0, 0]
+var dive_age: Array[int] = [100, 100]
 var ghosts: Array[Dictionary] = []
 const LAND_TICKS := 8
 const GHOST_LIFE := 10
@@ -121,6 +122,7 @@ func tick() -> void:
 	ghosts = ghosts.filter(func(g): return g.age < GHOST_LIFE)
 	for p in sim.players:
 		vel[p.side] = p.pos - last_pos[p.side]
+		dive_age[p.side] += 1
 		land_ticks[p.side] = maxi(0, land_ticks[p.side] - 1)
 		if last_z[p.side] > 0.0 and p.z <= 0.0:
 			land_ticks[p.side] = LAND_TICKS
@@ -130,7 +132,8 @@ func tick() -> void:
 			var pose := _pose(p, anim)
 			ghosts.append({"side": p.side, "frame": arts[p.side].frame_for(anim[0], anim[1]),
 				"ground": proj.air_point(p.pos, p.z) + pose.offset, "stretch": pose.stretch,
-				"lean": pose.lean, "age": 0})
+				"lean": pose.lean, "age": 0,
+				"facing_right": p.dash_dir.x > 0.0 if anim[0] == "dash" and absf(p.dash_dir.x) > 0.2 else p.side == MatchSim.LEFT})
 		moving[p.side] = p.pos.distance_to(last_pos[p.side]) > 0.5
 		if moving[p.side]:
 			var dx: float = p.pos.x - last_pos[p.side].x
@@ -164,6 +167,8 @@ func handle(e: Dictionary) -> void:
 		pixel_spectators.handle(e)
 	var s := Settings.shake_scale()
 	match e.type:
+		"dash":
+			dive_age[e.side] = 0
 		"ready":
 			overlay = {"kind": "ready", "ticks": int(sim.cfg.match.ready_ticks), "set": e.set}
 		"go":
@@ -351,8 +356,6 @@ func _draw_shadows(ci: CanvasItem) -> void:
 		var g := proj.floor_point(p.pos)
 		var s := 1.0 - clampf(p.z / 200.0, 0.0, 0.5)
 		_ellipse(ci, g, 34 * s, 12 * s, Color(0.1, 0.0, 0.2, 0.35))
-		if Settings.show_catch_zones:
-			_catch_zone(ci, p)
 	var d := sim.disc
 	if sim.phase != MatchSim.Phase.MATCH_OVER and d.state != MatchSim.Disc.HELD:
 		var g := proj.floor_point(d.pos)
@@ -360,9 +363,11 @@ func _draw_shadows(ci: CanvasItem) -> void:
 		_ellipse(ci, g, DISC_RADIUS * s, DISC_RADIUS * 0.45 * s, Color(0.1, 0.0, 0.2, 0.4))
 
 
-## The catch circle drawn on the floor (Options > Graphics > Show catch zones).
+## Catch circle projected at disc height (Options > Graphics > Show catch zones).
 func _catch_zone(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
-	var g := proj.floor_point(p.pos)
+	# Project the same floor collision radius onto the incoming disc's plane.
+	# Airborne lobs still use their landing circle on the court.
+	var g := proj.air_point(p.pos, FLY_HEIGHT) if sim.disc.state == MatchSim.Disc.FLYING else proj.floor_point(p.pos)
 	var r := float(sim.cfg.player.catch_radius) * proj.scale
 	var c := UI.P1 if p.side == MatchSim.LEFT else UI.P2
 	ci.draw_set_transform(g + _current_offset, 0.0, Vector2(1.0, proj.floor_y / proj.scale))
@@ -414,6 +419,10 @@ func _draw_referee(ci: CanvasItem) -> void:
 func _anim_for(p: MatchSim.PlayerState) -> Array:
 	if sim.phase == MatchSim.Phase.MATCH_OVER:
 		return ["win" if sim.winner == p.side else "lose", frame]
+	if p.dash_ticks > 0:
+		return ["dash", int(sim.cfg.player.dash_ticks) - p.dash_ticks]
+	if p.recovery_ticks > 0 and dive_age[p.side] <= int(sim.cfg.player.dash_ticks) + int(sim.cfg.player.dash_recovery_ticks):
+		return ["dash", int(sim.cfg.player.dash_ticks) + int(sim.cfg.player.dash_recovery_ticks) - p.recovery_ticks]
 	# A throw made out of the knockback slide shows the throw, not the slide.
 	var acting: bool = ACTION_ANIMS.has(p.action) and p.action_ticks < ACTION_ANIMS[p.action][1] 		and p.action != MatchSim.Act.CATCH
 	if p.knock_ticks > 0 and not acting:
@@ -429,8 +438,6 @@ func _anim_for(p: MatchSim.PlayerState) -> Array:
 		return ["jump", mini(19, int(flight * 20.0))]
 	if p.recovery_ticks > 0 and p.action == MatchSim.Act.JUMP:
 		return ["jump", 19]
-	if p.dash_ticks > 0:
-		return ["dash", int(sim.cfg.player.dash_ticks) - p.dash_ticks + 4]
 	if p.holding:
 		return ["hold", frame]
 	if p.charge > 0:
@@ -468,14 +475,12 @@ func _pose(p: MatchSim.PlayerState, anim: Array) -> Dictionary:
 			var speed := clampf(vel[p.side].length() / run_speed, 0.0, 1.0)
 			lean = clampf(vel[p.side].x / run_speed, -1.0, 1.0) * 0.11
 			var step := absf(sin(run_phase[p.side] * 0.32))
-			offset.y = -step * 7.0 * speed
-			stretch = Vector2(1.0 - 0.03 * step, 1.0 + 0.04 * step)
+			offset.y = -step * 3.0 * speed
+			stretch = Vector2(1.0 - 0.01 * step, 1.0 + 0.015 * step)
 		"dash":
-			if absf(p.dash_dir.x) > 0.2:
-				lean = signf(p.dash_dir.x) * 0.2
-				stretch = Vector2(1.13, 0.9)
-			else:
-				stretch = Vector2(0.92, 1.08)
+			# Authored launch, horizontal reach, landing and get-up poses.
+			# Avoid stretching the whole body over the new articulated frames.
+			offset.y = -sin(clampf(t / 9.0, 0.0, 1.0) * PI) * 8.0
 		"jump":
 			var up := clampf(p.vz / maxf(float(sim.cfg.player.jump_velocity), 0.001), -1.0, 1.0)
 			stretch = Vector2(1.0 - 0.08 * absf(up), 1.0 + 0.1 * absf(up))
@@ -530,11 +535,13 @@ func _draw_player(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
 	var pose := _pose(p, anim)
 	var ground: Vector2 = proj.air_point(p.pos, p.z) + pose.offset
 	var facing_right := p.side == MatchSim.LEFT
+	if anim[0] == "dash" and absf(p.dash_dir.x) > 0.2:
+		facing_right = p.dash_dir.x > 0.0
 	var c := UI.P1 if p.side == 0 else UI.P2
 	for g in ghosts:
 		if g.side == p.side:
 			var fade := 1.0 - float(g.age) / GHOST_LIFE
-			art.draw(ci, g.frame, g.ground, facing_right, SPRITE_SCALE,
+			art.draw(ci, g.frame, g.ground, g.facing_right, SPRITE_SCALE,
 				Color(c.r * 1.4, c.g * 1.4, c.b * 1.4, 0.4 * fade), g.stretch, g.lean)
 	var tint := Color.WHITE
 	if p.charged or (p.holding and sim.ex_full(p.side)):
@@ -544,11 +551,14 @@ func _draw_player(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
 	if p.knock_ticks > 0 and (frame / 2) % 2 == 0:
 		tint = Color(1.5, 1.5, 1.5)
 	art.draw(ci, f, ground, facing_right, SPRITE_SCALE, tint, pose.stretch, pose.lean)
+	if Settings.show_catch_zones:
+		_catch_zone(ci, p)
 	if p.holding and sim.disc.owner == p.side and sim.phase != MatchSim.Phase.MATCH_OVER \
 			and sim.phase != MatchSim.Phase.POINT_PAUSE and sim.phase != MatchSim.Phase.SET_PAUSE:
 		var hand: Vector2 = art.point(f, "hand") * SPRITE_SCALE
 		if not facing_right:
 			hand.x = -hand.x
+		hand = (hand * pose.stretch).rotated(pose.lean)
 		_draw_disc(ci, ground + hand, 0.0, 0.75)
 		_draw_hold_timer(ci, p, ground + art.point(f, "head") * SPRITE_SCALE)
 	# Player tag over the head.
