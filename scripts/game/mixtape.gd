@@ -14,7 +14,7 @@ var now_playing := {}
 var active_match := ""
 var match_info := {}
 var dub_candidates: Array = []
-var music_volume := 0.7
+var music_volume := 0.9
 var _player: AudioStreamPlayer
 var _playlist: Array = []
 var _index := 0
@@ -34,7 +34,10 @@ func _ready() -> void:
 	_player.finished.connect(_next)
 	var config := ConfigFile.new()
 	if config.load("user://mixtape.cfg") == OK:
-		music_volume = float(config.get_value("audio", "volume", 0.7))
+		music_volume = float(config.get_value("audio", "volume", 0.9))
+		# 0.7 was the old default: treat it as never changed.
+		if is_equal_approx(music_volume, 0.7):
+			music_volume = 0.9
 	Online.playbound.profile_changed.connect(_account_changed)
 	refresh()
 

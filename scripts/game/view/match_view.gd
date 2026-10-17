@@ -684,19 +684,22 @@ func _draw_cutin(ci: CanvasItem) -> void:
 	var out := clampf((cutin.ticks - 0) / 10.0, 0.0, 1.0)
 	var left: bool = cutin.side == 0
 	var c: Color = Color.WHITE if cutin.ex else SPECIAL_COLORS.get(arts[cutin.side].id, UI.PINK)
-	var y := 330.0
+	# Below the court, over the front-row crowd: players are drawn upward from
+	# their feet, so nothing on court is ever hidden.
+	var y := 910.0
 	var w := 1920.0 * slide
 	var x0 := 0.0 if left else 1920.0 - w
-	var band := PackedVector2Array([Vector2(x0, y + 40), Vector2(x0 + w, y), Vector2(x0 + w, y + 190),
-		Vector2(x0, y + 230)])
+	var band := PackedVector2Array([Vector2(x0, y + 14), Vector2(x0 + w, y), Vector2(x0 + w, y + 84),
+		Vector2(x0, y + 98)])
 	ci.draw_colored_polygon(band, Color(0.06, 0.0, 0.14, 0.82 * out))
 	ci.draw_polyline(PackedVector2Array([band[0], band[1]]), Color(c, out), 6)
 	ci.draw_polyline(PackedVector2Array([band[3], band[2]]), Color(c, out), 6)
 	if slide >= 1.0:
 		var art = arts[cutin.side]
-		var px := 220.0 if left else 1700.0
-		var face := Rect2(Vector2(px - 150, y - 20), Vector2(300, 260))
+		var px := 470.0 if left else 1450.0
+		var face := Rect2(Vector2(px - 62, y - 4), Vector2(124, 106))
 		ci.draw_texture_rect_region(art.portrait, face, art.portrait_bust, Color(1, 1, 1, out))
 		var label: String = ("POWER " if cutin.ex else "") + str(cutin.name) + "!"
-		UI.text(ci, Vector2(1030 if left else 890, y + 150), label, 110, Color(c, out), UI.display, 9,
+		var size := UI.fit_size(label, 64, 820.0, UI.display)
+		UI.text(ci, Vector2(1000 if left else 920, y + 70), label, size, Color(c, out), UI.display, 7,
 			HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)
