@@ -37,7 +37,8 @@ other sports:
    - finds where each sound starts
    - keeps the first hit, or a set length
    - mixes to mono at 44.1 kHz
-   - fades out and normalises
+   - fades out and levels it by loudness, so every take of a sound plays
+     equally loud
    - crossfades the crowd bed into a loop
 
 ## In the game

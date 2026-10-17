@@ -6,7 +6,8 @@ SOURCE_DIR defaults to ../refs/sfx/picked (Sonniss GDC bundle files, fetched
 by refs/sfx/remote_zip.py; royalty free, no attribution required). Each
 recipe below picks a source, finds where the sound actually starts, keeps
 either the first hit (impacts) or a fixed length (whooshes, crowds), mixes to
-mono, resamples to 44.1 kHz, fades out, normalises, and writes a 16-bit WAV
+mono, resamples to 44.1 kHz, fades out, levels it by loudness (so every take of
+a sound plays equally loud), and writes a 16-bit WAV
 to assets/sfx/.
 """
 import os
@@ -20,40 +21,42 @@ SRC = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "..", "refs", "sf
 OUT = os.path.join(ROOT, "assets", "sfx")
 RATE = 44100
 
-# out name: (source file, mode, max seconds, peak dBFS)
+# out name: (source file, mode, max seconds, loudness dB)
+# Loudness is the RMS of the sound's active part (within 20 dB of its peak),
+# capped so the peak stays under -0.5 dBFS.
 # mode "hit" keeps the first transient and its decay; "len" keeps max seconds;
 # "loop" is "len" with its end crossfaded into its start for seamless looping.
 RECIPES = {
-    "throw_whoosh_1": ("throw_whoosh_a.wav", "len", 0.45, -3.0),
-    "throw_whoosh_2": ("throw_whoosh_b.wav", "len", 0.45, -3.0),
-    "throw_whoosh_3": ("throw_whoosh_c.wav", "len", 0.4, -3.0),
-    "throw_whoosh_4": ("throw_whoosh_d.wav", "len", 0.5, -3.0),
-    "throw_crack_1": ("throw_crack_serve.wav", "hit", 0.35, -2.0),
-    "throw_crack_2": ("throw_crack_golf.wav", "hit", 0.35, -2.0),
-    "power_whoosh_1": ("power_whoosh_large.wav", "len", 0.9, -1.0),
-    "power_whoosh_2": ("power_whip.wav", "len", 0.8, -1.0),
-    "power_whoosh_3": ("power_doppler.wav", "len", 1.0, -1.0),
-    "special_launch": ("power_scifi_passby.wav", "len", 1.4, -1.0),
-    "catch_1": ("catch_keeper_punch.wav", "hit", 0.4, -1.0),
-    "catch_2": ("catch_punch_heavy.wav", "hit", 0.4, -1.0),
-    "catch_3": ("catch_deep_punch.wav", "hit", 0.4, -1.0),
-    "catch_4": ("catch_clean_deep.wav", "hit", 0.45, -1.0),
-    "catch_body_1": ("catch_low_thud.wav", "hit", 0.35, -4.0),
-    "catch_body_2": ("catch_grab.wav", "hit", 0.35, -6.0),
-    "block": ("catch_blocked.wav", "hit", 0.4, -2.0),
-    "wall_1": ("wall_ad_board.wav", "hit", 0.45, -2.0),
-    "wall_2": ("wall_metal_slam.wav", "hit", 0.5, -3.0),
-    "wall_3": ("wall_rail.wav", "hit", 0.35, -3.0),
-    "net_1": ("net_soccer.wav", "hit", 0.5, -4.0),
-    "net_2": ("net_tennis.wav", "hit", 0.5, -4.0),
-    "ground": ("ground_pass.wav", "hit", 0.3, -6.0),
-    "crowd_goal": ("crowd_goal_swell.wav", "len", 4.0, -2.0),
-    "crowd_cheer": ("crowd_cheers.wav", "len", 3.5, -2.0),
-    "crowd_miss": ("crowd_miss.wav", "len", 3.0, -3.0),
-    "crowd_bed": ("crowd_bed_clapping.wav", "loop", 20.0, -10.0),
-    "whistle": ("whistle_ref.wav", "hit", 1.0, -4.0),
-    "horn": ("horn_party.wav", "len", 1.6, -3.0),
-    "buzzer": ("buzzer.wav", "len", 1.2, -6.0),
+    "throw_whoosh_1": ("throw_whoosh_a.wav", "len", 0.45, -17.0),
+    "throw_whoosh_2": ("throw_whoosh_b.wav", "len", 0.45, -17.0),
+    "throw_whoosh_3": ("throw_whoosh_c.wav", "len", 0.4, -17.0),
+    "throw_whoosh_4": ("throw_whoosh_d.wav", "len", 0.5, -17.0),
+    "throw_crack_1": ("throw_crack_serve.wav", "hit", 0.35, -16.0),
+    "throw_crack_2": ("throw_crack_golf.wav", "hit", 0.35, -16.0),
+    "power_whoosh_1": ("power_whoosh_large.wav", "len", 0.9, -15.0),
+    "power_whoosh_2": ("power_whip.wav", "len", 0.8, -15.0),
+    "power_whoosh_3": ("power_doppler.wav", "len", 1.0, -15.0),
+    "special_launch": ("power_scifi_passby.wav", "len", 1.4, -15.0),
+    "catch_1": ("catch_keeper_punch.wav", "hit", 0.4, -15.0),
+    "catch_2": ("catch_punch_heavy.wav", "hit", 0.4, -15.0),
+    "catch_3": ("catch_deep_punch.wav", "hit", 0.4, -15.0),
+    "catch_4": ("catch_clean_deep.wav", "hit", 0.45, -15.0),
+    "catch_body_1": ("catch_low_thud.wav", "hit", 0.35, -18.0),
+    "catch_body_2": ("catch_grab.wav", "hit", 0.35, -18.0),
+    "block": ("catch_blocked.wav", "hit", 0.4, -16.0),
+    "wall_1": ("wall_ad_board.wav", "hit", 0.45, -16.0),
+    "wall_2": ("wall_metal_slam.wav", "hit", 0.5, -17.0),
+    "wall_3": ("wall_rail.wav", "hit", 0.35, -17.0),
+    "net_1": ("net_soccer.wav", "hit", 0.5, -18.0),
+    "net_2": ("net_tennis.wav", "hit", 0.5, -18.0),
+    "ground": ("ground_pass.wav", "hit", 0.3, -20.0),
+    "crowd_goal": ("crowd_goal_swell.wav", "len", 4.0, -16.0),
+    "crowd_cheer": ("crowd_cheers.wav", "len", 3.5, -16.0),
+    "crowd_miss": ("crowd_miss.wav", "len", 3.0, -17.0),
+    "crowd_bed": ("crowd_bed_clapping.wav", "loop", 20.0, -29.0),
+    "whistle": ("whistle_ref.wav", "hit", 1.0, -15.0),
+    "horn": ("horn_party.wav", "len", 1.6, -17.0),
+    "buzzer": ("buzzer.wav", "len", 1.2, -20.0),
 }
 
 
@@ -109,7 +112,16 @@ def envelope(x, win=256):
     return np.sqrt(np.convolve(x * x, k, mode="same"))
 
 
-def process(src, mode, max_len, peak_db):
+def level(y, loud_db):
+    """Scales y so its active part has the given RMS loudness (dBFS)."""
+    e = envelope(y, 441)
+    active = y[e > e.max() * 0.1]
+    rms = np.sqrt(np.mean(active * active)) if len(active) else 1e-6
+    gain = min(10 ** (loud_db / 20) / max(rms, 1e-9), 10 ** (-0.5 / 20) / max(np.abs(y).max(), 1e-9))
+    return y * gain
+
+
+def process(src, mode, max_len, loud_db):
     x, rate = read_wav(src)
     # Very long ambiences: only read what we need (plus some lead-in).
     x = x[: int(rate * (max_len + 5))]
@@ -133,12 +145,12 @@ def process(src, mode, max_len, peak_db):
         head, tail = y[:n].copy(), y[-n:]
         y = y[:-n]
         y[:n] = head * ramp + tail * (1 - ramp)
-        return y / max(np.abs(y).max(), 1e-6) * (10 ** (peak_db / 20))
+        return level(y, loud_db)
     fade = min(len(y) // 4, int(RATE * (0.08 if mode == "hit" else 0.3)))
     if fade > 0:
         y[-fade:] *= np.linspace(1, 0, fade) ** 2
     y[: min(32, len(y))] *= np.linspace(0, 1, min(32, len(y)))  # click-free start
-    y = y / max(np.abs(y).max(), 1e-6) * (10 ** (peak_db / 20))
+    y = level(y, loud_db)
     return y
 
 
