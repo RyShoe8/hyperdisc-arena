@@ -117,7 +117,7 @@ func handle_packet(data: PackedByteArray) -> void:
 		var start := buf.get_32()
 		var count := buf.get_u8()
 		for i in count:
-			_on_remote_input(start + i, buf.get_u16())
+			_on_remote_input(start + i, buf.get_u32())
 	elif kind == PKT_CHECKSUM:
 		var f := buf.get_32()
 		_remote_checksums[f] = buf.get_64()
@@ -149,7 +149,7 @@ func _send_inputs() -> void:
 	buf.put_32(start)
 	buf.put_u8(maxi(count, 0))
 	for f in range(start, start + maxi(count, 0)):
-		buf.put_u16(local_inputs.get(f, InputCodec.IDLE))
+		buf.put_u32(local_inputs.get(f, InputCodec.IDLE))
 	transport.send(buf.data_array)
 
 

@@ -20,6 +20,11 @@ const PLAYERS := 2
 ## stick resting near the edge doesn't flicker between moving and stopping.
 const DEADZONE := 0.27
 const DEADZONE_RELEASE := 0.2
+## A stick tilted less than this is "soft": a block still counts as a block.
+const SOFT_TILT := 0.6
+## Analog running within this many degrees of straight or an exact diagonal
+## snaps onto it, so lining up on the disc is easy.
+const SNAP_DEGREES := 8.0
 ## Device ids for virtual (phone) controllers; real pads are far below this.
 const VIRTUAL_BASE := 1000
 ## Rebindable actions, in the order the options menu lists them.
@@ -201,7 +206,7 @@ func input(player: int) -> Dictionary:
 	return {"x": s.get("x", 0), "y": s.get("y", 0), "ma": s.get("ma", 0),
 		"a": pressed(player, "a"), "b": pressed(player, "b"),
 		"jump": pressed(player, "jump"), "slap": pressed(player, "slap"),
-		"a_down": s.get("a", false), "b_down": s.get("b", false)}
+		"a_down": s.get("a", false), "b_down": s.get("b", false), "soft": s.get("soft", false)}
 
 
 ## True on the tick a button goes down.
@@ -465,7 +470,8 @@ func _sample(player: int) -> Dictionary:
 	out["y"] = dir.y
 	# The analog stick also moves freely (any angle); D-pad and keys stay 8-way.
 	var raw: Vector2 = pad.get("analog", Vector2.ZERO)
-	out["ma"] = angle_step(raw) if stick != Vector2.ZERO else 0
+	out["ma"] = angle_step(snap_angle(raw)) if stick != Vector2.ZERO else 0
+	out["soft"] = raw != Vector2.ZERO and raw.length() < SOFT_TILT
 	return out
 
 
@@ -522,6 +528,18 @@ func _virtual_state(device: int) -> Dictionary:
 	return {"x": dir.x, "y": dir.y, "analog": analog, "buttons": buttons,
 		"a": buttons[JOY_BUTTON_A], "b": buttons[JOY_BUTTON_B], "jump": buttons[JOY_BUTTON_X],
 		"slap": buttons[JOY_BUTTON_Y], "start": buttons[JOY_BUTTON_START]}
+
+
+## Snaps a stick direction onto straight or an exact diagonal when it's
+## within SNAP_DEGREES of one; otherwise leaves it alone.
+static func snap_angle(v: Vector2) -> Vector2:
+	if v == Vector2.ZERO:
+		return v
+	var a := v.angle()
+	var nearest := roundf(a / (PI / 4.0)) * (PI / 4.0)
+	if absf(angle_difference(a, nearest)) <= deg_to_rad(SNAP_DEGREES):
+		return Vector2.from_angle(nearest) * v.length()
+	return v
 
 
 ## Movement angle step (1..48) for a stick vector, 0 when centred. Matches

@@ -282,6 +282,9 @@ func step(inputs: Array) -> void:
 	# Presses are remembered even during hit-stop, so none are lost.
 	for side in [LEFT, RIGHT]:
 		_buffer_presses(players[side], inputs[side])
+		# Stick motions made during hit-stop count toward curve throws.
+		if phase == Phase.SERVE or phase == Phase.PLAY:
+			_record_motion(players[side], inputs[side])
 	if freeze_ticks > 0:
 		# Hit-stop: the whole game holds for a beat on big impacts.
 		freeze_ticks -= 1
@@ -311,8 +314,6 @@ func step(inputs: Array) -> void:
 				_start_next_set()
 			return
 
-	for side in [LEFT, RIGHT]:
-		_record_motion(players[side], inputs[side])
 	for side in [LEFT, RIGHT]:
 		if phase != Phase.SERVE and phase != Phase.PLAY:
 			break
@@ -473,8 +474,11 @@ func _try_defend(p: PlayerState, input: Dictionary) -> bool:
 	if input.get("b", false) and dist <= float(d.slap_radius):
 		_drop_shot(p)
 		return true
+	# Block: A with the stick centred, or only lightly tilted ("soft"), so a
+	# resting thumb on an analog stick doesn't turn a block into a dash.
 	var move := Vector2(input.get("x", 0), input.get("y", 0))
-	if input.get("a", false) and move == Vector2.ZERO and dist <= float(d.block_radius):
+	var neutral: bool = move == Vector2.ZERO or input.get("soft", false)
+	if input.get("a", false) and neutral and dist <= float(d.block_radius):
 		_block(p)
 		return true
 	return false
@@ -911,12 +915,23 @@ func _stick_y(p: PlayerState) -> int:
 
 ## Quarter-circle motions in numpad notation, relative to facing:
 ## 2-3-6 starts the disc downward and curves it up; 8-9-6 the reverse.
+## A fast roll that skips the diagonal between two ticks (2 straight to 6)
+## counts too.
 func _detect_curve(p: PlayerState) -> int:
-	if _has_sequence(p.history, [2, 3, 6]):
+	if _has_sequence(p.history, [2, 3, 6]) or _has_quick_roll(p.history, 2, 6):
 		return 1
-	if _has_sequence(p.history, [8, 9, 6]):
+	if _has_sequence(p.history, [8, 9, 6]) or _has_quick_roll(p.history, 8, 6):
 		return -1
 	return 0
+
+
+## True if the stick went straight from `from` to `to`, skipping the
+## diagonal (a roll faster than one tick), within the motion window.
+static func _has_quick_roll(history: Array[Vector2i], from: int, to: int) -> bool:
+	for i in range(1, history.size()):
+		if history[i - 1].x == from and history[i].x == to:
+			return true
+	return false
 
 
 static func _has_sequence(history: Array[Vector2i], seq: Array) -> bool:

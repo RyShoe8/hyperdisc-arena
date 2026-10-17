@@ -71,7 +71,7 @@
     "hold_decay_floor": 0.55,
     "curve_angle_degrees": 40,
     "curve_accel": 0.55,
-    "motion_window_ticks": 15,
+    "motion_window_ticks": 18,
     "smash_mult": 1.35,
     "smash_angle_degrees": 25
   },

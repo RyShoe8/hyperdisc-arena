@@ -33,6 +33,10 @@ func _init() -> void:
 			return
 	for test in [
 		"test_every_character_has_own_throw_sounds",
+		"test_soft_tilt_still_blocks",
+		"test_fast_roll_skipping_the_diagonal_curves",
+		"test_curve_motion_during_hitstop_counts",
+		"test_analog_snaps_to_straight_lines",
 		"test_jump_pressed_during_recovery_happens_when_free",
 		"test_buffered_press_expires",
 		"test_throw_pressed_during_hitstop_is_kept",
@@ -1058,3 +1062,51 @@ func test_dash_buffer_is_short() -> void:
 			check(p.dash_ticks > 0, "A then a direction %d ticks later dashes" % gap)
 		else:
 			check(p.dash_ticks == 0, "A then a direction %d ticks later just runs" % gap)
+
+func test_soft_tilt_still_blocks() -> void:
+	for soft in [true, false]:
+		var sim := new_sim()
+		var p := sim.players[MatchSim.LEFT]
+		p.pos = Vector2(300, 300)
+		fly(sim, Vector2(380, 300), Vector2(-6, 0), MatchSim.RIGHT)
+		sim.step([press({"a": true, "x": 0, "y": 1, "ma": 13, "soft": soft}), IDLE])
+		if soft:
+			check(sim.disc.state == MatchSim.Disc.AIR and p.dash_ticks == 0, "A with a light tilt blocks")
+		else:
+			check(p.dash_ticks > 0, "A with a full tilt still dashes")
+	var back := InputCodec.decode(InputCodec.encode({"soft": true, "ma": 48}))
+	check(back.soft and back.ma == 48, "the light-tilt flag survives the network")
+
+
+func test_fast_roll_skipping_the_diagonal_curves() -> void:
+	var sim := new_sim()
+	hold(sim, MatchSim.LEFT)
+	sim.step([press({"y": 1}), IDLE])
+	sim.step([press({"x": 1, "a": true}), IDLE])
+	check(sim.disc.curve < 0.0, "down straight to forward (diagonal skipped) still curves")
+	var plain := new_sim()
+	hold(plain, MatchSim.LEFT)
+	plain.step([press({"y": 1}), IDLE])
+	plain.step([IDLE, IDLE])
+	plain.step([press({"x": 1, "a": true}), IDLE])
+	check(is_zero_approx(plain.disc.curve), "down, let go, then forward is a straight throw")
+
+
+func test_curve_motion_during_hitstop_counts() -> void:
+	var sim := new_sim()
+	hold(sim, MatchSim.LEFT)
+	sim.freeze_ticks = 3
+	sim.step([press({"y": 1}), IDLE])
+	sim.step([press({"x": 1, "y": 1}), IDLE])
+	sim.step([press({"x": 1}), IDLE])
+	sim.step([press({"x": 1, "a": true}), IDLE])
+	check(sim.disc.curve < 0.0, "a quarter circle rolled during hit-stop curves the throw")
+
+
+func test_analog_snaps_to_straight_lines() -> void:
+	var near := ControlsScript.snap_angle(Vector2.from_angle(deg_to_rad(5.0)))
+	check(is_zero_approx(near.angle()), "5 degrees off straight snaps to straight")
+	var diag := ControlsScript.snap_angle(Vector2.from_angle(deg_to_rad(51.0)))
+	check(is_equal_approx(diag.angle(), PI / 4.0), "6 degrees off the diagonal snaps to it")
+	var free := ControlsScript.snap_angle(Vector2.from_angle(deg_to_rad(22.0)))
+	check(is_equal_approx(free.angle(), deg_to_rad(22.0)), "angles in between stay free")

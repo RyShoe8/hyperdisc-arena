@@ -1,10 +1,11 @@
-## Packs a sim input Dictionary into a small integer (16 bits) for the wire
-## and back. Rollback compares inputs by these integers.
+## Packs a sim input Dictionary into a small integer (17 bits, sent as 32)
+## for the wire and back. Rollback compares inputs by these integers.
 ##
 ## Bits 0-3: 8-way direction (x, y) used for aiming. Bits 4-9: buttons.
 ## Bits 10-15: "ma", the analog stick's movement angle: 0 = none (move by
 ## x/y), 1..MOVE_ANGLES = that angle step, so running follows the stick
 ## freely while throws keep their 8-way aim.
+## Bit 16: "soft", the stick is only lightly tilted (a block still counts).
 extends RefCounted
 
 const BUTTONS := ["a", "b", "jump", "slap", "a_down", "b_down"]
@@ -18,6 +19,8 @@ static func encode(input: Dictionary) -> int:
 		if input.get(BUTTONS[i], false):
 			v |= 1 << (4 + i)
 	v |= clampi(int(input.get("ma", 0)), 0, MOVE_ANGLES) << 10
+	if input.get("soft", false):
+		v |= 1 << 16
 	return v
 
 
@@ -26,6 +29,7 @@ static func decode(v: int) -> Dictionary:
 	for i in BUTTONS.size():
 		out[BUTTONS[i]] = (v >> (4 + i)) & 1 == 1
 	out["ma"] = (v >> 10) & 63
+	out["soft"] = (v >> 16) & 1 == 1
 	return out
 
 
