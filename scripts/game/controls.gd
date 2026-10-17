@@ -16,7 +16,10 @@ signal changed(message: String)
 
 const PLAYERS := 2
 ## Stick travel ignored around the centre, to stop drift on worn sticks.
-const DEADZONE := 0.35
+## Movement starts past DEADZONE and only stops below DEADZONE_RELEASE, so a
+## stick resting near the edge doesn't flicker between moving and stopping.
+const DEADZONE := 0.27
+const DEADZONE_RELEASE := 0.2
 ## Device ids for virtual (phone) controllers; real pads are far below this.
 const VIRTUAL_BASE := 1000
 ## Rebindable actions, in the order the options menu lists them.
@@ -61,6 +64,12 @@ var _virtual := {}
 var last_raw := "none yet"
 ## While rebinding, the next key or button press is captured instead of used.
 var _capture := {}
+## Presses seen as events since the last tick. Buttons are polled once per
+## tick, so a tap that goes down and up in between would otherwise be lost.
+var _key_latch := {}  # physical keycode -> true
+var _pad_latch := {}  # device -> {button: true}
+## Whether each controller's stick is currently past the deadzone.
+var _stick_on := {}
 
 
 func _init() -> void:
@@ -130,6 +139,8 @@ func _physics_process(_delta: float) -> void:
 	for i in PLAYERS:
 		_prev[i] = _now[i]
 		_now[i] = _sample(i)
+	_key_latch.clear()
+	_pad_latch.clear()
 
 
 ## Some platforms (notably browsers) deliver controller input without ever
@@ -138,6 +149,12 @@ func _physics_process(_delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if capturing():
 		_try_capture(event)
+	if event is InputEventKey and event.pressed and not event.echo:
+		_key_latch[event.physical_keycode] = true
+	elif event is InputEventJoypadButton and event.pressed:
+		if not _pad_latch.has(event.device):
+			_pad_latch[event.device] = {}
+		_pad_latch[event.device][event.button_index] = true
 	if event is InputEventJoypadButton:
 		last_raw = "device %d button %d %s" % [event.device, event.button_index,
 			"down" if event.pressed else "up"]
@@ -401,16 +418,31 @@ func _browser_pad_id(device: int) -> String:
 
 # --- Sampling --------------------------------------------------------------
 
+## A key held now, or tapped since the last tick.
+func _key(code: int) -> bool:
+	return Input.is_physical_key_pressed(code) or _key_latch.has(code)
+
+
+## A controller button held now, or tapped since the last tick.
+func _button(device: int, button: int) -> bool:
+	return Input.is_joy_button_pressed(device, button) or _pad_latch.get(device, {}).has(button)
+
+
+## Applies the deadzone (with hysteresis) to a controller's stick.
+func _deadzone(device: int, stick: Vector2) -> Vector2:
+	var on := stick.length() >= (DEADZONE_RELEASE if _stick_on.get(device, false) else DEADZONE)
+	_stick_on[device] = on
+	return stick if on else Vector2.ZERO
+
+
 func _sample(player: int) -> Dictionary:
 	var mk: Dictionary = MOVE_KEYS[player]
-	var kb := Vector2(
-		int(Input.is_physical_key_pressed(mk.right)) - int(Input.is_physical_key_pressed(mk.left)),
-		int(Input.is_physical_key_pressed(mk.down)) - int(Input.is_physical_key_pressed(mk.up)))
+	var kb := Vector2(int(_key(mk.right)) - int(_key(mk.left)), int(_key(mk.down)) - int(_key(mk.up)))
 	var keys_down := {}
 	for action in ACTIONS:
 		var down := false
 		for code in bindings[player].keys[action]:
-			down = down or Input.is_physical_key_pressed(code)
+			down = down or _key(code)
 		keys_down[action] = down
 
 	var pad: Dictionary = _pad_now.get(pads[player], {}) if pads[player] >= 0 else {}
@@ -448,15 +480,11 @@ func _pad_action(pad: Dictionary, player: int, action: String) -> bool:
 
 
 func _pad_state(device: int) -> Dictionary:
-	var stick := Vector2(Input.get_joy_axis(device, JOY_AXIS_LEFT_X),
-		Input.get_joy_axis(device, JOY_AXIS_LEFT_Y))
-	if stick.length() < DEADZONE:
-		stick = Vector2.ZERO
+	var stick := _deadzone(device, Vector2(Input.get_joy_axis(device, JOY_AXIS_LEFT_X),
+		Input.get_joy_axis(device, JOY_AXIS_LEFT_Y)))
 	var dpad := Vector2(
-		int(Input.is_joy_button_pressed(device, JOY_BUTTON_DPAD_RIGHT))
-			- int(Input.is_joy_button_pressed(device, JOY_BUTTON_DPAD_LEFT)),
-		int(Input.is_joy_button_pressed(device, JOY_BUTTON_DPAD_DOWN))
-			- int(Input.is_joy_button_pressed(device, JOY_BUTTON_DPAD_UP)))
+		int(_button(device, JOY_BUTTON_DPAD_RIGHT)) - int(_button(device, JOY_BUTTON_DPAD_LEFT)),
+		int(_button(device, JOY_BUTTON_DPAD_DOWN)) - int(_button(device, JOY_BUTTON_DPAD_UP)))
 	if dpad != Vector2.ZERO:
 		stick = dpad
 	var analog := stick if dpad == Vector2.ZERO else Vector2.ZERO
@@ -465,7 +493,7 @@ func _pad_state(device: int) -> Dictionary:
 	for b in [JOY_BUTTON_A, JOY_BUTTON_B, JOY_BUTTON_X, JOY_BUTTON_Y, JOY_BUTTON_LEFT_SHOULDER,
 			JOY_BUTTON_RIGHT_SHOULDER, JOY_BUTTON_START, JOY_BUTTON_BACK, JOY_BUTTON_LEFT_STICK,
 			JOY_BUTTON_RIGHT_STICK]:
-		buttons[b] = Input.is_joy_button_pressed(device, b)
+		buttons[b] = _button(device, b)
 	# Menus use the default layout on any controller, whatever the bindings:
 	# bottom face button confirms, right face button goes back.
 	return {"x": dir.x, "y": dir.y, "analog": analog, "buttons": buttons,
@@ -475,9 +503,7 @@ func _pad_state(device: int) -> Dictionary:
 
 func _virtual_state(device: int) -> Dictionary:
 	var v: Dictionary = _virtual[device]
-	var stick: Vector2 = v.axes
-	if stick.length() < DEADZONE:
-		stick = Vector2.ZERO
+	var stick := _deadzone(device, v.axes)
 	var b: Dictionary = v.buttons.duplicate()
 	for k in v.latched:
 		b[k] = true

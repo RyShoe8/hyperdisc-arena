@@ -58,7 +58,9 @@ HyperDisc Arena v1 copies the rules of Data East's Windjammers (Neo Geo, 1994) a
 ### Defence and catching
 
 - **Catch** by touching the disc: walk into it or dash/slide to it.
-- **Knockback:** catching a strong throw pushes the catcher backward. Light characters get pushed far; a big enough mismatch carries the catcher (and disc) into their own goal.
+- **Knockback:** catching a strong throw pushes the catcher backward. Light characters get pushed far; a big enough mismatch carries the catcher (and disc) into their own goal. The catcher can throw out of the slide after a short lock (`knock_lock_ticks`); the supersonic window still opens when the slide ends.
+- **Input buffer:** throw, lob, jump and slap presses count for `input_buffer_ticks` (8), so a press made a moment early fires on the first tick it can: during recovery, hit-stop, the serve delay or just before a catch. Presses made during hit-stop don't age. For a dash, the A press may come at most `dash_buffer_ticks` (4) before the direction. Any move clears the buffer.
+- **Quick taps:** key and button presses are latched between ticks, so a tap shorter than one tick still registers. The stick starts moving at 27% travel and stops below 20% (hysteresis).
 - **Block / toss:** pressing A as the disc arrives pops it into the air instead of catching it, buying time.
 - Missing an airborne disc (lob, toss or pop-up that lands on your side) gives the opponent 2 points.
 

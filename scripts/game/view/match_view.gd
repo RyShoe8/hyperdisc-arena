@@ -414,7 +414,9 @@ func _draw_referee(ci: CanvasItem) -> void:
 func _anim_for(p: MatchSim.PlayerState) -> Array:
 	if sim.phase == MatchSim.Phase.MATCH_OVER:
 		return ["win" if sim.winner == p.side else "lose", frame]
-	if p.knock_ticks > 0:
+	# A throw made out of the knockback slide shows the throw, not the slide.
+	var acting: bool = ACTION_ANIMS.has(p.action) and p.action_ticks < ACTION_ANIMS[p.action][1] 		and p.action != MatchSim.Act.CATCH
+	if p.knock_ticks > 0 and not acting:
 		return ["knock", frame]
 	if ACTION_ANIMS.has(p.action) and p.action_ticks < ACTION_ANIMS[p.action][1]:
 		var a: Array = ACTION_ANIMS[p.action]

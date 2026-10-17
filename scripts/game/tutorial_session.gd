@@ -237,10 +237,12 @@ func timing() -> Dictionary:
 		return {"now": now, "text": "JUMP NOW" if now else ("WAIT  %d ms" % (maxi(0, jump_window.x - t) * 1000 / 60) if t < jump_window.x else "JUMP WINDOW PASSED"),
 			"value": clampf(float(t) / maxf(jump_window.x, 1), 0, 1)}
 	if lesson == 10 and p.holding:
+		# A throw pressed during the hit-stop or the slide is buffered and goes
+		# the moment it can, so it's always "now" once the disc is caught.
 		if p.knock_ticks > 0 or sim.freeze_ticks > 0:
-			return {"now": false, "text": "CATCH! BRACE FOR THE RETURN", "value": 1.0}
+			return {"now": true, "text": "CATCH! THROW NOW", "value": 1.0}
 		var remaining := maxi(0, int(balance.throw.supersonic_window_ticks) - p.hold_ticks)
-		return {"now": p.knock_ticks == 0 and sim.freeze_ticks == 0, "text": "THROW NOW  %d ms LEFT" % (remaining * 1000 / 60), "value": remaining / float(balance.throw.supersonic_window_ticks)}
+		return {"now": true, "text": "THROW NOW  %d ms LEFT" % (remaining * 1000 / 60), "value": remaining / float(balance.throw.supersonic_window_ticks)}
 	if lesson in [14, 15] and not p.holding:
 		return {"now": false, "text": "CHARGE READY - STAY" if p.charge >= int(balance.charge.ticks_needed) else "STAY IN THE LANDING RING", "value": clampf(p.charge / float(balance.charge.ticks_needed), 0, 1)}
 	if lesson == 9 and p.holding:

@@ -56,6 +56,10 @@ class PlayerState:
 	var action_ticks := 0
 	## Recent stick directions as Vector2i(numpad code, tick), oldest first.
 	var history: Array[Vector2i] = []
+	## Button presses not used yet: button -> age in ticks. A press counts
+	## for a few ticks, so one made a moment early (during recovery, hit-stop
+	## or just before a catch) still happens as soon as it can.
+	var buffer := {}
 
 
 class DiscState:
@@ -197,7 +201,7 @@ func state_hash() -> int:
 		disc.air_kind, disc.air_to, disc.air_tick]
 	for p in players:
 		parts.append_array([p.pos, p.z, p.vz, p.holding, p.hold_ticks, p.dash_ticks,
-			p.recovery_ticks, p.knock_vel, p.knock_ticks, p.charge, p.charged, p.ex])
+			p.recovery_ticks, p.knock_vel, p.knock_ticks, p.charge, p.charged, p.ex, p.buffer])
 	return var_to_str(parts).hash()
 
 
@@ -268,9 +272,16 @@ static func _load_object(o: Object, d: Dictionary) -> void:
 
 # --- Simulation ------------------------------------------------------------
 
+## Buttons that are buffered (see PlayerState.buffer).
+const BUFFERED := ["a", "b", "jump", "slap"]
+
+
 func step(inputs: Array) -> void:
 	events.clear()
 	tick += 1
+	# Presses are remembered even during hit-stop, so none are lost.
+	for side in [LEFT, RIGHT]:
+		_buffer_presses(players[side], inputs[side])
 	if freeze_ticks > 0:
 		# Hit-stop: the whole game holds for a beat on big impacts.
 		freeze_ticks -= 1
@@ -278,6 +289,9 @@ func step(inputs: Array) -> void:
 	phase_ticks += 1
 	for p in players:
 		p.action_ticks += 1
+	if phase != Phase.SERVE and phase != Phase.PLAY:
+		for p in players:
+			p.buffer.clear()
 
 	match phase:
 		Phase.MATCH_OVER:
@@ -302,10 +316,12 @@ func step(inputs: Array) -> void:
 	for side in [LEFT, RIGHT]:
 		if phase != Phase.SERVE and phase != Phase.PLAY:
 			break
-		_update_player(players[side], inputs[side])
+		_update_player(players[side], _buffered(players[side], inputs[side]))
 
 	if phase == Phase.SERVE or phase == Phase.PLAY:
 		_update_disc()
+	for p in players:
+		_age_buffer(p)
 
 	if phase == Phase.SERVE or phase == Phase.PLAY:
 		if set_ticks_left > 0:
@@ -348,10 +364,15 @@ func _update_player(p: PlayerState, input: Dictionary) -> void:
 			_award_point(1 - p.side, zone_points(p.pos.y, p.side), "carried")
 			return
 		_clamp_to_half(p)
-		return
+		# Holding the disc, you can throw out of the slide once it's under way.
+		var slid := int(cfg.knockback.ticks) - p.knock_ticks
+		if not p.holding or slid < int(pc.knock_lock_ticks):
+			return
 
 	if p.holding:
-		p.hold_ticks += 1
+		# The hold clock (and the supersonic window) starts once the slide ends.
+		if p.knock_ticks == 0:
+			p.hold_ticks += 1
 		if phase == Phase.SERVE and p.hold_ticks < int(cfg.match.serve_delay_ticks):
 			return
 		if input.get("slap", false) and ex_full(p.side):
@@ -387,9 +408,12 @@ func _update_player(p: PlayerState, input: Dictionary) -> void:
 			_act(p, Act.JUMP)
 			events.append({"type": "jump", "side": p.side})
 		elif move != Vector2.ZERO:
-			if input.get("a", false):
+			# Dash: A with a direction. A pressed a moment before the
+			# direction still counts, but only just (dash_buffer_ticks).
+			if input.get("a", false) and int(p.buffer.get("a", 0)) < int(pc.dash_buffer_ticks):
 				p.dash_dir = move
 				p.dash_ticks = int(pc.dash_ticks)
+				p.buffer.clear()
 				events.append({"type": "dash", "side": p.side})
 			else:
 				p.pos += move * float(pc.run_speed) * speed_mult
@@ -848,6 +872,34 @@ func _gain_ex(p: PlayerState, amount: int) -> void:
 func _act(p: PlayerState, action: int) -> void:
 	p.action = action
 	p.action_ticks = 0
+	# Any move the player made uses up their buffered presses (a catch is
+	# automatic, so a throw pressed just before it is kept).
+	if action != Act.CATCH:
+		p.buffer.clear()
+
+
+func _buffer_presses(p: PlayerState, input: Dictionary) -> void:
+	for b in BUFFERED:
+		if input.get(b, false):
+			p.buffer[b] = 0
+
+
+## The input with still-buffered presses added in.
+func _buffered(p: PlayerState, input: Dictionary) -> Dictionary:
+	if p.buffer.is_empty():
+		return input
+	var out := input.duplicate()
+	for b in p.buffer:
+		out[b] = true
+	return out
+
+
+func _age_buffer(p: PlayerState) -> void:
+	var limit := int(cfg.player.input_buffer_ticks)
+	for b in p.buffer.keys():
+		p.buffer[b] += 1
+		if p.buffer[b] >= limit:
+			p.buffer.erase(b)
 
 
 func _stick_y(p: PlayerState) -> int:

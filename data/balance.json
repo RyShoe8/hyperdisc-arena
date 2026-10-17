@@ -51,14 +51,14 @@
     "air_control": 0.5,
     "dash_speed": 19.0,
     "dash_ticks": 9,
-    "dash_recovery_ticks": 10,
+    "dash_recovery_ticks": 7,
     "hold_limit_ticks": 120,
     "serve_hold_limit_ticks": 180,
     "home_x_from_wall": 110,
     "jump_velocity": 10.0,
     "gravity": 0.72,
     "jump_reach": 60,
-    "landing_recovery_ticks": 5
+    "landing_recovery_ticks": 5, "input_buffer_ticks": 8, "dash_buffer_ticks": 4, "knock_lock_ticks": 4
   },
   "throw": {
     "base_speed": 17.0,

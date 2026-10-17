@@ -33,6 +33,12 @@ func _init() -> void:
 			return
 	for test in [
 		"test_every_character_has_own_throw_sounds",
+		"test_jump_pressed_during_recovery_happens_when_free",
+		"test_buffered_press_expires",
+		"test_throw_pressed_during_hitstop_is_kept",
+		"test_throw_out_of_catch_knockback",
+		"test_supersonic_still_right_after_the_slide",
+		"test_dash_buffer_is_short",
 		"test_pixel_referee_and_disc_assets",
 		"test_pixel_crowd_event_reactions",
 		"test_pixel_mick_frames_and_reverse_run",
@@ -975,3 +981,80 @@ func test_every_character_has_own_throw_sounds() -> void:
 	check(files.size() > 20, "sfx.gd lists its sound files")
 	for m in files:
 		check(FileAccess.file_exists("res://assets/sfx/" + m.get_string(1)), "%s exists" % m.get_string(1))
+
+func test_jump_pressed_during_recovery_happens_when_free() -> void:
+	var sim := new_sim()
+	hold(sim, MatchSim.RIGHT)
+	var p := sim.players[MatchSim.LEFT]
+	p.recovery_ticks = 3
+	sim.step([press({"jump": true}), IDLE])
+	run(sim, 4)
+	check(p.z > 0.0, "a jump pressed 3 ticks early still happens")
+
+
+func test_buffered_press_expires() -> void:
+	var sim := new_sim()
+	hold(sim, MatchSim.RIGHT)
+	var p := sim.players[MatchSim.LEFT]
+	p.recovery_ticks = int(balance.player.input_buffer_ticks) + 4
+	sim.step([press({"jump": true}), IDLE])
+	run(sim, int(balance.player.input_buffer_ticks) + 8)
+	check(p.z == 0.0 and p.vz == 0.0, "a press made long before it could happen is dropped")
+
+
+func test_throw_pressed_during_hitstop_is_kept() -> void:
+	var sim := new_sim()
+	var p := hold(sim, MatchSim.LEFT)
+	sim.freeze_ticks = 4
+	sim.step([press({"a": true}), IDLE])
+	run(sim, 4)
+	check(not p.holding and sim.disc.state == MatchSim.Disc.FLYING, "throw pressed during hit-stop goes when it ends")
+	check(sim.disc.supersonic, "and it's still an instant (supersonic) throw")
+
+
+func test_throw_out_of_catch_knockback() -> void:
+	var sim := new_sim()
+	var p := sim.players[MatchSim.LEFT]
+	p.pos = Vector2(220, 300)
+	fly(sim, Vector2(320, 300), Vector2(-16, 0), MatchSim.RIGHT)
+	for i in 20:
+		sim.step([IDLE, IDLE])
+		if p.holding:
+			break
+	check(p.holding and p.knock_ticks > 0, "fast catch slides the catcher back")
+	sim.step([press({"a": true}), IDLE])
+	var thrown_at := -1
+	for i in 12:
+		if not p.holding:
+			thrown_at = i
+			break
+		sim.step([IDLE, IDLE])
+	check(thrown_at >= 0 and p.knock_ticks > 0, "a throw pressed right after the catch goes during the slide")
+
+
+func test_supersonic_still_right_after_the_slide() -> void:
+	var sim := new_sim()
+	var p := sim.players[MatchSim.LEFT]
+	p.pos = Vector2(220, 300)
+	fly(sim, Vector2(320, 300), Vector2(-16, 0), MatchSim.RIGHT)
+	for i in 40:
+		sim.step([IDLE, IDLE])
+		if p.holding and p.knock_ticks == 0 and sim.freeze_ticks == 0:
+			break
+	sim.step([press({"a": true}), IDLE])
+	check(not p.holding and sim.disc.supersonic, "throwing as the slide ends is still supersonic")
+
+
+func test_dash_buffer_is_short() -> void:
+	for gap in [2, 6]:
+		var sim := new_sim()
+		hold(sim, MatchSim.RIGHT)
+		var p := sim.players[MatchSim.LEFT]
+		p.pos = Vector2(300, 300)
+		sim.step([press({"a": true}), IDLE])
+		run(sim, gap - 1)
+		sim.step([press({"x": 0, "y": 1}), IDLE])
+		if gap <= int(balance.player.dash_buffer_ticks) - 1:
+			check(p.dash_ticks > 0, "A then a direction %d ticks later dashes" % gap)
+		else:
+			check(p.dash_ticks == 0, "A then a direction %d ticks later just runs" % gap)
