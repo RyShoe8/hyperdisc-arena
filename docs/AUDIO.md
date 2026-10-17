@@ -51,3 +51,19 @@ other sports:
 Each layer picks a random take, with slight pitch and volume variation. The
 cue is panned to the side of the court where it happens. Catch strength
 follows the knockback. The crowd bed fades in for matches.
+
+## Voices
+
+Character lines and the announcer come from Kokoro text-to-speech. Its
+weights are Apache 2.0, so commercial use is fine. `tools/audio/make_voices.py`:
+- holds the lines and a recipe per voice: a Kokoro voice or blend, pitch and
+  tempo
+- gives each line its arcade sound: EQ, compression, saturation, a little
+  band-limiting, and an arena echo for the announcer
+
+Kokoro and its models live outside the repo in `D:/Hyperdisc Arena/refs/voice`
+(a venv with `kokoro-onnx`, plus `models/kokoro-v1.0.onnx` and
+`voices-v1.0.bin` from the thewh1teagle/kokoro-onnx releases). Run it with
+that venv's Python:
+
+    "D:/Hyperdisc Arena/refs/voice/venv/Scripts/python" tools/audio/make_voices.py OUT_DIR
