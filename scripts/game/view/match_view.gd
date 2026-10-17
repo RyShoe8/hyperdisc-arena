@@ -47,6 +47,14 @@ var disc_region := Rect2()
 var last_pos: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
 var moving: Array[bool] = [false, false]
 var run_phase: Array[int] = [0, 0]
+## Squash and stretch: movement this tick (court units), ticks since
+## landing, and afterimages left behind by dashes and power throws.
+var vel: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
+var last_z: Array[float] = [0.0, 0.0]
+var land_ticks: Array[int] = [0, 0]
+var ghosts: Array[Dictionary] = []
+const LAND_TICKS := 8
+const GHOST_LIFE := 10
 var cheer_ticks := 0
 var zone_flash := {}  # "side:index" -> ticks left
 var overlay := {}     # current big overlay: {kind, ticks, ...}
@@ -108,7 +116,21 @@ func tick() -> void:
 	for e in effects:
 		e.age += 1
 	effects = effects.filter(func(e): return e.age < e.life)
+	for g in ghosts:
+		g.age += 1
+	ghosts = ghosts.filter(func(g): return g.age < GHOST_LIFE)
 	for p in sim.players:
+		vel[p.side] = p.pos - last_pos[p.side]
+		land_ticks[p.side] = maxi(0, land_ticks[p.side] - 1)
+		if last_z[p.side] > 0.0 and p.z <= 0.0:
+			land_ticks[p.side] = LAND_TICKS
+		last_z[p.side] = p.z
+		if _leaves_ghosts(p) and frame % 2 == 0 and Settings.high_effects():
+			var anim := _anim_for(p)
+			var pose := _pose(p, anim)
+			ghosts.append({"side": p.side, "frame": arts[p.side].frame_for(anim[0], anim[1]),
+				"ground": proj.air_point(p.pos, p.z) + pose.offset, "stretch": pose.stretch,
+				"lean": pose.lean, "age": 0})
 		moving[p.side] = p.pos.distance_to(last_pos[p.side]) > 0.5
 		if moving[p.side]:
 			var dx: float = p.pos.x - last_pos[p.side].x
@@ -416,12 +438,102 @@ func _anim_for(p: MatchSim.PlayerState) -> Array:
 	return ["idle", frame]
 
 
+## Dashes and power throws leave afterimages.
+func _leaves_ghosts(p: MatchSim.PlayerState) -> bool:
+	if p.dash_ticks > 0:
+		return true
+	var power_throw := p.action == MatchSim.Act.SMASH or p.action == MatchSim.Act.SPECIAL \
+		or (p.action == MatchSim.Act.THROW and sim.disc.thrower == p.side and sim.disc.supersonic)
+	return power_throw and p.action_ticks < 10
+
+
+## Squash, stretch, lean and bounce layered over the sprite frames, so a
+## handful of key poses still reads as motion: anticipation before a throw,
+## follow-through after it, recoil on a catch, a squash on landing.
+func _pose(p: MatchSim.PlayerState, anim: Array) -> Dictionary:
+	var fwd := 1.0 if p.side == MatchSim.LEFT else -1.0
+	var stretch := Vector2.ONE
+	var lean := 0.0
+	var offset := Vector2.ZERO
+	var t := int(anim[1])
+	var anim_name: String = anim[0]
+	var run_speed := maxf(float(sim.cfg.player.run_speed), 0.001)
+	match anim_name:
+		"idle", "hold":
+			var b := 0.018 * sin(frame * 0.09 + p.side * 1.7)
+			stretch = Vector2(1.0 - b * 0.6, 1.0 + b)
+		"run":
+			var speed := clampf(vel[p.side].length() / run_speed, 0.0, 1.0)
+			lean = clampf(vel[p.side].x / run_speed, -1.0, 1.0) * 0.11
+			var step := absf(sin(run_phase[p.side] * 0.32))
+			offset.y = -step * 7.0 * speed
+			stretch = Vector2(1.0 - 0.03 * step, 1.0 + 0.04 * step)
+		"dash":
+			if absf(p.dash_dir.x) > 0.2:
+				lean = signf(p.dash_dir.x) * 0.2
+				stretch = Vector2(1.13, 0.9)
+			else:
+				stretch = Vector2(0.92, 1.08)
+		"jump":
+			var up := clampf(p.vz / maxf(float(sim.cfg.player.jump_velocity), 0.001), -1.0, 1.0)
+			stretch = Vector2(1.0 - 0.08 * absf(up), 1.0 + 0.1 * absf(up))
+		"throw", "slap", "special":
+			var big := 1.6 if anim_name == "special" or p.action == MatchSim.Act.SMASH else 1.0
+			if t < 3:
+				# Wind up: crouch and lean back.
+				stretch = Vector2(1.0 + 0.06 * big, 1.0 - 0.07 * big)
+				lean = -fwd * 0.09 * big
+			else:
+				# Follow through: snap forward, then settle.
+				var k := clampf(1.0 - (t - 3) / 9.0, 0.0, 1.0)
+				stretch = Vector2(1.0 + 0.1 * big * k, 1.0 - 0.05 * big * k)
+				lean = fwd * 0.14 * big * k
+		"lob":
+			if t < 4:
+				stretch = Vector2(1.06, 0.93)
+			else:
+				var k := clampf(1.0 - (t - 4) / 10.0, 0.0, 1.0)
+				stretch = Vector2(1.0 - 0.06 * k, 1.0 + 0.09 * k)
+				lean = -fwd * 0.05 * k
+		"catch", "block":
+			# Recoil: squash and rock back, harder against fast discs.
+			var k := clampf(1.0 - t / 10.0, 0.0, 1.0)
+			var hit := clampf(0.6 + absf(p.knock_vel) * 0.1, 0.6, 1.6)
+			stretch = Vector2(1.0 + 0.1 * hit * k, 1.0 - 0.11 * hit * k)
+			lean = -fwd * 0.1 * hit * k
+		"knock":
+			lean = -fwd * 0.18
+			offset.x = sin(frame * 2.1) * 3.0
+			stretch = Vector2(1.05, 0.95)
+		"charge":
+			offset.x = sin(frame * 1.7) * 1.5
+			stretch = Vector2(1.04, 0.95)
+		"win":
+			var hop := absf(sin(frame * 0.14 + p.side))
+			offset.y = -hop * 26.0
+			stretch = Vector2(1.0 - 0.06 * hop, 1.0 + 0.08 * hop) if hop > 0.25 else Vector2(1.08, 0.9)
+		"lose":
+			stretch = Vector2(1.04, 0.93)
+			lean = fwd * 0.07 + sin(frame * 0.04) * 0.02
+	if land_ticks[p.side] > 0 and p.z <= 0.0:
+		var k := float(land_ticks[p.side]) / LAND_TICKS
+		stretch *= Vector2(1.0 + 0.15 * k, 1.0 - 0.14 * k)
+	return {"stretch": stretch, "lean": lean, "offset": offset}
+
+
 func _draw_player(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
 	var art = arts[p.side]
 	var anim := _anim_for(p)
 	var f: int = art.frame_for(anim[0], anim[1])
-	var ground := proj.air_point(p.pos, p.z)
+	var pose := _pose(p, anim)
+	var ground: Vector2 = proj.air_point(p.pos, p.z) + pose.offset
 	var facing_right := p.side == MatchSim.LEFT
+	var c := UI.P1 if p.side == 0 else UI.P2
+	for g in ghosts:
+		if g.side == p.side:
+			var fade := 1.0 - float(g.age) / GHOST_LIFE
+			art.draw(ci, g.frame, g.ground, facing_right, SPRITE_SCALE,
+				Color(c.r * 1.4, c.g * 1.4, c.b * 1.4, 0.4 * fade), g.stretch, g.lean)
 	var tint := Color.WHITE
 	if p.charged or (p.holding and sim.ex_full(p.side)):
 		var glow := 0.5 + 0.5 * sin(frame * 0.35)
@@ -429,7 +541,7 @@ func _draw_player(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
 		ci.draw_circle(ground - Vector2(0, 70), 70 + glow * 10, Color(aura, 0.18 + glow * 0.12))
 	if p.knock_ticks > 0 and (frame / 2) % 2 == 0:
 		tint = Color(1.5, 1.5, 1.5)
-	art.draw(ci, f, ground, facing_right, SPRITE_SCALE, tint)
+	art.draw(ci, f, ground, facing_right, SPRITE_SCALE, tint, pose.stretch, pose.lean)
 	if p.holding and sim.disc.owner == p.side and sim.phase != MatchSim.Phase.MATCH_OVER \
 			and sim.phase != MatchSim.Phase.POINT_PAUSE and sim.phase != MatchSim.Phase.SET_PAUSE:
 		var hand: Vector2 = art.point(f, "hand") * SPRITE_SCALE
@@ -440,7 +552,6 @@ func _draw_player(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
 	# Player tag over the head.
 	var head: Vector2 = art.point(f, "head") * SPRITE_SCALE
 	var tip := ground + Vector2(0, head.y - (44 if p.holding else 26))
-	var c := UI.P1 if p.side == 0 else UI.P2
 	ci.draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(-11, -15), tip + Vector2(11, -15)]), c)
 	UI.text(ci, tip + Vector2(0, -20), names[p.side], 20, c, UI.ui, 4)
 

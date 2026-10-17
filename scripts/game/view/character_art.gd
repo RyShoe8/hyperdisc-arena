@@ -76,10 +76,12 @@ func point(frame: int, which: String) -> Vector2:
 
 
 ## Draws a frame with its ground anchor at `ground`, flipped to face left
-## when needed, scaled, with an optional tint.
+## when needed, scaled, with an optional tint. `stretch` squashes or
+## stretches the sprite about its feet and `lean` tilts it (radians,
+## positive leans the head to the right).
 func draw(ci: CanvasItem, frame: int, ground: Vector2, facing_right: bool, scale: float,
-		tint := Color.WHITE) -> void:
+		tint := Color.WHITE, stretch := Vector2.ONE, lean := 0.0) -> void:
 	var flip := 1.0 if facing_right else -1.0
-	ci.draw_set_transform(ground, 0.0, Vector2(flip * scale, scale))
+	ci.draw_set_transform(ground, lean, Vector2(flip * scale * stretch.x, scale * stretch.y))
 	ci.draw_texture_rect_region(sheet, Rect2(-anchor, Vector2(frame_size, frame_size)), region(frame), tint)
 	ci.draw_set_transform(Vector2.ZERO)
