@@ -32,6 +32,7 @@ func _init() -> void:
 			quit(1)
 			return
 	for test in [
+		"test_every_character_has_own_throw_sounds",
 		"test_pixel_referee_and_disc_assets",
 		"test_pixel_crowd_event_reactions",
 		"test_pixel_mick_frames_and_reverse_run",
@@ -961,3 +962,16 @@ func test_pixel_referee_and_disc_assets() -> void:
 	check(img.get_pixel(0, 0).a == 0, "disc has transparent corners")
 	check(img.get_used_rect().size.x > 0, "disc has visible artwork")
 
+
+func test_every_character_has_own_throw_sounds() -> void:
+	# sfx.gd needs the Settings autoload, so read its file names as text.
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/balance.json"))
+	for c in data.characters:
+		for sound in ["throw_whoosh", "power_whoosh", "special_launch"]:
+			var path := "res://assets/sfx/characters/%s/%s_1.wav" % [c.id, sound]
+			check(FileAccess.file_exists(path) and load(path) is AudioStream, "%s has their own %s" % [c.id, sound])
+	var source := FileAccess.get_file_as_string("res://scripts/game/sfx.gd")
+	var files := RegEx.create_from_string("\"([a-z_0-9]+[.](?:wav|ogg))\"").search_all(source)
+	check(files.size() > 20, "sfx.gd lists its sound files")
+	for m in files:
+		check(FileAccess.file_exists("res://assets/sfx/" + m.get_string(1)), "%s exists" % m.get_string(1))

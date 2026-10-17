@@ -5,9 +5,16 @@
 ## are Kenney Interface Sounds (CC0). A cue layers several sounds, each picked
 ## at random from its takes with a little pitch and volume variation so
 ## repeats don't sound mechanical, and is panned to where it happens on court.
+##
+## Throws, power throws and specials are per character: each character has
+## their own takes in assets/sfx/characters/<id>/ (see process_sfx.py), used
+## when play() is given the character's id.
 extends Node
 
 const DIR := "res://assets/sfx/"
+const CHARACTER_DIR := "res://assets/sfx/characters/"
+## Sounds that each character has their own takes of.
+const CHARACTER_SOUNDS := ["throw_whoosh", "power_whoosh", "special_launch"]
 
 ## Sound name -> takes (one is picked at random each time).
 const SOUNDS := {
@@ -18,41 +25,40 @@ const SOUNDS := {
 	"pause": ["pause.ogg"],
 	"connect": ["connect.ogg"],
 	"disconnect": ["disconnect.ogg"],
-	"throw_whoosh": ["throw_whoosh_1.wav", "throw_whoosh_2.wav", "throw_whoosh_3.wav", "throw_whoosh_4.wav"],
-	"throw_crack": ["throw_crack_1.wav", "throw_crack_2.wav"],
+	"throw_whoosh": ["throw_whoosh_1.wav", "throw_whoosh_2.wav", "throw_whoosh_3.wav", "throw_whoosh_4.wav",
+		"throw_whoosh_5.wav"],
 	"power_whoosh": ["power_whoosh_1.wav", "power_whoosh_2.wav", "power_whoosh_3.wav"],
-	"special_launch": ["special_launch.wav"],
-	"catch_hit": ["catch_1.wav", "catch_2.wav", "catch_3.wav", "catch_4.wav"],
+	"special_launch": ["special_launch_1.wav"],
+	"catch_hit": ["catch_1.wav", "catch_2.wav", "catch_3.wav", "catch_4.wav", "catch_5.wav"],
 	"catch_body": ["catch_body_1.wav", "catch_body_2.wav"],
-	"block_hit": ["block.wav"],
-	"wall": ["wall_1.wav", "wall_2.wav", "wall_3.wav"],
-	"net": ["net_1.wav", "net_2.wav"],
+	"block_hit": ["block_1.wav", "block_2.wav"],
+	"wall": ["wall_1.wav", "wall_2.wav"],
+	"net": ["net_1.wav"],
 	"ground": ["ground.wav"],
-	"crowd_goal": ["crowd_goal.wav"],
+	"crowd_goal": ["crowd_goal_1.wav", "crowd_goal_2.wav"],
 	"crowd_cheer": ["crowd_cheer.wav"],
 	"crowd_miss": ["crowd_miss.wav"],
 	"whistle": ["whistle.wav"],
-	"horn": ["horn.wav"],
 	"buzzer": ["buzzer.wav"],
 }
 
 ## Cue -> layers of [sound, volume dB, pitch jitter]. Cue names are what the
 ## game plays; a plain sound name works too.
 const CUES := {
-	"throw": [["throw_whoosh", -2.0, 0.07], ["throw_crack", -7.0, 0.05]],
-	"supersonic": [["power_whoosh", 0.0, 0.05], ["throw_crack", -3.0, 0.05]],
-	"special": [["special_launch", 0.0, 0.0], ["power_whoosh", -5.0, 0.05], ["throw_crack", -2.0, 0.0]],
-	"slap": [["throw_crack", -1.0, 0.06], ["power_whoosh", -6.0, 0.08]],
+	"throw": [["throw_whoosh", -2.0, 0.07]],
+	"supersonic": [["power_whoosh", 0.0, 0.05]],
+	"special": [["special_launch", 0.0, 0.0], ["power_whoosh", -5.0, 0.05]],
+	"slap": [["throw_whoosh", -3.0, 0.08], ["catch_hit", -10.0, 0.06]],
 	"lob": [["throw_whoosh", -9.0, 0.05]],
 	"catch": [["catch_hit", 0.0, 0.06], ["catch_body", -7.0, 0.06]],
 	"block": [["block_hit", -1.0, 0.05], ["catch_body", -9.0, 0.05]],
 	"bounce": [["wall", -3.0, 0.08]],
 	"net": [["net", -4.0, 0.06]],
 	"land": [["ground", -10.0, 0.1]],
-	"goal": [["horn", -5.0, 0.0], ["crowd_goal", -3.0, 0.03]],
+	"goal": [["crowd_goal", -3.0, 0.03]],
 	"miss": [["crowd_miss", -4.0, 0.03], ["ground", -6.0, 0.05]],
 	"set_end": [["whistle", -3.0, 0.0], ["crowd_cheer", -5.0, 0.03]],
-	"match_win": [["horn", -3.0, 0.0], ["crowd_cheer", 0.0, 0.0]],
+	"match_win": [["crowd_cheer", 0.0, 0.0]],
 }
 
 const POOL_SIZE := 16
@@ -60,6 +66,7 @@ const BED_DB := -20.0
 const EFFECTS_GAIN_DB := 4.0
 
 var _streams := {}
+var _character_streams := {}  # character id -> {sound: takes}
 var _players: Array[AudioStreamPlayer2D] = []
 var _next := 0
 var _bed: AudioStreamPlayer
@@ -82,6 +89,17 @@ func _ready() -> void:
 			if ResourceLoader.exists(DIR + file):
 				takes.append(load(DIR + file))
 		_streams[key] = takes
+	for id in _character_ids():
+		var sounds := {}
+		for sound in CHARACTER_SOUNDS:
+			var takes: Array = []
+			var i := 1
+			while ResourceLoader.exists("%s%s/%s_%d.wav" % [CHARACTER_DIR, id, sound, i]):
+				takes.append(load("%s%s/%s_%d.wav" % [CHARACTER_DIR, id, sound, i]))
+				i += 1
+			if not takes.is_empty():
+				sounds[sound] = takes
+		_character_streams[id] = sounds
 	for i in POOL_SIZE:
 		var p := AudioStreamPlayer2D.new()
 		p.bus = "Effects"
@@ -101,12 +119,25 @@ func _ready() -> void:
 		_bed.stream = bed
 
 
+## Character ids from the balance data.
+func _character_ids() -> Array:
+	var data = JSON.parse_string(FileAccess.get_file_as_string("res://data/balance.json"))
+	var ids := []
+	if data is Dictionary:
+		for c in data.get("characters", []):
+			ids.append(str(c.id))
+	return ids
+
+
 ## Plays a cue or sound. pitch scales every layer (bounces and catches vary
 ## it), volume is in decibels, pan runs -1 (left of the court) to 1 (right).
-func play(sound: String, pitch := 1.0, volume_db := 0.0, pan := 0.0) -> void:
+## With a character id, that character's own takes are used where they have
+## them.
+func play(sound: String, pitch := 1.0, volume_db := 0.0, pan := 0.0, character := "") -> void:
 	var layers: Array = CUES.get(sound, [[sound, 0.0, 0.0]])
+	var own: Dictionary = _character_streams.get(character, {})
 	for layer in layers:
-		var takes: Array = _streams.get(layer[0], [])
+		var takes: Array = own.get(layer[0], _streams.get(layer[0], []))
 		if takes.is_empty():
 			push_warning("Unknown sound: " + str(layer[0]))
 			continue

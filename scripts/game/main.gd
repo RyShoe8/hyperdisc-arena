@@ -511,6 +511,8 @@ func _count(e: Dictionary) -> void:
 
 func _sound_for(e: Dictionary) -> void:
 	var pan := _side_pan(int(e.get("side", 0)))
+	# Throws, power throws and specials use the thrower's own sounds.
+	var who: String = str(sim.players[int(e.get("side", 0))].character.get("id", ""))
 	match e.type:
 		"ready":
 			Sfx.play("countdown", 0.8)
@@ -518,17 +520,17 @@ func _sound_for(e: Dictionary) -> void:
 			Sfx.play("whistle", 1.15, -6.0)
 		"throw":
 			if e.supersonic or e.smash:
-				Sfx.play("supersonic", 1.08 if e.smash else 1.0, 0.0, pan)
+				Sfx.play("supersonic", 1.08 if e.smash else 1.0, 0.0, pan, who)
 				_rumble(e.side, 0.3, 0.0, 0.08)
 			else:
-				Sfx.play("throw", 1.0, 0.0, pan)
+				Sfx.play("throw", 1.0, 0.0, pan, who)
 		"special":
-			Sfx.play("special", 1.0, 0.0, pan)
+			Sfx.play("special", 1.0, 0.0, pan, who)
 			_rumble(e.side, 0.6, 0.6, 0.25)
 		"lob", "drop":
 			Sfx.play("lob", 0.8 if e.type == "drop" else 0.95, 0.0, pan)
 		"slap":
-			Sfx.play("slap", 1.0, 0.0, pan)
+			Sfx.play("slap", 1.0, 0.0, pan, who)
 		"block", "power_toss":
 			Sfx.play("block", 1.0, 0.0, pan)
 		"jump":

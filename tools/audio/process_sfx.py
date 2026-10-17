@@ -31,32 +31,46 @@ RECIPES = {
     "throw_whoosh_2": ("throw_whoosh_b.wav", "len", 0.45, -17.0),
     "throw_whoosh_3": ("throw_whoosh_c.wav", "len", 0.4, -17.0),
     "throw_whoosh_4": ("throw_whoosh_d.wav", "len", 0.5, -17.0),
-    "throw_crack_1": ("throw_crack_serve.wav", "hit", 0.35, -16.0),
-    "throw_crack_2": ("throw_crack_golf.wav", "hit", 0.35, -16.0),
+    "throw_whoosh_5": ("throw_whoosh_e.wav", "len", 0.45, -17.0),
     "power_whoosh_1": ("power_whoosh_large.wav", "len", 0.9, -15.0),
     "power_whoosh_2": ("power_whip.wav", "len", 0.8, -15.0),
     "power_whoosh_3": ("power_doppler.wav", "len", 1.0, -15.0),
-    "special_launch": ("power_scifi_passby.wav", "len", 1.4, -15.0),
+    "special_launch_1": ("power_scifi_passby.wav", "len", 1.4, -15.0),
     "catch_1": ("catch_keeper_punch.wav", "hit", 0.4, -15.0),
     "catch_2": ("catch_punch_heavy.wav", "hit", 0.4, -15.0),
     "catch_3": ("catch_deep_punch.wav", "hit", 0.4, -15.0),
     "catch_4": ("catch_clean_deep.wav", "hit", 0.45, -15.0),
+    "catch_5": ("catch_body_thump.wav", "hit", 0.4, -15.0),
     "catch_body_1": ("catch_low_thud.wav", "hit", 0.35, -18.0),
     "catch_body_2": ("catch_grab.wav", "hit", 0.35, -18.0),
-    "block": ("catch_blocked.wav", "hit", 0.4, -16.0),
+    "block_1": ("catch_blocked.wav", "hit", 0.4, -16.0),
+    "block_2": ("block_metal_heavy.wav", "hit", 0.4, -16.0),
     "wall_1": ("wall_ad_board.wav", "hit", 0.45, -16.0),
     "wall_2": ("wall_metal_slam.wav", "hit", 0.5, -17.0),
-    "wall_3": ("wall_rail.wav", "hit", 0.35, -17.0),
     "net_1": ("net_soccer.wav", "hit", 0.5, -18.0),
-    "net_2": ("net_tennis.wav", "hit", 0.5, -18.0),
-    "ground": ("ground_pass.wav", "hit", 0.3, -20.0),
-    "crowd_goal": ("crowd_goal_swell.wav", "len", 4.0, -16.0),
+    "ground": ("ground_gravel.wav", "hit", 0.3, -20.0),
+    "crowd_goal_1": ("crowd_goal_swell.wav", "len", 4.0, -16.0),
+    "crowd_goal_2": ("crowd_goal_female.wav", "len", 4.0, -16.0),
     "crowd_cheer": ("crowd_cheers.wav", "len", 3.5, -16.0),
     "crowd_miss": ("crowd_miss.wav", "len", 3.0, -17.0),
     "crowd_bed": ("crowd_bed_clapping.wav", "loop", 20.0, -29.0),
     "whistle": ("whistle_ref.wav", "hit", 1.0, -15.0),
-    "horn": ("horn_party.wav", "len", 1.6, -17.0),
     "buzzer": ("buzzer.wav", "len", 1.2, -20.0),
+}
+
+# Per-character sounds: each character gets their own copies of these, in
+# assets/sfx/characters/<id>/, so any of them can be swapped for that
+# character alone (and voice lines layered on later). For now each copy is
+# one of the shared takes, pitched to suit the character: heavy hitters
+# lower, quick ones higher.
+CHARACTER_SOUNDS = {
+    # id: (pitch, throw_whoosh takes, power_whoosh takes, special_launch takes)
+    "mick": (0.92, [1, 2, 5], [1, 2], [1]),
+    "keno": (0.82, [1, 4, 5], [1, 3], [1]),
+    "vanessa": (0.96, [2, 4, 5], [2, 3], [1]),
+    "pete": (1.0, [1, 3, 5], [1, 2], [1]),
+    "steve": (1.08, [2, 3, 5], [2, 3], [1]),
+    "tiffany": (1.15, [3, 4, 5], [1, 2], [1]),
 }
 
 
@@ -162,13 +176,28 @@ def write_wav(path, y):
         fh.write(b"data" + struct.pack("<I", len(pcm)) + pcm)
 
 
+def pitched(y, pitch, loud_db):
+    """Raises (pitch > 1) or lowers the pitch, changing the length to match."""
+    return level(resample(y, int(RATE * pitch)), loud_db)
+
+
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
-    for name, (src, mode, max_len, peak) in RECIPES.items():
+    made = {}
+    for name, (src, mode, max_len, loud) in RECIPES.items():
         path = os.path.join(SRC, src)
         if not os.path.exists(path):
             print("missing", src)
             continue
-        y = process(path, mode, max_len, peak)
+        y = process(path, mode, max_len, loud)
+        made[name] = (y, loud)
         write_wav(os.path.join(OUT, name + ".wav"), y)
         print(f"{name:16s} {len(y) / RATE:5.2f}s  from {src}")
+    for cid, (pitch, throws, powers, specials) in CHARACTER_SOUNDS.items():
+        out = os.path.join(OUT, "characters", cid)
+        os.makedirs(out, exist_ok=True)
+        for sound, takes in (("throw_whoosh", throws), ("power_whoosh", powers), ("special_launch", specials)):
+            for i, take in enumerate(takes, 1):
+                y, loud = made[f"{sound}_{take}"]
+                write_wav(os.path.join(out, f"{sound}_{i}.wav"), pitched(y, pitch, loud))
+        print(f"characters/{cid}: pitch {pitch}")
