@@ -33,6 +33,8 @@ func _init() -> void:
 			return
 	for test in [
 		"test_every_character_has_own_throw_sounds",
+		"test_online_delay_follows_ping",
+		"test_menu_direction_repeats_when_held",
 		"test_soft_tilt_still_blocks",
 		"test_fast_roll_skipping_the_diagonal_curves",
 		"test_curve_motion_during_hitstop_counts",
@@ -1110,3 +1112,21 @@ func test_analog_snaps_to_straight_lines() -> void:
 	check(is_equal_approx(diag.angle(), PI / 4.0), "6 degrees off the diagonal snaps to it")
 	var free := ControlsScript.snap_angle(Vector2.from_angle(deg_to_rad(22.0)))
 	check(is_equal_approx(free.angle(), deg_to_rad(22.0)), "angles in between stay free")
+
+func test_online_delay_follows_ping() -> void:
+	check(OnlineMatch.delay_for_ping(30) == 1, "a good connection gets 1 frame of input delay")
+	check(OnlineMatch.delay_for_ping(120) == 2, "a middling one gets 2")
+	check(OnlineMatch.delay_for_ping(250) == 3, "a slow one gets 3")
+	check(OnlineMatch.delay_for_ping(-1) == 2, "unmeasured falls back to 2")
+
+
+func test_menu_direction_repeats_when_held() -> void:
+	var held := [Vector2i.ZERO, 0]
+	var fired := []
+	for t in 40:
+		held = ControlsScript._hold(held, Vector2i(0, 1))
+		if ControlsScript._repeats(held):
+			fired.append(t)
+	check(fired.size() >= 3 and fired[0] >= ControlsScript.REPEAT_DELAY - 1, "holding a direction repeats after a pause (%s)" % [fired])
+	held = ControlsScript._hold(held, Vector2i.ZERO)
+	check(not ControlsScript._repeats(held), "letting go stops the repeat")
