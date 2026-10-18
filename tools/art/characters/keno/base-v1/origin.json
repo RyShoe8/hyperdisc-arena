@@ -1,0 +1,47 @@
+{
+	"character": "keno",
+	"poses": [
+		{
+			"animation": "idle",
+			"bounds": [
+				166,
+				177,
+				215,
+				272
+			],
+			"frame": 0
+		},
+		{
+			"animation": "run",
+			"bounds": [
+				112,
+				194,
+				288,
+				256
+			],
+			"frame": 16
+		},
+		{
+			"animation": "throw",
+			"bounds": [
+				128,
+				178,
+				256,
+				272
+			],
+			"frame": 7
+		},
+		{
+			"animation": "catch",
+			"bounds": [
+				116,
+				176,
+				280,
+				274
+			],
+			"frame": 10
+		}
+	],
+	"source_atlas": "res://assets/art/characters/keno",
+	"source_revision": "9422b2b"
+}

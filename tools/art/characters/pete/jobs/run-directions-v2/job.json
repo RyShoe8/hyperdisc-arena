@@ -1,0 +1,15 @@
+{
+  "character": "pete",
+  "animation": "run-directions-v2",
+  "base_version": "base-v1",
+  "base_sha256": "f556490d2c803774cd2b4a0401096f3c18be157396ba2fe1b1e6da1f7f15e833",
+  "reference_sha256": "854229308abb820f0d333880870bfac149f25e5ccfc937cdcc4f7f4093a549a2",
+  "expected_frames": 16,
+  "columns": 4,
+  "rows": 4,
+  "status": "accepted",
+  "candidate": "candidate.png",
+  "candidate_sha256": "1691de4acd698923d720df1fbe7c68079e9b0ad1d75ca5d77e97104fa4faff95",
+  "review_notes": "Compared enlarged canonical run against front and rear movement previews. Hair, outfit colors and cut, accessories and silhouette retained. Transparent sheet extraction yields sixteen separate figures. New angles are drawn interpretations of the frozen base, not pixel-identical rotations.",
+  "accepted_sha256": "1691de4acd698923d720df1fbe7c68079e9b0ad1d75ca5d77e97104fa4faff95"
+}

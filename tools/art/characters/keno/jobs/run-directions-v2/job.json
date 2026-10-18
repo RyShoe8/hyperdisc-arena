@@ -1,0 +1,15 @@
+{
+  "character": "keno",
+  "animation": "run-directions-v2",
+  "base_version": "base-v1",
+  "base_sha256": "00a336b3e9e53bb96de4b3d03a586c380e68dc8fa6ddbc1c78a086630ea2ad7c",
+  "reference_sha256": "8ffd4dcfa67d0d699f89d485a66736804dc177aa46e951b6a99b44befa948f03",
+  "expected_frames": 16,
+  "columns": 4,
+  "rows": 4,
+  "status": "accepted",
+  "candidate": "candidate.png",
+  "candidate_sha256": "49e02f38e1503ac03f5871f481ac346dc9b8a2b0aff41b4e43984acb42814bdd",
+  "review_notes": "Compared enlarged canonical run against front and rear movement previews. Hair, outfit colors and cut, accessories and silhouette retained. Transparent sheet extraction yields sixteen separate figures. New angles are drawn interpretations of the frozen base, not pixel-identical rotations.",
+  "accepted_sha256": "49e02f38e1503ac03f5871f481ac346dc9b8a2b0aff41b4e43984acb42814bdd"
+}

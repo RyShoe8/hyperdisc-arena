@@ -1,0 +1,14 @@
+IDENTITY-PRESERVING ANIMATION EDIT. Use BOTH supplied canonical images:
+D:\Hyperdisc Arena\hyperdisc-arena-repo\tools\art\characters\keno\base-v1\base.png
+D:\Hyperdisc Arena\hyperdisc-arena-repo\tools\art\characters\keno\base-v1\reference.png
+
+Character: keno. Animation: turnaround-v1. Required distinct frames: 2, grid 2 columns by 1 rows.
+Keep the EXACT approved character: face, age, hair silhouette, proportions,
+costume cut, accessories, shoes, palette, line weight and pixel clusters.
+Identity locks: Asian mature face and black buzz cut; very broad heavy muscular proportions; burgundy and charcoal singlet with exact panels; black knee pads; burgundy wristbands; black/burgundy shoes.
+Change only pose and facing needed for the movement. No redesign or reinterpretation.
+Transparent background, isolated complete figures, consistent scale and foot anchor.
+First make a front/back turnaround for visual comparison. Only after it matches,
+animate those same poses. Preserve the canonical references in every generation.
+Specify and verify the grid before extracting. Do not accept extra/missing limbs,
+lost accessories, altered faces, changed clothes, or inconsistent body mass.

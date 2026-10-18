@@ -1,0 +1,15 @@
+{
+  "character": "vanessa",
+  "animation": "run-directions-v1",
+  "base_version": "base-v1",
+  "base_sha256": "33c39cb4518398b67033295247da2405ff35f50dff98b42839d233e89348c591",
+  "reference_sha256": "1c07c027ccb72a4690db8d056e4634d6962586bfdfe03151440bf961c45ce396",
+  "expected_frames": 16,
+  "columns": 4,
+  "rows": 4,
+  "status": "accepted",
+  "candidate": "candidate.png",
+  "candidate_sha256": "186085e9417757da216cdd2dd2fb390933aa3ecf3f0177528ffa3ae53f7bb5a3",
+  "review_notes": "Compared enlarged canonical run against front and rear movement previews. Hair, outfit colors and cut, accessories and silhouette retained. Transparent sheet extraction yields sixteen separate figures. New angles are drawn interpretations of the frozen base, not pixel-identical rotations.",
+  "accepted_sha256": "186085e9417757da216cdd2dd2fb390933aa3ecf3f0177528ffa3ae53f7bb5a3"
+}

@@ -1,0 +1,47 @@
+{
+	"character": "steve",
+	"poses": [
+		{
+			"animation": "idle",
+			"bounds": [
+				140,
+				190,
+				243,
+				258
+			],
+			"frame": 0
+		},
+		{
+			"animation": "run",
+			"bounds": [
+				130,
+				197,
+				251,
+				253
+			],
+			"frame": 16
+		},
+		{
+			"animation": "throw",
+			"bounds": [
+				129,
+				190,
+				253,
+				260
+			],
+			"frame": 7
+		},
+		{
+			"animation": "catch",
+			"bounds": [
+				133,
+				198,
+				246,
+				252
+			],
+			"frame": 10
+		}
+	],
+	"source_atlas": "res://assets/art/characters/steve",
+	"source_revision": "9422b2b"
+}

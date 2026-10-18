@@ -1,0 +1,15 @@
+{
+  "character": "steve",
+  "animation": "run-directions-v1",
+  "base_version": "base-v1",
+  "base_sha256": "86c20d28a6feff507ccd153cfe1155c8863f7203ea1b42b6180f5b344d287ac7",
+  "reference_sha256": "d5a78bd0862b2285069e4b8120dce1f76656c8cbf3c5eb8ee3a0a55b51bb7ba0",
+  "expected_frames": 16,
+  "columns": 4,
+  "rows": 4,
+  "status": "accepted",
+  "candidate": "candidate.png",
+  "candidate_sha256": "cde9757253a7c4d527f838348a3d0eb2e00f10d94a1f03bc2d727628ae8c43e3",
+  "review_notes": "Compared source 16 poses and rendered identity-preview/steve-20.png against approved run: matching sly adult face, ginger mullet, lanky proportions, mint bowling shirt with large navy triangles, cream cuffed trousers, red shoes. Front/back retain outfit and silhouette. Reviewed complete sprites and grid.",
+  "accepted_sha256": "cde9757253a7c4d527f838348a3d0eb2e00f10d94a1f03bc2d727628ae8c43e3"
+}

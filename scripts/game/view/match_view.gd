@@ -47,6 +47,10 @@ var disc_region := Rect2()
 var last_pos: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
 var moving: Array[bool] = [false, false]
 var run_phase: Array[int] = [0, 0]
+## Smoothed travel heading selects authored front/rear run cycles.
+var run_heading: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
+var run_direction: Array[String] = ["run", "run"]
+var run_facing_right: Array[bool] = [true, false]
 ## Squash and stretch: movement this tick (court units), ticks since
 ## landing, and afterimages left behind by dashes and power throws.
 var vel: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
@@ -66,6 +70,7 @@ var referee: CharacterArt
 var ref_anim := "idle"
 var ref_ticks := 0
 var ref_facing_right := true
+var ref_focus := 0.0
 
 
 func _init(match_sim: MatchSim, character_ids: Array, player_names: Array[String]) -> void:
@@ -97,8 +102,15 @@ func tick() -> void:
 		pixel_spectators.tick()
 		pixel_spectators.rally_x = clampf(float(sim.disc.pos.x)/float(sim.court_width()),0.0,1.0)
 	ref_ticks += 1
-	if ref_anim != "idle" and ref_ticks > 70:
+	if ref_anim != "idle" and ref_ticks > (54 if ref_anim == "win" else 30):
 		ref_anim = "idle"
+	if ref_anim == "idle":
+		var target_x: float = sim.disc.pos.x
+		if sim.phase == MatchSim.Phase.READY:
+			target_x = sim.players[sim.server].pos.x
+		ref_focus = lerpf(ref_focus, target_x - sim.net_x(), 0.14)
+		if absf(ref_focus) > 55.0:
+			ref_facing_right = ref_focus > 0.0
 	shake = maxf(0.0, shake - 0.7)
 	cheer_ticks = maxi(0, cheer_ticks - 1)
 	banner_ticks = maxi(0, banner_ticks - 1)
@@ -136,9 +148,21 @@ func tick() -> void:
 				"facing_right": p.dash_dir.x > 0.0 if anim[0] == "dash" and absf(p.dash_dir.x) > 0.2 else p.side == MatchSim.LEFT})
 		moving[p.side] = p.pos.distance_to(last_pos[p.side]) > 0.5
 		if moving[p.side]:
+			run_heading[p.side] = run_heading[p.side].lerp(vel[p.side].normalized(), 0.32)
+			var heading := run_heading[p.side]
+			var threshold := 0.45 if run_direction[p.side] != "run" else 0.65
+			if absf(heading.y) > threshold:
+				run_direction[p.side] = "run_up" if heading.y < 0.0 else "run_down"
+				if absf(heading.x) > 0.35:
+					run_facing_right[p.side] = heading.x > 0.0
+			else:
+				run_direction[p.side] = "run"
 			var dx: float = p.pos.x - last_pos[p.side].x
 			var backwards := dx < -0.1 if p.side == MatchSim.LEFT else dx > 0.1
-			run_phase[p.side] += -1 if backwards else 1
+			run_phase[p.side] += -1 if backwards and run_direction[p.side] == "run" else 1
+		else:
+			run_heading[p.side] = Vector2.ZERO
+			run_direction[p.side] = "run"
 		last_pos[p.side] = p.pos
 		if p.dash_ticks > 0 and frame % 3 == 0 and Settings.high_effects():
 			_dust(p.pos, 0.7)
@@ -173,7 +197,7 @@ func handle(e: Dictionary) -> void:
 			overlay = {"kind": "ready", "ticks": int(sim.cfg.match.ready_ticks), "set": e.set}
 		"go":
 			overlay = {"kind": "go", "ticks": 45}
-			_referee("lob", sim.server == MatchSim.LEFT)
+			_referee("lob", sim.server == MatchSim.RIGHT)
 		"throw":
 			trail_color = Color("ffb347") if e.supersonic else Color(1, 1, 1, 0.7)
 			if e.smash:
@@ -203,6 +227,7 @@ func handle(e: Dictionary) -> void:
 			else:
 				_ring(sim.players[e.side].pos, Color(1, 1, 1, 0.8), 0.6)
 		"block", "power_toss":
+			if ref_anim == "idle": _referee("focus", sim.disc.pos.x > sim.net_x())
 			_burst(sim.disc.pos, UI.YELLOW, 1.1)
 		"drop":
 			_ring(sim.disc.pos, UI.CYAN, 0.8)
@@ -232,7 +257,7 @@ func handle(e: Dictionary) -> void:
 				for i in zones.size():
 					if t >= float(zones[i].from) and t <= float(zones[i].to):
 						zone_flash["%d:%d" % [defender, i]] = 70
-			_referee("win", e.side == MatchSim.LEFT)
+			_referee("win", e.side == MatchSim.RIGHT)
 			overlay = {"kind": "point", "ticks": int(sim.cfg.match.point_pause_ticks), "side": e.side,
 				"points": e.points, "reason": e.reason, "scores": e.scores}
 		"set_end":
@@ -411,7 +436,10 @@ func _draw_world(ci: CanvasItem, off: Vector2) -> void:
 
 func _draw_referee(ci: CanvasItem) -> void:
 	var ground := proj.floor_point(Vector2(sim.net_x() + 4.0, sim.court_height() + 58.0))
-	var f := referee.frame_for(ref_anim, ref_ticks if ref_anim != "idle" else frame)
+	var watching := "center" if absf(ref_focus) < 100.0 else "idle"
+	if sim.disc.state == MatchSim.Disc.FLYING and sim.disc.vel.length() > 20.0:
+		watching = "focus"
+	var f := referee.frame_for(watching if ref_anim == "idle" else ref_anim, ref_ticks if ref_anim != "idle" else frame)
 	_ellipse(ci, ground, 30, 10, Color(0.1, 0.0, 0.2, 0.35))
 	referee.draw(ci, f, ground, ref_facing_right, SPRITE_SCALE * 0.9)
 
@@ -443,7 +471,8 @@ func _anim_for(p: MatchSim.PlayerState) -> Array:
 	if p.charge > 0:
 		return ["charge", frame]
 	if moving[p.side]:
-		return ["run", run_phase[p.side]]
+		var direction: String = run_direction[p.side]
+		return [direction if arts[p.side].animations.has(direction) else "run", run_phase[p.side]]
 	return ["idle", frame]
 
 
@@ -471,7 +500,7 @@ func _pose(p: MatchSim.PlayerState, anim: Array) -> Dictionary:
 		"idle", "hold":
 			var b := 0.018 * sin(frame * 0.09 + p.side * 1.7)
 			stretch = Vector2(1.0 - b * 0.6, 1.0 + b)
-		"run":
+		"run", "run_up", "run_down":
 			var speed := clampf(vel[p.side].length() / run_speed, 0.0, 1.0)
 			lean = clampf(vel[p.side].x / run_speed, -1.0, 1.0) * 0.11
 			var step := absf(sin(run_phase[p.side] * 0.32))
@@ -535,6 +564,8 @@ func _draw_player(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
 	var pose := _pose(p, anim)
 	var ground: Vector2 = proj.air_point(p.pos, p.z) + pose.offset
 	var facing_right := p.side == MatchSim.LEFT
+	if anim[0] in ["run_up", "run_down"]:
+		facing_right = run_facing_right[p.side]
 	if anim[0] == "dash" and absf(p.dash_dir.x) > 0.2:
 		facing_right = p.dash_dir.x > 0.0
 	var c := UI.P1 if p.side == 0 else UI.P2

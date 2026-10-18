@@ -1,0 +1,14 @@
+IDENTITY-PRESERVING ANIMATION EDIT. Use BOTH supplied canonical images:
+D:\Hyperdisc Arena\hyperdisc-arena-repo\tools\art\characters\mick\base-v1\base.png
+D:\Hyperdisc Arena\hyperdisc-arena-repo\tools\art\characters\mick\base-v1\reference.png
+
+Character: mick. Animation: turnaround-v1. Required distinct frames: 2, grid 2 columns by 1 rows.
+Keep the EXACT approved character: face, age, hair silhouette, proportions,
+costume cut, accessories, shoes, palette, line weight and pixel clusters.
+Identity locks: magenta sunglasses covering both eyes, dark frames; blond tall flat-top and mullet silhouette; square mature jaw, muscular shoulders; silver dog tags; teal lightning tank; purple belted cargo shorts with thigh pockets; magenta wristbands; white/teal high tops and striped socks.
+Change only pose and facing needed for the movement. No redesign or reinterpretation.
+Transparent background, isolated complete figures, consistent scale and foot anchor.
+First make a front/back turnaround for visual comparison. Only after it matches,
+animate those same poses. Preserve the canonical references in every generation.
+Specify and verify the grid before extracting. Do not accept extra/missing limbs,
+lost accessories, altered faces, changed clothes, or inconsistent body mass.

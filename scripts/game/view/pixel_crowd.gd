@@ -14,12 +14,20 @@ var sections: Array[Rect2] = []
 var material: ShaderMaterial
 var canvas := RID()
 var rally_x := 0.5
+var reaction_side := -1
+var excitement := 0.0
+var event_serial := 0
 
 func _init(court: String = "stadium") -> void:
 	frames.watch = load("res://assets/art/courts/%s_pixel.png" % court)
 	for pose in ["clap","cheer","surprise"]:
 		frames[pose] = load("res://assets/art/crowds/%s_%s.png" % [court,pose])
 	_build_sections(court)
+	var groups_path := "res://assets/art/crowds/%s_groups.json" % court
+	if FileAccess.file_exists(groups_path):
+		sections.clear()
+		for box in JSON.parse_string(FileAccess.get_file_as_string(groups_path)):
+			sections.append(Rect2(box[0],box[1],box[2],box[3]))
 	material = ShaderMaterial.new()
 	material.shader = load("res://scripts/game/view/shaders/living_arena.gdshader")
 	material.set_shader_parameter("applause",frames.clap)
@@ -28,18 +36,22 @@ func _init(court: String = "stadium") -> void:
 	material.set_shader_parameter("court_style",["beach","lawn","tiled","concrete","clay","stadium"].find(court))
 	var boxes := PackedVector4Array()
 	var grids := PackedVector2Array()
+	var seat_map := Image.create(1920,1080,false,Image.FORMAT_R8)
+	seat_map.fill(Color.BLACK)
 	for area in sections:
 		boxes.append(Vector4(area.position.x,area.position.y,area.size.x,area.size.y))
+		seat_map.fill_rect(Rect2i(area),Color(float(boxes.size())/255.0,0,0))
 		var cell := Vector2(45,55)
 		if court == "stadium": cell = Vector2(35,38)
 		if area.size.x < 300: cell = Vector2(60,90)
 		grids.append(Vector2(maxi(1,roundi(area.size.x/cell.x)),maxi(1,roundi(area.size.y/cell.y))))
-	while boxes.size() < 8:
+	while boxes.size() < 64:
 		boxes.append(Vector4.ZERO)
 		grids.append(Vector2.ONE)
 	material.set_shader_parameter("audience",boxes)
 	material.set_shader_parameter("grids",grids)
 	material.set_shader_parameter("audience_count",sections.size())
+	material.set_shader_parameter("seat_map",ImageTexture.create_from_image(seat_map))
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE and canvas.is_valid():
@@ -88,6 +100,7 @@ func _build_sections(court: String) -> void:
 
 func tick() -> void:
 	clock += 1
+	excitement = maxf(0.0, excitement - 0.003)
 	reaction_age += 1
 	ticks_left = maxi(0,ticks_left-1)
 	if ticks_left == 0:
@@ -95,17 +108,26 @@ func tick() -> void:
 		priority = 0
 
 func handle(event: Dictionary) -> void:
+	if event.type in ["throw", "slap", "catch", "block", "special"]:
+		excitement = minf(1.0, excitement + (0.25 if event.type == "special" else 0.07))
+	var side := int(event.get("side", event.get("winner", -1)))
 	match event.type:
-		"point": _react("cheer",150,3)
-		"set_end": _react("cheer",240,4)
-		"match_over": _react("victory",480,5)
-		"special","block","power_toss": _react("surprise",85,2)
-		"catch": _react("clap",80,1)
-		"throw","slap": _react("clap",60,1)
+		"point": _react("cheer",150,3,side)
+		"set_end": _react("cheer",240,4,reaction_side)
+		"match_over": _react("victory",480,5,side)
+		"special","block","power_toss": _react("surprise",85,2,side)
+		"catch":
+			if event.get("special",false) or float(event.get("speed",0)) > 20.0:
+				_react("clap",80,1,side)
+		"slap": _react("clap",60,1,side)
 
-func _react(kind: String, duration: int, importance: int) -> void:
+func _react(kind: String, duration: int, importance: int, side := -1) -> void:
 	if importance < priority and ticks_left > 0: return
+	# Repeated catches must not restart the wave before distant fans react.
+	if kind == reaction and importance == priority and ticks_left > duration / 2: return
 	reaction = kind
+	reaction_side = side
+	event_serial += 1
 	ticks_left = duration
 	priority = importance
 	reaction_age = 0
@@ -133,6 +155,9 @@ func draw(ci: CanvasItem, offset: Vector2 = Vector2.ZERO) -> void:
 	material.set_shader_parameter("clock_seconds",float(clock)/60.0)
 	material.set_shader_parameter("reaction_age",float(reaction_age)/60.0)
 	material.set_shader_parameter("rally_x",rally_x)
+	material.set_shader_parameter("reaction_side",reaction_side)
+	material.set_shader_parameter("excitement",excitement)
+	material.set_shader_parameter("event_serial",float(event_serial))
 	var kind := 0
 	if reaction == "clap": kind = 1
 	if reaction in ["cheer","victory"]: kind = 2

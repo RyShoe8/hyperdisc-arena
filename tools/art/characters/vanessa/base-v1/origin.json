@@ -1,0 +1,47 @@
+{
+	"character": "vanessa",
+	"poses": [
+		{
+			"animation": "idle",
+			"bounds": [
+				136,
+				200,
+				233,
+				247
+			],
+			"frame": 0
+		},
+		{
+			"animation": "run",
+			"bounds": [
+				144,
+				221,
+				224,
+				229
+			],
+			"frame": 16
+		},
+		{
+			"animation": "throw",
+			"bounds": [
+				152,
+				202,
+				208,
+				248
+			],
+			"frame": 7
+		},
+		{
+			"animation": "catch",
+			"bounds": [
+				160,
+				204,
+				191,
+				246
+			],
+			"frame": 10
+		}
+	],
+	"source_atlas": "res://assets/art/characters/vanessa",
+	"source_revision": "9422b2b"
+}

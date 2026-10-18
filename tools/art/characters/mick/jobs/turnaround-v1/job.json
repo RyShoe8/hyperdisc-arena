@@ -1,0 +1,15 @@
+{
+  "character": "mick",
+  "animation": "turnaround-v1",
+  "base_version": "base-v1",
+  "base_sha256": "53f12f75353fccf78905718f2cf73da8cec7c370c05590b1ac0b19aff8b3d24e",
+  "reference_sha256": "74b7a5e736e4a21cc79366d9d0d6ae4cab48dd10b09e0f57137e37fbfb00b71c",
+  "expected_frames": 2,
+  "columns": 2,
+  "rows": 1,
+  "status": "needs-review",
+  "candidate": "candidate.png",
+  "candidate_sha256": "3025c2e6d91f0958ace59031ad4cef3de75647140eb68d54077322561508542d",
+  "review_notes": "",
+  "accepted_sha256": ""
+}

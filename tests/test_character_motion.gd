@@ -2,6 +2,10 @@ extends SceneTree
 func _initialize() -> void:
 	_run.call_deferred()
 func _run() -> void:
+	var catalog: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://tools/art/characters/catalog.json"))
+	for character in catalog.characters:
+		assert(FileAccess.get_sha256("res://"+character.base)==character.hashes["base.png"])
+		assert(FileAccess.get_sha256("res://"+character.reference)==character.hashes["reference.png"])
 	var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/balance.json"))
 	var sim=load("res://scripts/sim/match_sim.gd").new(rules,rules.characters[0],rules.characters[1],0)
 	var names: Array[String]=["LEFT","RIGHT"]
@@ -22,11 +26,52 @@ func _run() -> void:
 	view.moving[0]=true
 	view.run_phase[0]=-1
 	assert(view._anim_for(p)==["run",-1])
+	# Sustained vertical movement turns; a single diagonal wobble does not.
+	for i in 8:
+		p.pos.y -= 3
+		view.tick()
+	assert(view.run_direction[0]=="run_up")
+	assert(view._anim_for(p)[0]==("run_up" if view.arts[0].animations.has("run_up") else "run"))
+	p.pos += Vector2(3,0.1)
+	view.tick()
+	assert(view.run_direction[0]=="run_up")
+	for i in 10:
+		p.pos.y += 3
+		view.tick()
+	assert(view.run_direction[0]=="run_down")
+	view.tick()
+	assert(view._anim_for(p)[0]=="idle")
+	sim.server=sim.LEFT
+	view.handle({"type":"go"})
+	assert(not view.ref_facing_right)
+	sim.server=sim.RIGHT
+	view.handle({"type":"go"})
+	assert(view.ref_facing_right)
+	view.ref_anim="idle"
+	sim.disc.pos.x=0
+	for i in 30: view.tick()
+	assert(not view.ref_facing_right)
+	sim.disc.pos.x=sim.court_width()
+	for i in 30: view.tick()
+	assert(view.ref_facing_right)
 	for id in ["mick","pete","tiffany","keno","steve","vanessa"]:
 		var art=load("res://scripts/game/view/character_art.gd").new(id)
 		assert(art.animations.run.count==12 and art.animations.dash.count==6)
+		assert(art.animations.has("run_up") and art.animations.has("run_down"))
+		if art.animations.has("run_up"):
+			assert(art.animations.run_up.count==8 and art.animations.run_down.count==8)
+			assert(art.frame_for("run_up",32)==art.frame_for("run_up",0))
+			assert(art.frame_for("run_up",0)!=art.frame_for("run_down",0))
 		assert(art.frame_for("run",-1)==art.frame_for("run",31))
 		assert(art.frame_for("dash",8)<art.frame_for("dash",9))
 		assert(art.frame_for("dash",15)==art.frame_for("dash",100))
+	var crowd=view.pixel_spectators
+	assert(crowd.sections.size()>20 and crowd.sections.size()<=64)
+	crowd.handle({"type":"point","side":0})
+	var serial: int=crowd.event_serial
+	crowd.handle({"type":"catch","side":1,"speed":30})
+	assert(crowd.reaction=="cheer" and crowd.reaction_side==0 and crowd.event_serial==serial)
+	for i in 151: crowd.tick()
+	assert(crowd.reaction=="watch")
 	print("CHARACTER MOTION TESTS PASSED")
 	quit()

@@ -940,8 +940,10 @@ func test_pixel_mick_frames_and_reverse_run() -> void:
 func test_pixel_crowd_event_reactions() -> void:
 	var spectators = load("res://scripts/game/view/pixel_crowd.gd").new()
 	check(spectators.frames.watch != null, "arena crowd frame loads")
-	spectators.handle({"type":"catch"})
-	check(spectators.reaction == "clap", "rally catch gets applause")
+	spectators.handle({"type":"catch","speed":12})
+	check(spectators.reaction == "watch", "routine catch does not trigger uniform applause")
+	spectators.handle({"type":"catch","speed":25})
+	check(spectators.reaction == "clap", "fast catch gets applause")
 	spectators.handle({"type":"special"})
 	check(spectators.reaction == "surprise", "power play surprises spectators")
 	spectators.handle({"type":"point"})
@@ -966,11 +968,12 @@ func test_pixel_crowd_event_reactions() -> void:
 
 func test_pixel_referee_and_disc_assets() -> void:
 	var art = load("res://scripts/game/view/character_art.gd").new("referee")
-	check(art.pixel_art and art.frames.size() == 6, "referee uses six original pixel poses")
-	for name in ["idle", "lob", "win"]:
+	check(art.pixel_art and art.frames.size() >= 14, "referee includes court-facing poses")
+	for name in ["idle", "lob", "win", "center", "focus"]:
 		for tick in range(0, 100):
 			var f: int = art.frame_for(name, tick)
-			check(f >= 0 and f < 6, "%s referee animation stays in atlas" % name)
+			check(f >= 0 and f < art.frames.size(), "%s referee animation stays in atlas" % name)
+			check(Rect2(Vector2.ZERO,art.sheet.get_size()).encloses(art.region(f)), "%s referee region stays in texture" % name)
 	var disc: Texture2D = load("res://assets/art/disc/hyperdisc.png")
 	check(disc != null, "pixel disc imports")
 	var img := disc.get_image()

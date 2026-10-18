@@ -1,0 +1,15 @@
+{
+  "character": "mick",
+  "animation": "run-directions-v1",
+  "base_version": "base-v1",
+  "base_sha256": "53f12f75353fccf78905718f2cf73da8cec7c370c05590b1ac0b19aff8b3d24e",
+  "reference_sha256": "74b7a5e736e4a21cc79366d9d0d6ae4cab48dd10b09e0f57137e37fbfb00b71c",
+  "expected_frames": 16,
+  "columns": 4,
+  "rows": 4,
+  "status": "accepted",
+  "candidate": "candidate.png",
+  "candidate_sha256": "03a4020e57ea6ba4ef4da013a7c22fcfe2feac67cb84b348522b99f42ccd0727",
+  "review_notes": "Compared all 16 source poses and rendered identity-preview/mick-20.png with approved run. Magenta glasses and temples retained, blond flat-top, angular face, dog tags, lightning tank, cargo pockets, wristbands and shoe palette match. Back has plain tank, front retains motif. Equal-height comparison reads as same character; new direction drawings are not pixel-identical copies.",
+  "accepted_sha256": "03a4020e57ea6ba4ef4da013a7c22fcfe2feac67cb84b348522b99f42ccd0727"
+}

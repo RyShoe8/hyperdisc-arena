@@ -1,0 +1,15 @@
+{
+  "character": "pete",
+  "animation": "turnaround-v1",
+  "base_version": "base-v1",
+  "base_sha256": "f556490d2c803774cd2b4a0401096f3c18be157396ba2fe1b1e6da1f7f15e833",
+  "reference_sha256": "854229308abb820f0d333880870bfac149f25e5ccfc937cdcc4f7f4093a549a2",
+  "expected_frames": 2,
+  "columns": 2,
+  "rows": 1,
+  "status": "needs-review",
+  "candidate": "candidate.png",
+  "candidate_sha256": "91d49d270c3697e102634f40e65fc3471f40e52efbdac73c49930079859ddfa1",
+  "review_notes": "",
+  "accepted_sha256": ""
+}

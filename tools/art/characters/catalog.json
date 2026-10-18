@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "source_revision": "9422b2b",
+  "characters": [
+    {
+      "id": "mick",
+      "version": "base-v1",
+      "base": "tools/art/characters/mick/base-v1/base.png",
+      "reference": "tools/art/characters/mick/base-v1/reference.png",
+      "hashes": {
+        "base.png": "53f12f75353fccf78905718f2cf73da8cec7c370c05590b1ac0b19aff8b3d24e",
+        "reference.png": "74b7a5e736e4a21cc79366d9d0d6ae4cab48dd10b09e0f57137e37fbfb00b71c"
+      },
+      "identity_locks": [
+        "magenta sunglasses covering both eyes, dark frames",
+        "blond tall flat-top and mullet silhouette",
+        "square mature jaw, muscular shoulders",
+        "silver dog tags",
+        "teal lightning tank",
+        "purple belted cargo shorts with thigh pockets",
+        "magenta wristbands",
+        "white/teal high tops and striped socks"
+      ]
+    },
+    {
+      "id": "tiffany",
+      "version": "base-v1",
+      "base": "tools/art/characters/tiffany/base-v1/base.png",
+      "reference": "tools/art/characters/tiffany/base-v1/reference.png",
+      "hashes": {
+        "base.png": "3633ce1f16ee97553d72784e75a801980ed1eb1492cb60500a21fae8956f4c7b",
+        "reference.png": "aed8698b84f389cb12d63f05368656ee7d9ef77311802757cd07361a0bc1bf7b"
+      },
+      "identity_locks": [
+        "brunette ponytail with red tie",
+        "same adult face and curvy athletic proportions",
+        "classic red one-piece lifeguard swimsuit, preserve its exact coverage and cut",
+        "red/white trainers and socks",
+        "no new accessories"
+      ]
+    },
+    {
+      "id": "pete",
+      "version": "base-v1",
+      "base": "tools/art/characters/pete/base-v1/base.png",
+      "reference": "tools/art/characters/pete/base-v1/reference.png",
+      "hashes": {
+        "base.png": "f556490d2c803774cd2b4a0401096f3c18be157396ba2fe1b1e6da1f7f15e833",
+        "reference.png": "854229308abb820f0d333880870bfac149f25e5ccfc937cdcc4f7f4093a549a2"
+      },
+      "identity_locks": [
+        "black framed eyeglasses",
+        "dark skin and short curly fade",
+        "lean athletic physique",
+        "white collared polo with blue/coral chest stripes",
+        "blue shorts with white piping",
+        "blue/white high tops, striped socks",
+        "no headband"
+      ]
+    },
+    {
+      "id": "steve",
+      "version": "base-v1",
+      "base": "tools/art/characters/steve/base-v1/base.png",
+      "reference": "tools/art/characters/steve/base-v1/reference.png",
+      "hashes": {
+        "base.png": "86c20d28a6feff507ccd153cfe1155c8863f7203ea1b42b6180f5b344d287ac7",
+        "reference.png": "d5a78bd0862b2285069e4b8120dce1f76656c8cbf3c5eb8ee3a0a55b51bb7ba0"
+      },
+      "identity_locks": [
+        "ginger swept mullet, mature sly angular face",
+        "lanky narrow build",
+        "mint bowling shirt with dark geometric triangles, not foliage",
+        "cream cuffed trousers",
+        "red canvas sneakers"
+      ]
+    },
+    {
+      "id": "vanessa",
+      "version": "base-v1",
+      "base": "tools/art/characters/vanessa/base-v1/base.png",
+      "reference": "tools/art/characters/vanessa/base-v1/reference.png",
+      "hashes": {
+        "base.png": "33c39cb4518398b67033295247da2405ff35f50dff98b42839d233e89348c591",
+        "reference.png": "1c07c027ccb72a4690db8d056e4634d6962586bfdfe03151440bf961c45ce396"
+      },
+      "identity_locks": [
+        "blonde bob and aqua headband",
+        "slim upper body, strong legs, preserve approved proportions",
+        "ivory/aqua cropped jacket, original neckline",
+        "charcoal full-length leggings with aqua side stripe",
+        "aqua/white sneakers"
+      ]
+    },
+    {
+      "id": "keno",
+      "version": "base-v1",
+      "base": "tools/art/characters/keno/base-v1/base.png",
+      "reference": "tools/art/characters/keno/base-v1/reference.png",
+      "hashes": {
+        "base.png": "00a336b3e9e53bb96de4b3d03a586c380e68dc8fa6ddbc1c78a086630ea2ad7c",
+        "reference.png": "8ffd4dcfa67d0d699f89d485a66736804dc177aa46e951b6a99b44befa948f03"
+      },
+      "identity_locks": [
+        "Asian mature face and black buzz cut",
+        "very broad heavy muscular proportions",
+        "burgundy and charcoal singlet with exact panels",
+        "black knee pads",
+        "burgundy wristbands",
+        "black/burgundy shoes"
+      ]
+    }
+  ]
+}

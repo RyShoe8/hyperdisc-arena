@@ -1,0 +1,15 @@
+{
+  "character": "tiffany",
+  "animation": "turnaround-v1",
+  "base_version": "base-v1",
+  "base_sha256": "3633ce1f16ee97553d72784e75a801980ed1eb1492cb60500a21fae8956f4c7b",
+  "reference_sha256": "aed8698b84f389cb12d63f05368656ee7d9ef77311802757cd07361a0bc1bf7b",
+  "expected_frames": 2,
+  "columns": 2,
+  "rows": 1,
+  "status": "needs-review",
+  "candidate": "candidate.png",
+  "candidate_sha256": "76351ed697786626f67b471da72e5fcbf1e34b949639e2026519dc0fc114ac1a",
+  "review_notes": "",
+  "accepted_sha256": ""
+}

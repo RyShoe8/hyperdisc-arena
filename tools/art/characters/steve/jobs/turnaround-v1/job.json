@@ -1,0 +1,15 @@
+{
+  "character": "steve",
+  "animation": "turnaround-v1",
+  "base_version": "base-v1",
+  "base_sha256": "86c20d28a6feff507ccd153cfe1155c8863f7203ea1b42b6180f5b344d287ac7",
+  "reference_sha256": "d5a78bd0862b2285069e4b8120dce1f76656c8cbf3c5eb8ee3a0a55b51bb7ba0",
+  "expected_frames": 2,
+  "columns": 2,
+  "rows": 1,
+  "status": "needs-review",
+  "candidate": "candidate.png",
+  "candidate_sha256": "88542e500cbaa323e821d26e9a304226bc62a20e863f1cd95d4bc2c4f6e53f7d",
+  "review_notes": "",
+  "accepted_sha256": ""
+}

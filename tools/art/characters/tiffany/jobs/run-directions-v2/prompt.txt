@@ -1,0 +1,14 @@
+IDENTITY-PRESERVING ANIMATION EDIT. Use BOTH supplied canonical images:
+D:\Hyperdisc Arena\hyperdisc-arena-repo\tools\art\characters\tiffany\base-v1\base.png
+D:\Hyperdisc Arena\hyperdisc-arena-repo\tools\art\characters\tiffany\base-v1\reference.png
+
+Character: tiffany. Animation: run-directions-v2. Required distinct frames: 16, grid 4 columns by 4 rows.
+Keep the EXACT approved character: face, age, hair silhouette, proportions,
+costume cut, accessories, shoes, palette, line weight and pixel clusters.
+Identity locks: brunette ponytail with red tie; same adult face and curvy athletic proportions; classic red one-piece lifeguard swimsuit, preserve its exact coverage and cut; red/white trainers and socks; no new accessories.
+Change only pose and facing needed for the movement. No redesign or reinterpretation.
+Transparent background, isolated complete figures, consistent scale and foot anchor.
+First make a front/back turnaround for visual comparison. Only after it matches,
+animate those same poses. Preserve the canonical references in every generation.
+Specify and verify the grid before extracting. Do not accept extra/missing limbs,
+lost accessories, altered faces, changed clothes, or inconsistent body mass.

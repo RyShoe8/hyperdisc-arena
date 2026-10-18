@@ -1,0 +1,15 @@
+{
+  "character": "keno",
+  "animation": "run-directions-v1",
+  "base_version": "base-v1",
+  "base_sha256": "00a336b3e9e53bb96de4b3d03a586c380e68dc8fa6ddbc1c78a086630ea2ad7c",
+  "reference_sha256": "8ffd4dcfa67d0d699f89d485a66736804dc177aa46e951b6a99b44befa948f03",
+  "expected_frames": 16,
+  "columns": 4,
+  "rows": 4,
+  "status": "needs-review",
+  "candidate": "candidate.png",
+  "candidate_sha256": "338030e6b4dcd9541d66a928304bc292ebc699e346057cdede588b3861e8d3b5",
+  "review_notes": "",
+  "accepted_sha256": ""
+}

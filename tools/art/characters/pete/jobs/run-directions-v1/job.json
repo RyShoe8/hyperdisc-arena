@@ -1,0 +1,15 @@
+{
+  "character": "pete",
+  "animation": "run-directions-v1",
+  "base_version": "base-v1",
+  "base_sha256": "f556490d2c803774cd2b4a0401096f3c18be157396ba2fe1b1e6da1f7f15e833",
+  "reference_sha256": "854229308abb820f0d333880870bfac149f25e5ccfc937cdcc4f7f4093a549a2",
+  "expected_frames": 16,
+  "columns": 4,
+  "rows": 4,
+  "status": "needs-review",
+  "candidate": "candidate.png",
+  "candidate_sha256": "06306d9f01658d8d35f1f32d110bbc490a1c9c03112bd26211ed9f0fb4ee735e",
+  "review_notes": "",
+  "accepted_sha256": ""
+}

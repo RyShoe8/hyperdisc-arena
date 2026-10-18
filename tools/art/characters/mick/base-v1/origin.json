@@ -1,0 +1,47 @@
+{
+	"character": "mick",
+	"poses": [
+		{
+			"animation": "idle",
+			"bounds": [
+				174,
+				202,
+				176,
+				248
+			],
+			"frame": 0
+		},
+		{
+			"animation": "run",
+			"bounds": [
+				140,
+				214,
+				231,
+				236
+			],
+			"frame": 21
+		},
+		{
+			"animation": "throw",
+			"bounds": [
+				142,
+				200,
+				228,
+				250
+			],
+			"frame": 6
+		},
+		{
+			"animation": "catch",
+			"bounds": [
+				142,
+				200,
+				270,
+				250
+			],
+			"frame": 3
+		}
+	],
+	"source_atlas": "res://assets/art/characters/mick",
+	"source_revision": "9422b2b"
+}

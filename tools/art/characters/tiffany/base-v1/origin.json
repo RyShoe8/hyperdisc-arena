@@ -1,0 +1,47 @@
+{
+	"character": "tiffany",
+	"poses": [
+		{
+			"animation": "idle",
+			"bounds": [
+				138,
+				200,
+				236,
+				244
+			],
+			"frame": 0
+		},
+		{
+			"animation": "run",
+			"bounds": [
+				154,
+				213,
+				204,
+				237
+			],
+			"frame": 16
+		},
+		{
+			"animation": "throw",
+			"bounds": [
+				147,
+				204,
+				218,
+				246
+			],
+			"frame": 7
+		},
+		{
+			"animation": "catch",
+			"bounds": [
+				149,
+				211,
+				214,
+				239
+			],
+			"frame": 10
+		}
+	],
+	"source_atlas": "res://assets/art/characters/tiffany",
+	"source_revision": "9422b2b"
+}
