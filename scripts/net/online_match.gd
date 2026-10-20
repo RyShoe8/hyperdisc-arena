@@ -12,7 +12,7 @@ const RollbackSession := preload("res://scripts/net/rollback_session.gd")
 enum State { CONNECTING, LOBBY, PLAYING, ENDED, FAILED }
 
 ## Bump when the wire format or the rules change incompatibly.
-const PROTOCOL := 4  # 4: input buffer, throws out of knockback, 32-bit inputs; 3: analog movement angle
+const PROTOCOL := 5  # 5: explicit curve takes priority over normal throw; prevents mixed-sim desyncs
 const PKT_LOBBY := 1
 const RESEND_TICKS := 20
 const TIMEOUT_TICKS := 600

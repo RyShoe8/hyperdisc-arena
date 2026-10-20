@@ -236,7 +236,8 @@ func input(player: int) -> Dictionary:
 		"a": pressed(player, "a"), "b": pressed(player, "b"),
 		"jump": pressed(player, "jump"), "slap": pressed(player, "slap"),
 		"a_down": s.get("a", false), "b_down": s.get("b", false), "soft": s.get("soft", false),
-		"curve_high": pressed(player, "curve_high"), "curve_low": pressed(player, "curve_low")}
+		"curve_high": pressed(player, "curve_high") or (pressed(player, "a") and s.get("curve_high", false)),
+		"curve_low": pressed(player, "curve_low") or (pressed(player, "a") and s.get("curve_low", false))}
 
 
 ## True on the tick a button goes down.

@@ -382,15 +382,15 @@ func _update_player(p: PlayerState, input: Dictionary) -> void:
 			_special(p, true, input)
 		elif input.get("b", false):
 			_lob(p, input)
+		elif input.get("curve_high", false) or input.get("curve_low", false):
+			# One-button curve throws: high starts up and bends down (like
+			# 8-9-6), low starts down and bends up (like 2-3-6).
+			_throw(p, input, false, -1 if input.get("curve_high", false) else 1)
 		elif input.get("a", false):
 			if p.charged:
 				_special(p, false, input)
 			else:
 				_throw(p, input, false)
-		elif input.get("curve_high", false) or input.get("curve_low", false):
-			# One-button curve throws: high starts up and bends down (like
-			# 8-9-6), low starts down and bends up (like 2-3-6).
-			_throw(p, input, false, -1 if input.get("curve_high", false) else 1)
 		elif p.hold_ticks >= _hold_limit(p):
 			_throw(p, {"x": 0, "y": 0}, false)
 		return

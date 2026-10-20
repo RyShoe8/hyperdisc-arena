@@ -1138,6 +1138,25 @@ func test_menu_direction_repeats_when_held() -> void:
 	check(not ControlsScript._repeats(held), "letting go stops the repeat")
 
 func test_shoulder_buttons_throw_curves() -> void:
+	var controls = ControlsScript.new()
+	for action in ["curve_high", "curve_low"]:
+		controls._prev[0] = {action: true}
+		controls._now[0] = {action: true, "a": true}
+		check(controls.input(0)[action], "held shoulder modifies a new throw press")
+		controls._prev[0] = {action: true, "a": true}
+		check(not controls.input(0)[action], "held buttons do not repeatedly throw")
+	controls.free()
+	for side in [MatchSim.LEFT, MatchSim.RIGHT]:
+		for action in ["curve_high", "curve_low"]:
+			var combined := new_sim()
+			var p := hold(combined, side)
+			p.pos = Vector2(200 if side == MatchSim.LEFT else combined.court_width()-200, combined.court_height()/2.0)
+			combined.disc.pos = p.pos
+			var inputs := [IDLE, IDLE]
+			inputs[side] = press({"a": true, action: true})
+			combined.step(inputs)
+			check(combined.disc.curve > 0 if action == "curve_high" else combined.disc.curve < 0,
+				"explicit curve wins over simultaneous normal throw on either side")
 	var low := new_sim()
 	var lp := hold(low, MatchSim.LEFT)
 	lp.pos = Vector2(200, low.court_height() / 2.0)
