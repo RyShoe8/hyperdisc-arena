@@ -1,0 +1,15 @@
+{
+  "character": "keno",
+  "animation": "celebration-v1",
+  "base_version": "base-v1",
+  "base_sha256": "00a336b3e9e53bb96de4b3d03a586c380e68dc8fa6ddbc1c78a086630ea2ad7c",
+  "reference_sha256": "8ffd4dcfa67d0d699f89d485a66736804dc177aa46e951b6a99b44befa948f03",
+  "expected_frames": 8,
+  "columns": 4,
+  "rows": 2,
+  "status": "accepted",
+  "candidate": "candidate.png",
+  "candidate_sha256": "6792af704bd4f5d09bc169f76a32dd24eb4412170cb4550a762a1c0d563a789d",
+  "review_notes": "Eight separate poses; matching massive build, buzzcut, burgundy and charcoal singlet, knee pads and footwear. Double flex into chest-out final pose.",
+  "accepted_sha256": "6792af704bd4f5d09bc169f76a32dd24eb4412170cb4550a762a1c0d563a789d"
+}

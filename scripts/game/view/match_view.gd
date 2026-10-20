@@ -71,6 +71,7 @@ var ref_anim := "idle"
 var ref_ticks := 0
 var ref_facing_right := true
 var ref_focus := 0.0
+var celebration_ticks := 0
 
 
 func _init(match_sim: MatchSim, character_ids: Array, player_names: Array[String]) -> void:
@@ -97,6 +98,8 @@ func _init(match_sim: MatchSim, character_ids: Array, player_names: Array[String
 # --- Per-tick updates ------------------------------------------------------
 
 func tick() -> void:
+	if sim.phase == MatchSim.Phase.MATCH_OVER:
+		celebration_ticks += 1
 	frame += 1
 	if pixel_spectators != null:
 		pixel_spectators.tick()
@@ -266,6 +269,7 @@ func handle(e: Dictionary) -> void:
 				"sets": e.sets_won, "set": e.set}
 		"match_over":
 			cheer_ticks = 400
+			celebration_ticks = 0
 
 
 func _referee(anim: String, facing_right: bool) -> void:
@@ -446,7 +450,7 @@ func _draw_referee(ci: CanvasItem) -> void:
 
 func _anim_for(p: MatchSim.PlayerState) -> Array:
 	if sim.phase == MatchSim.Phase.MATCH_OVER:
-		return ["win" if sim.winner == p.side else "lose", frame]
+		return ["win" if sim.winner == p.side else "lose", celebration_ticks]
 	if p.dash_ticks > 0:
 		return ["dash", int(sim.cfg.player.dash_ticks) - p.dash_ticks]
 	if p.recovery_ticks > 0 and dive_age[p.side] <= int(sim.cfg.player.dash_ticks) + int(sim.cfg.player.dash_recovery_ticks):
@@ -545,9 +549,8 @@ func _pose(p: MatchSim.PlayerState, anim: Array) -> Dictionary:
 			offset.x = sin(frame * 1.7) * 1.5
 			stretch = Vector2(1.04, 0.95)
 		"win":
-			var hop := absf(sin(frame * 0.14 + p.side))
-			offset.y = -hop * 26.0
-			stretch = Vector2(1.0 - 0.06 * hop, 1.0 + 0.08 * hop) if hop > 0.25 else Vector2(1.08, 0.9)
+			# Authored body motion supplies the gesture; keep planted feet stable.
+			stretch = Vector2.ONE
 		"lose":
 			stretch = Vector2(1.04, 0.93)
 			lean = fwd * 0.07 + sin(frame * 0.04) * 0.02
@@ -658,11 +661,11 @@ func _draw_trail(ci: CanvasItem) -> void:
 	var width := 34.0 if special else (22.0 if d.supersonic else 10.0)
 	for i in range(trail.size() - 1, 0, -1):
 		var t := 1.0 - float(i) / trail.size()
-		var w := width * t
-		ci.draw_line(trail[i], trail[i - 1], Color(trail_color, 0.25 * t), w * 1.8)
-		ci.draw_line(trail[i], trail[i - 1], Color(trail_color, 0.8 * t), w)
+		var w := maxf(3.0, snappedf(width * t, 3.0))
+		ci.draw_line(trail[i].snapped(Vector2(3, 3)), trail[i - 1].snapped(Vector2(3, 3)), Color(trail_color, 0.25 * t), w * 1.8)
+		ci.draw_line(trail[i].snapped(Vector2(3, 3)), trail[i - 1].snapped(Vector2(3, 3)), Color(trail_color, 0.8 * t), w)
 		if special or d.supersonic:
-			ci.draw_line(trail[i], trail[i - 1], Color(1, 1, 1, 0.9 * t), w * 0.35)
+			ci.draw_line(trail[i].snapped(Vector2(3, 3)), trail[i - 1].snapped(Vector2(3, 3)), Color(1, 1, 1, 0.9 * t), w * 0.35)
 
 
 func _draw_barrier(ci: CanvasItem, b: Vector3) -> void:
@@ -696,18 +699,38 @@ func _draw_effects(ci: CanvasItem, off: Vector2) -> void:
 		var t: float = float(e.age) / float(e.life)
 		match e.type:
 			"burst":
-				var c := proj.air_point(e.pos, 20)
-				var r: float = (30.0 + 70.0 * t) * e.size
-				UI.starburst(ci, c, r * 0.45, r, 10, Color(e.color, 1.0 - t), e.rot)
-				UI.starburst(ci, c, r * 0.25, r * 0.6, 10, Color(1, 1, 1, 1.0 - t), e.rot + 0.3)
+				# Fast contact flash, then separated sparks with a slower decay.
+				var c := proj.air_point(e.pos, FLY_HEIGHT).snapped(Vector2(3, 3))
+				var travel := 1.0 - pow(1.0 - t, 3.0)
+				var opacity := (1.0 - t) * (1.0 - t)
+				if e.age < 4:
+					var flash: float = (22.0 - e.age * 3.0) * e.size
+					ci.draw_rect(Rect2(c - Vector2(flash, 3), Vector2(flash * 2, 6)), Color.WHITE)
+					ci.draw_rect(Rect2(c - Vector2(3, flash), Vector2(6, flash * 2)), Color.WHITE)
+				var count := 10 if Settings.high_effects() else 5
+				for i in count:
+					var angle: float = e.rot + TAU * i / count
+					var direction := Vector2(cos(angle), sin(angle) * 0.7)
+					var distance: float = (12.0 + travel * (42.0 + (i % 3) * 14.0)) * e.size
+					var tip := (c + direction * distance + Vector2(0, t * t * 24)).snapped(Vector2(3, 3))
+					var width := maxf(3, snappedf((7.0 - 4.0 * t) * e.size, 3))
+					ci.draw_rect(Rect2(tip - Vector2.ONE * width * 0.5, Vector2.ONE * width), Color(e.color, opacity))
+					if t < 0.45:
+						ci.draw_rect(Rect2(tip, Vector2(3, 3)), Color(1, 1, 1, opacity))
 			"ring":
 				var c := proj.floor_point(e.pos)
-				ci.draw_set_transform(c + off, 0.0, Vector2(1.0, 0.5))
-				ci.draw_arc(Vector2.ZERO, (20 + 70 * t) * e.size, 0, TAU, 36, Color(e.color, 1.0 - t), 5.0 * (1.0 - t) + 1.0)
-				ci.draw_set_transform(off)
+				var radius: float = (12.0 + 65.0 * (1.0 - pow(1.0 - t, 2))) * e.size
+				# Broken pixel shockwave leaves the disc and catch marker readable.
+				for i in 16:
+					var angle := TAU * i / 16.0
+					var point := (c + Vector2(cos(angle), sin(angle) * 0.45) * radius).snapped(Vector2(3, 3))
+					var width := 6.0 if t < 0.5 else 3.0
+					ci.draw_rect(Rect2(point, Vector2(width, 3)), Color(e.color, 1.0 - t))
 			"dust":
-				var c := proj.floor_point(e.pos) + Vector2(e.drift * e.age * 2.0, -t * 26.0)
-				ci.draw_circle(c, (8 + 16 * t) * e.size, Color(1, 0.95, 0.9, 0.5 * (1.0 - t)))
+				var c := (proj.floor_point(e.pos) + Vector2(e.drift * e.age * 2.0, -t * 26.0)).snapped(Vector2(3, 3))
+				var size: float = snappedf((6 + 10 * sin(t * PI)) * e.size, 3)
+				ci.draw_rect(Rect2(c - Vector2(size, size * 0.5), Vector2(size * 2, size)), Color(0.85, 0.77, 0.69, 0.45 * (1.0 - t)))
+				ci.draw_rect(Rect2(c - Vector2(size * 0.5, size), Vector2(size, size)), Color(1, 0.95, 0.85, 0.5 * (1.0 - t)))
 			"text":
 				var c := proj.air_point(e.pos, 150 + t * 60)
 				UI.text(ci, c, e.text, 34, Color(e.color, 1.0 - t * t), UI.display)

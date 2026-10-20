@@ -34,6 +34,14 @@ var _presence_status := "online"
 var _next_presence_start_ms := 0
 var _seen_invites := {}
 var _busy := {}
+const LOBBY_PATH := "/api/game-lobby/hyperdisc-arena"
+var lobby_rooms: Array = []
+var lobby_players: Array = []
+var lobby_error := ""
+var lobby_visible := false
+var lobby_room := {}
+var _next_lobby_ms := 0
+var _next_lobby_pulse_ms := 0
 
 
 func service_name() -> String:
@@ -132,9 +140,14 @@ func cancel_sign_in() -> void:
 
 func sign_out() -> void:
 	if api.token != "":
+		api.call_api(HTTPClient.METHOD_DELETE, LOBBY_PATH)
 		_end_presence()
 		api.call_api(HTTPClient.METHOD_POST, "/api/game-auth/logout", {})
 	api.token = ""
+	lobby_room = {}
+	lobby_rooms = []
+	lobby_players = []
+	lobby_visible = false
 	_profile = {}
 	_friends = []
 	_save_token("")
@@ -181,6 +194,12 @@ func poll() -> void:
 	if not is_signed_in():
 		return
 	var now := Time.get_ticks_msec()
+	if now >= _next_lobby_pulse_ms and not _busy.has("lobby_pulse"):
+		_next_lobby_pulse_ms = now + 15000
+		_lobby_pulse()
+	if lobby_visible and now >= _next_lobby_ms and not _busy.has("lobby"):
+		_next_lobby_ms = now + 5000
+		_refresh_lobby()
 	if now >= _next_friends_ms and not _busy.has("friends"):
 		_next_friends_ms = now + FRIENDS_REFRESH_MS
 		_refresh_friends()
@@ -195,6 +214,36 @@ func poll() -> void:
 
 func refresh_friends_now() -> void:
 	_next_friends_ms = 0
+
+
+func refresh_lobby_now() -> void:
+	_next_lobby_ms = 0
+	_next_lobby_pulse_ms = 0
+
+
+func _lobby_pulse() -> void:
+	_busy["lobby_pulse"] = true
+	var body: Dictionary = lobby_room.duplicate()
+	body.status = _presence_status
+	var res: Dictionary = await api.call_api(HTTPClient.METHOD_POST, LOBBY_PATH, body)
+	_busy.erase("lobby_pulse")
+	if int(res.get("_status", 0)) == 409:
+		lobby_room = {}
+		_next_lobby_pulse_ms = 0
+
+
+func _refresh_lobby() -> void:
+	_busy["lobby"] = true
+	var res: Dictionary = await api.call_api(HTTPClient.METHOD_GET, LOBBY_PATH)
+	_busy.erase("lobby")
+	if not res.get("_ok", false):
+		lobby_rooms = []
+		lobby_players = []
+		lobby_error = str(res.get("error", "LOBBY UNAVAILABLE - TRY AGAIN")).to_upper()
+		return
+	lobby_error = ""
+	lobby_rooms = res.get("rooms", [])
+	lobby_players = res.get("players", [])
 
 
 func _refresh_friends() -> void:
@@ -312,6 +361,8 @@ func has_presence() -> bool:
 
 ## Called when the game quits, so friends stop seeing us online.
 func shutdown() -> void:
+	if is_signed_in():
+		await api.call_api(HTTPClient.METHOD_DELETE, LOBBY_PATH)
 	await _end_presence()
 
 
@@ -354,6 +405,9 @@ func _ready_transport(info: Dictionary, as_role: String) -> void:
 	if t.start(api, info, "host" if as_role == "host" else "client") != OK:
 		error.emit(t.failure)
 		return
+	if as_role == "host" and is_signed_in():
+		lobby_room = {"sessionId": str(info.sessionId), "hostToken": str(info.hostToken)}
+		_next_lobby_pulse_ms = 0
 	match_ready.emit({"role": as_role, "transport": t, "opponent": {}, "room_code": str(info.get("joinCode", ""))})
 
 

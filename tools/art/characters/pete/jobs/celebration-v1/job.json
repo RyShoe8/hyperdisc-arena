@@ -1,0 +1,15 @@
+{
+  "character": "pete",
+  "animation": "celebration-v1",
+  "base_version": "base-v1",
+  "base_sha256": "f556490d2c803774cd2b4a0401096f3c18be157396ba2fe1b1e6da1f7f15e833",
+  "reference_sha256": "854229308abb820f0d333880870bfac149f25e5ccfc937cdcc4f7f4093a549a2",
+  "expected_frames": 8,
+  "columns": 4,
+  "rows": 2,
+  "status": "accepted",
+  "candidate": "candidate.png",
+  "candidate_sha256": "988d1260696f03702d8f85fdb6442cd12193848f8f0ab7659d940aa358823d2a",
+  "review_notes": "Compared all eight poses with canonical reference: hairstyle, outfit, accessories and gesture continuity retained; transparent extraction found eight separate full figures. Runtime scale and planted feet checked separately in preview.",
+  "accepted_sha256": "988d1260696f03702d8f85fdb6442cd12193848f8f0ab7659d940aa358823d2a"
+}

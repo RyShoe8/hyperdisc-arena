@@ -1,0 +1,4 @@
+Built-in image generation, transparent background.
+Reference: ../../base-v1/reference.png (relative to the character jobs parent).
+
+Production pixel art sprite animation of tiffany, exactly the SAME adult character as reference. Reference image is identity and clothing source, not layout. Preserve face, hairstyle, glasses if present, proportions, outfit cut, all colors/accessories exactly. Make 8 consecutive frames of a cheerful raised hand wave with a small celebratory knee bounce. Anticipation, transition, expressive peak, settle into proud final pose. Four columns TWO rows, EXACTLY EIGHT separate full body figures. Generous transparent gutters. Consistent scale, feet baseline and mildly elevated three-quarter right-facing camera, no camera rotation. Crisp pixel clusters matching source. No text, ground, shadows, props, background or disconnected decorative marks. Fully transparent alpha.

@@ -1,0 +1,14 @@
+IDENTITY-PRESERVING ANIMATION EDIT. Use BOTH supplied canonical images:
+D:\Hyperdisc Arena\hyperdisc-arena-repo\tools\art\characters\vanessa\base-v1\base.png
+D:\Hyperdisc Arena\hyperdisc-arena-repo\tools\art\characters\vanessa\base-v1\reference.png
+
+Character: vanessa. Animation: celebration-v2. Required distinct frames: 8, grid 4 columns by 2 rows.
+Keep the EXACT approved character: face, age, hair silhouette, proportions,
+costume cut, accessories, shoes, palette, line weight and pixel clusters.
+Identity locks: blonde bob and aqua headband; slim upper body, strong legs, preserve approved proportions; ivory/aqua cropped jacket, original neckline; charcoal full-length leggings with aqua side stripe; aqua/white sneakers.
+Change only pose and facing needed for the movement. No redesign or reinterpretation.
+Transparent background, isolated complete figures, consistent scale and foot anchor.
+First make a front/back turnaround for visual comparison. Only after it matches,
+animate those same poses. Preserve the canonical references in every generation.
+Specify and verify the grid before extracting. Do not accept extra/missing limbs,
+lost accessories, altered faces, changed clothes, or inconsistent body mass.

@@ -1,0 +1,15 @@
+{
+  "character": "vanessa",
+  "animation": "celebration-v1",
+  "base_version": "base-v1",
+  "base_sha256": "33c39cb4518398b67033295247da2405ff35f50dff98b42839d233e89348c591",
+  "reference_sha256": "1c07c027ccb72a4690db8d056e4634d6962586bfdfe03151440bf961c45ce396",
+  "expected_frames": 8,
+  "columns": 4,
+  "rows": 2,
+  "status": "needs-review",
+  "candidate": "candidate.png",
+  "candidate_sha256": "26d8ba757eccbe7fa4534a5bcbf74446c3cf373ab413823b1b6f7dd651bfacda",
+  "review_notes": "",
+  "accepted_sha256": ""
+}

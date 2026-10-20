@@ -1,0 +1,15 @@
+{
+  "character": "steve",
+  "animation": "celebration-v1",
+  "base_version": "base-v1",
+  "base_sha256": "86c20d28a6feff507ccd153cfe1155c8863f7203ea1b42b6180f5b344d287ac7",
+  "reference_sha256": "d5a78bd0862b2285069e4b8120dce1f76656c8cbf3c5eb8ee3a0a55b51bb7ba0",
+  "expected_frames": 8,
+  "columns": 4,
+  "rows": 2,
+  "status": "accepted",
+  "candidate": "candidate.png",
+  "candidate_sha256": "b5775a154b97fa48678ea84f97df2886db15e7f8902ae336732e6185fd46e482",
+  "review_notes": "Compared all eight poses with canonical reference: hairstyle, outfit, accessories and gesture continuity retained; transparent extraction found eight separate full figures. Runtime scale and planted feet checked separately in preview.",
+  "accepted_sha256": "b5775a154b97fa48678ea84f97df2886db15e7f8902ae336732e6185fd46e482"
+}

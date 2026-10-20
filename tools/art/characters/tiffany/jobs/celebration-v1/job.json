@@ -1,0 +1,15 @@
+{
+  "character": "tiffany",
+  "animation": "celebration-v1",
+  "base_version": "base-v1",
+  "base_sha256": "3633ce1f16ee97553d72784e75a801980ed1eb1492cb60500a21fae8956f4c7b",
+  "reference_sha256": "aed8698b84f389cb12d63f05368656ee7d9ef77311802757cd07361a0bc1bf7b",
+  "expected_frames": 8,
+  "columns": 4,
+  "rows": 2,
+  "status": "accepted",
+  "candidate": "candidate.png",
+  "candidate_sha256": "de95bce17f74744f4bea67c69487b1c473cb5ee3f8891984d2f59fb6fe6ccacd",
+  "review_notes": "Compared all eight poses with canonical reference: hairstyle, outfit, accessories and gesture continuity retained; transparent extraction found eight separate full figures. Runtime scale and planted feet checked separately in preview.",
+  "accepted_sha256": "de95bce17f74744f4bea67c69487b1c473cb5ee3f8891984d2f59fb6fe6ccacd"
+}

@@ -22,6 +22,9 @@ var leave_index := 0
 var vs_ticks := 0
 var announced_rematch := false
 var friends_index := 0
+var browser_index := 0
+var player_page := 0
+var browser_rows: Array = []
 ## True while waiting on PlayBound (creating or joining a room, inviting).
 var busy := false
 
@@ -81,6 +84,8 @@ func _clean(field: String, value: String) -> String:
 func _finish_typing(keep: bool) -> void:
 	var field: String = typing.field
 	var value: String = typing.value.strip_edges()
+	if keep and value.is_empty() and field in ["address", "room"]:
+		return
 	typing = {}
 	if not keep:
 		Sfx.play("menu_back")
@@ -112,8 +117,7 @@ func menu_items() -> Array:
 		items.append(["friends", "FRIENDS  (%d ONLINE)" % online_count, true])
 	else:
 		items.append(["sign_in", "SIGN IN WITH PLAYBOUND", true])
-	items.append(["host_room", "HOST ROOM", true])
-	items.append(["join_room", "JOIN ROOM", true])
+	items.append(["browse", "LOBBY", true])
 	items.append(["host_lan", "HOST ON LAN", true])
 	items.append(["join_ip", "JOIN BY ADDRESS", true])
 	if Online.signed_in():
@@ -141,6 +145,14 @@ func menu_input() -> void:
 		return
 	Sfx.play("menu_confirm")
 	match items[menu_index][0]:
+		"browse":
+			if not Online.signed_in():
+				sign_in()
+				return
+			browser_index = 0
+			Online.playbound.lobby_visible = true
+			Online.playbound.refresh_lobby_now()
+			m._go(m.Screen.ONLINE_ROOM)
 		"sign_in":
 			sign_in()
 		"friends":
@@ -183,8 +195,12 @@ func _connect(address: String) -> void:
 func host_room() -> void:
 	Online.close()
 	busy = true
+	m._go(m.Screen.ONLINE_WAIT)
 	await Online.host_room()
 	busy = false
+	if m.screen != m.Screen.ONLINE_WAIT:
+		Online.close()
+		return
 	_after_connect_attempt()
 
 
@@ -194,6 +210,9 @@ func join_room(code: String) -> void:
 	m._go(m.Screen.ONLINE_WAIT)
 	await Online.join_room(code)
 	busy = false
+	if m.screen != m.Screen.ONLINE_WAIT:
+		Online.close()
+		return
 	_after_connect_attempt()
 
 
@@ -207,8 +226,66 @@ func _after_connect_attempt() -> void:
 
 
 func join_input() -> void:
-	# All handled by text entry; Escape cancels back to the menu.
-	pass
+	if m._back_pressed():
+		typing = {}
+		m._go(m.Screen.ONLINE)
+
+
+func browser_input() -> void:
+	if m._back_pressed():
+		Online.playbound.lobby_visible = false
+		m._go(m.Screen.ONLINE)
+		return
+	if busy:
+		return
+	var rooms: Array = browser_rows
+	var n := Controls.menu_nudged()
+	browser_index = clampi(browser_index + n.y, 0, rooms.size() + 1)
+	player_page = clampi(player_page + n.x, 0, maxi(0, (Online.playbound.lobby_players.size()-1)/10))
+	if m._confirm_device() == -1:
+		return
+	if browser_index == 0:
+		host_room()
+	elif browser_index == 1:
+		Online.playbound.refresh_lobby_now()
+	else:
+		var room: Dictionary = rooms[browser_index-2]
+		if str(room.version) != Online.playbound.build_id:
+			m.toast_msg("DIFFERENT GAME VERSION - BOTH PLAYERS NEED THE SAME BUILD")
+			return
+		join_room(str(room.code))
+
+
+func draw_browser() -> void:
+	UI.outrun_background(m, m.SCREEN, m.frame / 60.0, 0.55)
+	UI.text(m, Vector2(960, 135), "HYPERDISC LOBBY", 80, UI.YELLOW, UI.display, 6)
+	var pb = Online.playbound
+	var selected_id := ""
+	if browser_index >= 2 and browser_index-2 < browser_rows.size():
+		selected_id = str(browser_rows[browser_index-2].id)
+	browser_rows = pb.lobby_rooms.duplicate(true)
+	if selected_id != "":
+		browser_index = 1
+		for i in browser_rows.size():
+			if str(browser_rows[i].id) == selected_id: browser_index = i+2
+	UI.text(m, Vector2(580, 225), "PUBLIC ROOMS", 36, UI.CYAN, UI.ui, 3)
+	UI.text(m, Vector2(1450, 225), "PLAYERS ONLINE (%d)" % pb.lobby_players.size(), 32, UI.CYAN, UI.ui, 3)
+	UI.button(m, Rect2(150,270,860,64), "CREATING ROOM..." if busy else "CREATE ROOM", browser_index==0,m.frame)
+	UI.button(m, Rect2(150,348,860,64), "REFRESH", browser_index==1,m.frame)
+	var first := maxi(0, browser_index-7)
+	for i in range(first, mini(first+6,pb.lobby_rooms.size())):
+		var room: Dictionary = pb.lobby_rooms[i]
+		var label := "%s'S ROOM  %d/%d" % [str(room.name).left(24).to_upper(),room.players,room.capacity]
+		if str(room.version) != pb.build_id: label += "  [UPDATE NEEDED]"
+		UI.button(m, Rect2(150,440+(i-first)*70,860,60),label,browser_index==i+2,m.frame)
+	if pb.lobby_rooms.is_empty():
+		UI.text(m, Vector2(580,515), "NO OPEN ROOMS - CREATE ONE", 28, UI.DIM, UI.ui, 3)
+	player_page=clampi(player_page,0,maxi(0,(pb.lobby_players.size()-1)/10))
+	for i in range(player_page*10,mini(player_page*10+10,pb.lobby_players.size())):
+		var player: Dictionary=pb.lobby_players[i]
+		UI.text(m, Vector2(1450,300+(i%10)*52),str(player.name).left(24).to_upper()+"  -  "+str(player.status).to_upper(),25,Color.WHITE,UI.ui,2)
+	UI.text(m,Vector2(960,925),pb.lobby_error if pb.lobby_error!="" else "YOUR PLAYBOUND NAME IS VISIBLE TO PLAYERS IN THIS GAME",24,UI.DIM,UI.ui,2)
+	m._hint("%s SELECT     %s BACK     LEFT / RIGHT: PLAYER PAGES" % [m._a(),m._b()])
 
 
 # --- PlayBound sign-in -----------------------------------------------------------
@@ -308,6 +385,10 @@ func invite_input() -> void:
 # --- Waiting for a connection ------------------------------------------------
 
 func wait_input() -> void:
+	if m._back_pressed():
+		Online.close()
+		m._go(m.Screen.ONLINE)
+		return
 	var o := om()
 	if o == null:
 		if not busy:
@@ -589,8 +670,8 @@ func draw_menu() -> void:
 		var about: String = {
 			"sign_in": "USE YOUR PLAYBOUND ACCOUNT (OR MAKE ONE) FOR FRIENDS AND INVITES",
 			"friends": "SEE WHO'S ONLINE AND INVITE THEM TO PLAY",
-			"host_room": "GET A ROOM CODE TO SHARE - WORKS OVER THE INTERNET, NO SETUP",
-			"join_room": "TYPE A FRIEND'S ROOM CODE",
+			"browse": "BROWSE PUBLIC ROOMS AND SEE PLAYERS ONLINE",
+
 			"host_lan": "PLAY SOMEONE ON THE SAME NETWORK",
 			"join_ip": "CONNECT STRAIGHT TO AN ADDRESS",
 		}.get(id, "")
@@ -626,11 +707,11 @@ func draw_wait() -> void:
 	UI.text(ci, Vector2(960, 260), ("WAITING FOR A PLAYER" if hosting else "CONNECTING") + dots, 80, UI.YELLOW,
 		UI.display, 7, HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)
 	if hosting and Online.room_code != "":
-		UI.text(ci, Vector2(960, 390), "YOUR ROOM CODE", 34, Color.WHITE, UI.ui, 4)
+		UI.text(ci, Vector2(960, 390), "PUBLIC ROOM", 34, Color.WHITE, UI.ui, 4)
 		var box := Rect2(Vector2(610, 420), Vector2(700, 150))
 		UI.slant_panel(ci, box, Color("120826"), UI.CYAN, 28, 6)
-		UI.text(ci, Vector2(960, 528), Online.room_code, 104, UI.YELLOW, UI.display, 8)
-		UI.text(ci, Vector2(960, 640), "YOUR FRIEND PICKS ONLINE > JOIN ROOM AND TYPES THIS CODE", 28, UI.DIM, UI.ui, 3)
+		UI.text(ci, Vector2(960, 528), Online.display_name() + "'S ROOM", 64, UI.YELLOW, UI.display, 8)
+		UI.text(ci, Vector2(960, 640), "PLAYERS CAN FIND YOU IN ONLINE > LOBBY", 28, UI.DIM, UI.ui, 3)
 		if Online.signed_in():
 			UI.text(ci, Vector2(960, 700), "OR PRESS %s TO INVITE A PLAYBOUND FRIEND" % Controls.label(0, "slap"),
 				32, UI.CYAN, UI.ui, 4)

@@ -29,6 +29,7 @@ func _run() -> void:
 	service._next_presence_start_ms = 0
 	service._next_friends_ms = Time.get_ticks_msec() + 100000
 	service._next_invites_ms = Time.get_ticks_msec() + 100000
+	service._next_lobby_pulse_ms = Time.get_ticks_msec() + 100000
 	service.poll()
 	assert(service.has_presence())
 	await service._heartbeat_presence()

@@ -119,6 +119,8 @@ func join_room(code: String) -> void:
 
 
 func close() -> void:
+	playbound.lobby_room = {}
+	playbound.refresh_lobby_now()
 	if current != null and current.state != OnlineMatch.State.FAILED:
 		current.leave()
 	current = null

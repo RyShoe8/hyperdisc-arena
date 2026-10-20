@@ -169,3 +169,7 @@ Hosted Connect rooms send a keepalive every 20 seconds and are deleted on close.
 
 Run tests/test_playbound_presence.gd for registration and heartbeat recovery. Opt-in tests/test_live_connect.gd creates an anonymous live room, waits 65 seconds, then connects native WebRTC peers and verifies packet delivery; it does not use player accounts. This does not replace testing two players on separate networks.
 
+
+## Public lobby
+Sign into PlayBound, then choose Online > Lobby. Create Room advertises a two-player room; select a listed room to join without entering a code. The roster shows signed-in HyperDisc clients (online/playing), with left/right paging. Rooms disappear when full, closed, or stale. Client presence renews every 15 seconds and expires after 45 seconds; room heartbeats retain the existing 60-second expiry. The PlayBound /api/game-lobby/hyperdisc-arena routes must be deployed before using this build. Older clients do not advertise to this lobby. Room codes remain an internal Connect/invite identifier.
+

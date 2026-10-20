@@ -266,7 +266,7 @@ func _physics_process(_delta: float) -> void:
 		Screen.ONLINE_FRIENDS:
 			net.friends_input()
 		Screen.ONLINE_ROOM:
-			net.join_input()
+			net.browser_input()
 	queue_redraw()
 
 
@@ -920,7 +920,7 @@ func _draw() -> void:
 		Screen.ONLINE_FRIENDS:
 			net.draw_friends()
 		Screen.ONLINE_ROOM:
-			net.draw_join()
+			net.draw_browser()
 	if net.invite_modal_active():
 		net.draw_invite()
 	_draw_toast()

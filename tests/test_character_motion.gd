@@ -57,6 +57,9 @@ func _run() -> void:
 	for id in ["mick","pete","tiffany","keno","steve","vanessa"]:
 		var art=load("res://scripts/game/view/character_art.gd").new(id)
 		assert(art.animations.run.count==12 and art.animations.dash.count==6)
+		assert(art.animations.win.count==8 and not art.animations.win.loop)
+		assert(art.frame_for("win",0)==art.animations.win.start)
+		assert(art.frame_for("win",1000)==art.animations.win.start+7)
 		assert(art.animations.has("run_up") and art.animations.has("run_down"))
 		if art.animations.has("run_up"):
 			assert(art.animations.run_up.count==8 and art.animations.run_down.count==8)
@@ -65,7 +68,15 @@ func _run() -> void:
 		assert(art.frame_for("run",-1)==art.frame_for("run",31))
 		assert(art.frame_for("dash",8)<art.frame_for("dash",9))
 		assert(art.frame_for("dash",15)==art.frame_for("dash",100))
+	sim.phase=sim.Phase.MATCH_OVER
+	sim.winner=0
+	view.frame=999
+	view.handle({"type":"match_over","winner":0})
+	assert(view._anim_for(p)==["win",0])
+	view.tick()
+	assert(view._anim_for(p)==["win",1])
 	var crowd=view.pixel_spectators
+	crowd.ticks_left=0
 	assert(crowd.sections.size()>20 and crowd.sections.size()<=64)
 	crowd.handle({"type":"point","side":0})
 	var serial: int=crowd.event_serial

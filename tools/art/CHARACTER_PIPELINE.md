@@ -60,6 +60,18 @@ then render `tools/preview_arena_life.gd`. Inspect actual gameplay before publis
 
 ## Current status
 
+## Celebration jobs
+
+Run `inspect-turns.ps1 -Character <id> -JobName celebration-v1` after review
+(Vanessa uses `celebration-v2` for corrected transparency), then run
+`pack_celebrations.gd`. Run this after `pack_turns.gd` when rebuilding both sets.
+Eight authored victory poses play once and hold the final pose. The view resets
+their clock on match_over; the animation never starts at an arbitrary match frame.
+`tools/preview_celebrations.gd` renders all six gestures for comparison.
+The built-in image generation prompts are saved beside each animation job.
+
+## Directional status
+
 Base-v1 masters are copied from approved build 9422b2b, not from the rejected angles.
 Six corrected directional jobs have passed visual comparison and separate-frame
 extraction. The selected jobs supply eight up and eight down frames per character.

@@ -1,0 +1,15 @@
+{
+  "character": "vanessa",
+  "animation": "celebration-v2",
+  "base_version": "base-v1",
+  "base_sha256": "33c39cb4518398b67033295247da2405ff35f50dff98b42839d233e89348c591",
+  "reference_sha256": "1c07c027ccb72a4690db8d056e4634d6962586bfdfe03151440bf961c45ce396",
+  "expected_frames": 8,
+  "columns": 4,
+  "rows": 2,
+  "status": "accepted",
+  "candidate": "candidate.png",
+  "candidate_sha256": "56580525304d3cc2f493fe57f28b475daeb2f0a39c3d7e16ea3e7ba16d75863c",
+  "review_notes": "Eight full separated poses; corrected transparent background. Bob, headband, jacket, leggings and aqua stripes retained.",
+  "accepted_sha256": "56580525304d3cc2f493fe57f28b475daeb2f0a39c3d7e16ea3e7ba16d75863c"
+}
