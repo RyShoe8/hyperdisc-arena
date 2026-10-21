@@ -804,20 +804,25 @@ func draw_lobby() -> void:
 	UI.text(ci, Vector2(960, 98), "ONLINE LOBBY", 64, UI.INK, UI.display, 2)
 	var chars: Array = m.balance.characters
 	var cell := Vector2(210, 210)
-	var grid_origin := Vector2(960 - cell.x * 1.5 - 10, 230)
+	var gap := 28
+	var grid_origin := Vector2(960 - cell.x * 1.5 - gap, 230)
 	var picks := {o.local_side: o.local_pick, 1 - o.local_side: o.remote_pick}
 	for i in chars.size():
-		var pos := grid_origin + Vector2((i % 3) * (cell.x + 10), (i / 3) * (cell.y + 10))
+		var pos := grid_origin + Vector2((i % 3) * (cell.x + gap), (i / 3) * (cell.y + gap))
 		var r := Rect2(pos, cell)
 		ci.draw_rect(r.grow(4), UI.INK)
 		ci.draw_rect(r, Color("2a1250"))
 		ci.draw_texture_rect_region(m.portraits[i], r, Rect2(100, 40, 440, 440))
+		UI.text(ci, pos + Vector2(cell.x / 2, cell.y - 12), str(chars[i].name).to_upper(), 22, Color.WHITE, UI.ui, 4)
+	# Keep selection outlines above all portraits, including adjacent selections.
+	for i in chars.size():
+		var pos := grid_origin + Vector2((i % 3) * (cell.x + gap), (i / 3) * (cell.y + gap))
+		var r := Rect2(pos, cell)
 		for side in [0, 1]:
 			if picks[side] != i:
 				continue
 			var c := UI.P1 if side == 0 else UI.P2
 			ci.draw_rect(r.grow(4 + side * 6), c, false, 7)
-		UI.text(ci, pos + Vector2(cell.x / 2, cell.y - 12), str(chars[i].name).to_upper(), 22, Color.WHITE, UI.ui, 4)
 	for side in [0, 1]:
 		var who: int = picks[side]
 		if who < 0:

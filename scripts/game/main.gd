@@ -987,13 +987,20 @@ func _draw_select() -> void:
 
 	var chars: Array = balance.characters
 	var cell := Vector2(210, 210)
-	var grid_origin := Vector2(960 - cell.x * 1.5 - 10, 230)
+	var gap := 28
+	var grid_origin := Vector2(960 - cell.x * 1.5 - gap, 230)
 	for i in chars.size():
-		var pos := grid_origin + Vector2((i % 3) * (cell.x + 10), (i / 3) * (cell.y + 10))
+		var pos := grid_origin + Vector2((i % 3) * (cell.x + gap), (i / 3) * (cell.y + gap))
 		var r := Rect2(pos, cell)
 		draw_rect(r.grow(4), UI.INK)
 		draw_rect(r, Color("2a1250"))
 		draw_texture_rect_region(portraits[i], r, Rect2(100, 40, 440, 440))
+		UI.text(self, pos + Vector2(cell.x / 2, cell.y - 12), str(chars[i].name).to_upper(), 22,
+			Color.WHITE, UI.ui, 4)
+	# Paint outlines after every portrait so neighboring tiles cannot cover them.
+	for i in chars.size():
+		var pos := grid_origin + Vector2((i % 3) * (cell.x + gap), (i / 3) * (cell.y + gap))
+		var r := Rect2(pos, cell)
 		for who in [0, 1]:
 			if pick[who] != i:
 				continue
@@ -1006,8 +1013,6 @@ func _draw_select() -> void:
 			var tag := "P1" if who == 0 else ("P2" if versus else "CPU")
 			UI.text(self, pos + Vector2(14 if who == 0 else cell.x - 14, 40), tag, 32, c, UI.display, 4,
 				HORIZONTAL_ALIGNMENT_LEFT if who == 0 else HORIZONTAL_ALIGNMENT_RIGHT)
-		UI.text(self, pos + Vector2(cell.x / 2, cell.y - 12), str(chars[i].name).to_upper(), 22,
-			Color.WHITE, UI.ui, 4)
 
 	for who in [0, 1]:
 		if not versus and who == 1 and select_step == 0:
