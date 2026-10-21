@@ -16,6 +16,7 @@ const ONLINE_RESULTS := ["DUB TAPES", "REMATCH", "LEAVE"]
 var m  # main.gd
 var menu_index := 0
 var typing := {}        # {field, value} while a text field is being edited
+var partner_cpu: CpuPlayer
 var lobby_row := 0      # 0 character grid, 1 court (host, once locked)
 var leave_menu := false
 var leave_index := 0
@@ -449,6 +450,13 @@ func lobby_input() -> void:
 	if bot:
 		_bot_lobby(o)
 		return
+	if Controls.pressed(0, "jump") and o.is_host and not o.local_locked:
+		o.configure_team(not o.doubles, o.local_partner_pick, o.local_partner_human)
+	if o.doubles and not o.local_locked:
+		if Controls.pressed(0, "slap"):
+			o.configure_team(o.doubles, posmod(o.local_partner_pick + 1, m.balance.characters.size()), o.local_partner_human)
+		if Controls.pressed(1, "start"):
+			o.configure_team(o.doubles, o.local_partner_pick, not o.local_partner_human)
 	var n := Controls.menu_nudged()
 	if lobby_row == 0:
 		if not o.local_locked and n != Vector2i.ZERO:
@@ -500,6 +508,14 @@ func _start_online_match() -> void:
 	var ids := _ids(o)
 	var names: Array[String] = [o.local_name if o.is_host else o.remote_name,
 		o.remote_name if o.is_host else o.local_name]
+	if o.doubles:
+		ids.append(o.sim.players[2].character.id)
+		ids.append(o.sim.players[3].character.id)
+		names.append(((o.local_name if o.is_host else o.remote_name) + " / 2") if (o.local_partner_human if o.is_host else o.remote_partner_human) else "CPU A")
+		names.append(((o.remote_name if o.is_host else o.local_name) + " / 2") if (o.remote_partner_human if o.is_host else o.local_partner_human) else "CPU B")
+	partner_cpu = CpuPlayer.new(o.local_side + 2, m.balance.cpu.normal, int(Time.get_ticks_usec())) if o.doubles and not o.local_partner_human else null
+	m.story = false
+	m.doubles = o.doubles
 	m.view = MatchView.new(o.sim, ids, names)
 	m.stats.assign([{}, {}])
 	m.last_second = -1
@@ -540,7 +556,7 @@ func match_tick() -> void:
 		return
 	if leave_menu:
 		_leave_menu_input()
-	elif Controls.pressed(0, "start"):
+	elif Controls.pressed(0, "start") or (o.doubles and o.local_partner_human and Controls.pressed(1, "start")):
 		leave_menu = true
 		leave_index = 0
 		Sfx.play("pause")
@@ -550,7 +566,7 @@ func match_tick() -> void:
 		return
 	if o.session != null and o.session.desynced and m.toast_ticks <= 0:
 		m.toast_msg("DESYNC DETECTED AT FRAME %d" % o.session.desync_frame)
-	if o.match_settled() and (o.sim.phase_ticks > 150 or o.opponent_left):
+	if o.match_settled() and (o.sim.phase_ticks > MatchView.CELEBRATION_TICKS or o.opponent_left):
 		Mixtape.finish_match(o)
 		if bot:
 			_bot_report(o)
@@ -570,6 +586,9 @@ func _step(idle: bool) -> void:
 		input = bot_cpu.think(o.sim)
 	elif not idle:
 		input = Controls.input(0)
+	if o.doubles and o.sim != null:
+		input = input.duplicate()
+		input["partner"] = {} if idle else (Controls.input(1) if o.local_partner_human else partner_cpu.think(o.sim))
 	var events := o.poll(input)
 	if bot and o.session != null and o.session.frame % 1200 == 1:
 		print("ONLINE_PROGRESS frame=%d score=%s sets=%s rollbacks=%d desync=%s" % [o.session.frame,
@@ -837,6 +856,15 @@ func draw_lobby() -> void:
 		UI.text(ci, Vector2(x, 200), name, 44, UI.P1 if side == 0 else UI.P2, UI.display, 5)
 		if locked:
 			UI.text(ci, Vector2(x, 790), "READY!", 56, UI.YELLOW, UI.display, 6)
+	UI.text(ci, Vector2(960, 160), "DOUBLES 2v2" if o.doubles else "SINGLES 1v1", 30, UI.CYAN, UI.ui, 3)
+	if o.doubles:
+		for side in [0, 1]:
+			var local: bool = side == o.local_side
+			var partner: int = o.local_partner_pick if local else o.remote_partner_pick
+			var human: bool = o.local_partner_human if local else o.remote_partner_human
+			var label := "%s: %s" % ["PARTNER" if human else "CPU", m.balance.characters[partner].name]
+			UI.text(ci, Vector2(260 if side == 0 else 1660, 850), label, UI.fit_size(label, 26, 450, UI.ui), Color.WHITE, UI.ui, 3)
+	UI.text(ci, Vector2(960, 900), "HOST JUMP: FORMAT   SLAP: PARTNER CHARACTER   P2 START: JOIN / CPU", 22, UI.CYAN, UI.ui, 2)
 	var court_name: String = m.balance.courts[o.court].name
 	var r := Rect2(Vector2(660, 700), Vector2(600, 84))
 	var court_label := ("<  COURT: %s  >" % court_name) if o.is_host else "COURT: %s" % court_name

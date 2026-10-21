@@ -17,10 +17,40 @@ Pull requests build too; their zips are attached to the workflow run under Actio
 
 Open the folder in Godot 4.7 and press F5.
 
+## Play modes
+
+The main menu is **Story, VS, Online, Tutorial, Mixtapes, Options, Quit**.
+Quit is omitted in browser builds; Online remains desktop-only.
+
+- **Story:** choose a fighter and face every other fighter in roster order.
+  Each opponent increases the CPU skill factor by 10%, starting at the easy
+  baseline. Reactions, aiming and move decisions improve within bounded limits;
+  character stats and scoring do not change. Wins save the next opponent;
+  losses offer Retry. Continue resumes a saved run. Story is singles.
+- **VS:** one-off Singles (1v1) or Doubles (2v2). Up/down chooses a setup row;
+  left/right changes the format, fighter, difficulty or court. On a fighter row,
+  Jump cycles CPU / Player 1–4, skipping players already assigned to another slot.
+  Team A has slots 1/3; Team B has slots 2/4. Select Start Match to play.
+  The default is Player 1 versus CPU. Extra local players use controllers.
+- **Online:** the existing host/join lobby supports singles and doubles across
+  two machines. Before locking in, the host uses Jump to change format. In doubles,
+  Slap cycles your partner's character and Player 2 presses Start to join or return
+  that slot to CPU. Each machine controls one team. Four independent online
+  clients are not supported yet. Both peers need the updated build (protocol 7).
+- **Tutorial:** the interactive move lessons plus a Doubles Basics guide.
+
+Doubles uses one disc, shared team scoring, independent power meters, and the
+existing set rules. Teammates move through each other. CPU partners yield to
+better-positioned teammates and cover the other lane. Passing is not included.
+
+To verify the new modes, run Godot with `--headless --path . --script tests/test_modes.gd`.
+For rendered screen captures, omit `--headless` and append `-- --visual`; captures
+are written to `.godot/mode_previews`.
+
 ## Controls
 
 Controllers are the primary input. Player 1 is the first controller plus the
-keyboard; player 2 is the second controller. Controllers can be plugged in or
+keyboard; players 2–4 use the remaining controllers (players 1–2 also have keyboard bindings). Controllers can be plugged in or
 out at any time, and unplugging one mid-match pauses the game. Every action
 can be rebound per player, for controller and keyboard, under
 **Options > Controls**.

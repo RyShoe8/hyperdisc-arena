@@ -7,6 +7,7 @@ const MatchSim := preload("res://scripts/sim/match_sim.gd")
 
 enum Defence { NONE, SLAP, BLOCK, DROP, POWER_TOSS }
 
+var slot: int
 var side: int
 var params: Dictionary
 var rng := RandomNumberGenerator.new()
@@ -23,13 +24,14 @@ var _will_jump := false
 
 
 func _init(cpu_side: int, difficulty: Dictionary, seed_value: int = 1) -> void:
-	side = cpu_side
+	slot = cpu_side
+	side = cpu_side % 2
 	params = difficulty
 	rng.seed = seed_value
 
 
 func think(sim: MatchSim) -> Dictionary:
-	var me: MatchSim.PlayerState = sim.players[side]
+	var me: MatchSim.PlayerState = sim.players[slot]
 	if sim.phase != MatchSim.Phase.SERVE and sim.phase != MatchSim.Phase.PLAY:
 		_plan.clear()
 		_hold_wait = -1
@@ -38,9 +40,19 @@ func think(sim: MatchSim) -> Dictionary:
 	if not _plan.is_empty():
 		return _plan.pop_front()
 
+	side = me.side
 	if me.holding:
 		return _think_holding(sim, me)
 	_hold_wait = -1
+	if sim.players.size() == 4:
+		var target := sim.landing_spot()
+		var partner = sim.players[(slot + 2) % 4]
+		var mine := me.pos.distance_squared_to(target)
+		var theirs: float = partner.pos.distance_squared_to(target)
+		if partner.holding or theirs < mine or (is_equal_approx(theirs, mine) and partner.slot < slot):
+			var home := Vector2(sim.home_x(side), sim.court_height() * (0.3 if partner.pos.y > sim.court_height() / 2.0 else 0.7))
+			var delta := home - me.pos
+			return {"x": int(signf(delta.x)) if absf(delta.x) > 6.0 else 0, "y": int(signf(delta.y)) if absf(delta.y) > 6.0 else 0}
 	return _think_defending(sim, me)
 
 
@@ -58,7 +70,7 @@ func _think_holding(sim: MatchSim, me: MatchSim.PlayerState) -> Dictionary:
 
 	var fwd := MatchSim.forward(side)
 	var aim := rng.randi_range(-1, 1)
-	if sim.ex_full(side) and rng.randf() < float(params.ex_chance):
+	if sim.ex_full(slot) and rng.randf() < float(params.ex_chance):
 		return _press({"slap": true, "y": aim})
 	if me.charged and rng.randf() < float(params.special_chance):
 		return _press({"a": true, "y": aim})
@@ -88,7 +100,7 @@ func _think_defending(sim: MatchSim, me: MatchSim.PlayerState) -> Dictionary:
 		var d: Dictionary = sim.cfg.defence
 		match _defence:
 			Defence.POWER_TOSS:
-				if sim.ex_full(side) and dist <= float(d.power_toss_radius) and sim.side_of(disc.pos.x) == side:
+				if sim.ex_full(slot) and dist <= float(d.power_toss_radius) and sim.side_of(disc.pos.x) == side:
 					_defence = Defence.NONE
 					return _press({"a": true, "b_down": true})
 			Defence.SLAP:

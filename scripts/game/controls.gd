@@ -14,7 +14,7 @@ extends Node
 
 signal changed(message: String)
 
-const PLAYERS := 2
+const PLAYERS := 4
 ## Stick travel ignored around the centre, to stop drift on worn sticks.
 ## Movement starts past DEADZONE and only stops below DEADZONE_RELEASE, so a
 ## stick resting near the edge doesn't flicker between moving and stopping.
@@ -52,15 +52,15 @@ const DEFAULT_PAD := {
 }
 
 ## Controller device id per player slot, or -1 when the slot has none.
-var pads: Array[int] = [-1, -1]
+var pads: Array[int] = [-1, -1, -1, -1]
 ## True when the player last touched a controller rather than the keyboard,
 ## so on-screen prompts can show the right buttons.
-var using_pad: Array[bool] = [false, false]
+var using_pad: Array[bool] = [false, false, false, false]
 ## bindings[player] = {"keys": {action: [keycodes]}, "pad": {action: [buttons]}}
 var bindings: Array = []
 
-var _now: Array[Dictionary] = [{}, {}]
-var _prev: Array[Dictionary] = [{}, {}]
+var _now: Array[Dictionary] = [{}, {}, {}, {}]
+var _prev: Array[Dictionary] = [{}, {}, {}, {}]
 ## Every connected controller's state, slotted or not, by device id.
 ## Menus read these so any controller can drive them.
 var _pad_now := {}
@@ -83,7 +83,7 @@ var _stick_on := {}
 ## ticks, then every REPEAT_RATE ticks.
 const REPEAT_DELAY := 22
 const REPEAT_RATE := 6
-var _held := [[Vector2i.ZERO, 0], [Vector2i.ZERO, 0]]  # per player: [direction, ticks]
+var _held := [[Vector2i.ZERO, 0], [Vector2i.ZERO, 0], [Vector2i.ZERO, 0], [Vector2i.ZERO, 0]]  # per player: [direction, ticks]
 var _pad_held := {}  # device -> [direction, ticks]
 
 
@@ -102,7 +102,7 @@ func _ready() -> void:
 func reset_bindings() -> void:
 	bindings = []
 	for i in PLAYERS:
-		bindings.append({"keys": DEFAULT_KEYS[i].duplicate(true), "pad": DEFAULT_PAD.duplicate(true)})
+		bindings.append({"keys": DEFAULT_KEYS[i].duplicate(true) if i < 2 else {"a": [], "b": [], "jump": [], "slap": [], "curve_high": [], "curve_low": [], "start": []}, "pad": DEFAULT_PAD.duplicate(true)})
 
 
 func get_bindings() -> Dictionary:
@@ -111,10 +111,10 @@ func get_bindings() -> Dictionary:
 
 func set_bindings(data: Dictionary) -> void:
 	var players = data.get("players", null)
-	if not players is Array or players.size() != PLAYERS:
+	if not players is Array or players.size() not in [2, PLAYERS]:
 		return
 	reset_bindings()
-	for i in PLAYERS:
+	for i in players.size():
 		for kind in ["keys", "pad"]:
 			var src = players[i].get(kind, {})
 			for action in ACTIONS:
@@ -477,7 +477,7 @@ func _deadzone(device: int, stick: Vector2) -> Vector2:
 
 
 func _sample(player: int) -> Dictionary:
-	var mk: Dictionary = MOVE_KEYS[player]
+	var mk: Dictionary = MOVE_KEYS[player] if player < 2 else {"up": 0, "down": 0, "left": 0, "right": 0}
 	var kb := Vector2(int(_key(mk.right)) - int(_key(mk.left)), int(_key(mk.down)) - int(_key(mk.up)))
 	var keys_down := {}
 	for action in ACTIONS:

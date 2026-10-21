@@ -394,7 +394,10 @@ func test_conceding_player_serves() -> void:
 	sim.players[MatchSim.LEFT].pos = Vector2(400, 50)
 	fly(sim, Vector2(40, 300), Vector2(-10, 0), MatchSim.RIGHT)
 	run(sim, 10 + int(balance.match.point_pause_ticks))
-	check(sim.phase == MatchSim.Phase.SERVE, "should be back to serve")
+	check(sim.disc.state == MatchSim.Disc.AIR and sim.disc.air_kind == MatchSim.Air.REF, "referee tosses after a point")
+	check(not sim.players[0].holding and not sim.players[1].holding, "disc travels before a player receives it")
+	run_until_serve(sim)
+	check(sim.phase == MatchSim.Phase.SERVE, "referee toss finishes in a serve")
 	check(sim.players[MatchSim.LEFT].holding, "left player conceded, so left serves")
 
 

@@ -71,6 +71,7 @@ jobs:
           ~/godot/godot --headless --script res://tests/test_playbound_presence.gd
           ~/godot/godot --headless --script res://tests/test_character_motion.gd
           ~/godot/godot --headless --script res://tests/test_lobby.gd
+          ~/godot/godot --headless --script res://tests/test_modes.gd
 
       - name: Export all platforms
         run: |

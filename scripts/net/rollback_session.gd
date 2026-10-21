@@ -62,7 +62,7 @@ func _init(match_sim: MatchSim, net_transport, side: int, delay := 2) -> void:
 	input_delay = delay
 	# The first frames have no local input yet: they are idle on both ends.
 	for f in input_delay:
-		local_inputs[f] = InputCodec.IDLE
+		local_inputs[f] = _idle_code()
 	last_local_frame = input_delay - 1
 
 
@@ -89,7 +89,7 @@ func tick(local_input: Dictionary) -> Array[Dictionary]:
 	var can_advance := frame - last_remote_frame <= MAX_PREDICTION and not _should_wait()
 	if can_advance:
 		last_local_frame = frame + input_delay
-		local_inputs[last_local_frame] = InputCodec.encode(local_input)
+		local_inputs[last_local_frame] = _encode_team(local_input)
 	else:
 		stats.stalls += 1
 	_send_inputs()
@@ -117,7 +117,7 @@ func handle_packet(data: PackedByteArray) -> void:
 		var start := buf.get_32()
 		var count := buf.get_u8()
 		for i in count:
-			_on_remote_input(start + i, buf.get_u32())
+			_on_remote_input(start + i, buf.get_64())
 	elif kind == PKT_CHECKSUM:
 		var f := buf.get_32()
 		_remote_checksums[f] = buf.get_64()
@@ -149,7 +149,7 @@ func _send_inputs() -> void:
 	buf.put_32(start)
 	buf.put_u8(maxi(count, 0))
 	for f in range(start, start + maxi(count, 0)):
-		buf.put_u32(local_inputs.get(f, InputCodec.IDLE))
+		buf.put_64(local_inputs.get(f, _idle_code()))
 	transport.send(buf.data_array)
 
 
@@ -159,16 +159,22 @@ func _remote_for(f: int) -> int:
 	if remote_inputs.has(f):
 		return remote_inputs[f]
 	var last := mini(last_remote_frame, f - 1)
-	return remote_inputs.get(last, InputCodec.IDLE) if last >= 0 else InputCodec.IDLE
+	return remote_inputs.get(last, _idle_code()) if last >= 0 else _idle_code()
 
 
 func _simulate(f: int, fresh: bool) -> Array[Dictionary]:
 	states[f] = sim.save_state()
 	var remote := _remote_for(f)
 	used_remote[f] = remote
-	var mine := InputCodec.decode(local_inputs.get(f, InputCodec.IDLE))
-	var theirs := InputCodec.decode(remote)
-	sim.step([mine, theirs] if local_side == 0 else [theirs, mine])
+	var mine_code: int = local_inputs.get(f, _idle_code())
+	var mine := InputCodec.decode(mine_code & 0x7ffff)
+	var theirs := InputCodec.decode(remote & 0x7ffff)
+	var inputs := [mine, theirs] if local_side == 0 else [theirs, mine]
+	if sim.players.size() == 4:
+		var partner := InputCodec.decode((mine_code >> 19) & 0x7ffff)
+		var other_partner := InputCodec.decode((remote >> 19) & 0x7ffff)
+		inputs.append_array([partner, other_partner] if local_side == 0 else [other_partner, partner])
+	sim.step(inputs)
 	if fresh:
 		return sim.events.duplicate()
 	return []
@@ -244,3 +250,14 @@ func _forget_old() -> void:
 		for f in table.keys():
 			if f < keep_from:
 				table.erase(f)
+
+
+func _idle_code() -> int:
+	return InputCodec.IDLE | (InputCodec.IDLE << 19) if sim.players.size() == 4 else InputCodec.IDLE
+
+
+func _encode_team(input: Dictionary) -> int:
+	var encoded := InputCodec.encode(input)
+	if sim.players.size() == 4:
+		encoded |= InputCodec.encode(input.get("partner", {})) << 19
+	return encoded

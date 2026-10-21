@@ -34,7 +34,7 @@ const COURT_NOTES := {
 }
 
 enum Screen { TITLE, MAIN, SELECT, COURT, VS, MATCH, PAUSED, OPTIONS, RESULTS,
-	ONLINE, ONLINE_WAIT, ONLINE_JOIN, ONLINE_LOBBY, ONLINE_SIGNIN, ONLINE_FRIENDS, ONLINE_ROOM, MIXTAPE, TUTORIAL }
+	ONLINE, ONLINE_WAIT, ONLINE_JOIN, ONLINE_LOBBY, ONLINE_SIGNIN, ONLINE_FRIENDS, ONLINE_ROOM, MIXTAPE, TUTORIAL, SETUP, STORY_MENU, TRAINING, DOUBLES_GUIDE }
 
 var balance: Dictionary
 var sim: MatchSim
@@ -44,6 +44,19 @@ var screen: int = Screen.TITLE
 var screen_ticks := 0
 var frame := 0
 var versus := false
+var doubles := false
+var story := false
+var story_fighter := 0
+var story_round := 0
+var story_order: Array[int] = []
+var story_menu_index := 0
+var training_index := 0
+var setup_row := 0
+var slot_picks: Array[int] = [0, 1, 2, 3]
+# Simulation slots alternate sides: 0/2 = Team A, 1/3 = Team B.
+var slot_controls: Array[int] = [0, -1, -1, -1]
+var match_cpus: Array = []
+var story_save_path := "user://story.cfg"
 ## True while playing (or in the results of) an online match.
 var online := false
 var net: OnlineScreens
@@ -230,6 +243,23 @@ func _physics_process(_delta: float) -> void:
 			_main_input()
 		Screen.MIXTAPE:
 			tapes.input()
+		Screen.TRAINING:
+			if Controls.menu_nudged().y != 0:
+				training_index = 1 - training_index
+			if _back_pressed():
+				_go(Screen.MAIN)
+			elif _confirm_device() != -1:
+				if training_index == 0:
+					tutorial.open()
+				else:
+					_go(Screen.DOUBLES_GUIDE)
+		Screen.DOUBLES_GUIDE:
+			if _back_pressed() or _confirm_device() != -1:
+				_go(Screen.TRAINING)
+		Screen.SETUP:
+			_setup_input()
+		Screen.STORY_MENU:
+			_story_menu_input()
 		Screen.SELECT:
 			_select_input()
 		Screen.COURT:
@@ -319,7 +349,7 @@ func _title_input() -> void:
 
 
 func _main_items() -> Array:
-	var items := ["VS CPU", "VS PLAYER 2", "TUTORIAL", "ONLINE", "MIXTAPES", "OPTIONS"]
+	var items := ["STORY", "VS", "ONLINE", "TUTORIAL", "MIXTAPES", "OPTIONS"]
 	if OS.has_feature("web"):
 		items.erase("ONLINE")  # browsers can't open UDP sockets
 	if not OS.has_feature("web"):
@@ -342,13 +372,15 @@ func _main_input() -> void:
 	Sfx.play("menu_confirm")
 	match items[main_index]:
 		"TUTORIAL":
-			tutorial.open()
-		"VS CPU":
-			versus = false
-			_open_select()
-		"VS PLAYER 2":
-			versus = true
-			_open_select()
+			training_index = 0
+			_go(Screen.TRAINING)
+		"STORY":
+			story_menu_index = 0 if _load_story() else 1
+			_go(Screen.STORY_MENU)
+		"VS":
+			story = false
+			setup_row = 0
+			_go(Screen.SETUP)
 		"ONLINE":
 			net.menu_index = 0
 			_go(Screen.ONLINE)
@@ -411,6 +443,16 @@ func _select_input() -> void:
 				Sfx.play("menu_move")
 			if _confirm_device() != -1:
 				Sfx.play("menu_confirm")
+				if story:
+					story_fighter = pick[0]
+					story_round = 0
+					story_order.clear()
+					for i in balance.characters.size():
+						if i != story_fighter:
+							story_order.append(i)
+					_save_story()
+					_prepare_story()
+					return
 				select_step += 1
 			elif _back_pressed():
 				Sfx.play("menu_back")
@@ -464,12 +506,28 @@ func _names() -> Array[String]:
 
 func _start_match() -> void:
 	online = false
+	if story:
+		pick = [story_fighter, story_order[story_round]]
+		slot_picks[0] = pick[0]
+		slot_picks[1] = pick[1]
 	var characters: Array = balance.characters
 	var seed_value := int(Time.get_ticks_usec())
 	cpu = null if versus else CpuPlayer.new(MatchSim.RIGHT, balance.cpu[DIFFICULTIES[difficulty]], seed_value)
 	cpu_left = CpuPlayer.new(MatchSim.LEFT, balance.cpu.hard, seed_value + 7) if demo else null
 	sim = MatchSim.new(balance, characters[pick[0]], characters[pick[1]], court)
-	view = MatchView.new(sim, [characters[pick[0]].id, characters[pick[1]].id], _names())
+	match_cpus.clear()
+	if doubles and not story:
+		sim = MatchSim.new(balance, characters[slot_picks[0]], characters[slot_picks[1]], court,
+			[characters[slot_picks[2]], characters[slot_picks[3]]])
+	var ids: Array = []
+	var labels: Array[String] = []
+	for i in sim.players.size():
+		ids.append(sim.players[i].character.id)
+		var controller := 0 if story and i == 0 else (-1 if story else slot_controls[i])
+		labels.append("CPU %d" % (i + 1) if controller < 0 else "P%d" % (controller + 1))
+		var params: Dictionary = _story_difficulty() if story else balance.cpu[DIFFICULTIES[difficulty]]
+		match_cpus.append(CpuPlayer.new(i, params, seed_value + i * 7) if controller < 0 else null)
+	view = MatchView.new(sim, ids, labels)
 	stats = [{}, {}]
 	last_second = -1
 	_go(Screen.MATCH)
@@ -478,20 +536,25 @@ func _start_match() -> void:
 func _match_tick() -> void:
 	if sim.phase == MatchSim.Phase.MATCH_OVER:
 		view.tick()
-		if sim.phase_ticks > 150 or (sim.phase_ticks > 40 and _confirm_device() != -1):
+		if sim.phase_ticks > MatchView.CELEBRATION_TICKS or (sim.phase_ticks > MatchView.CELEBRATION_SKIP_TICKS and _confirm_device() != -1):
 			result_index = 0
+			if story and sim.winner == 0:
+				_save_story(story_round + 1)
 			Sfx.play("menu_confirm")
 			_go(Screen.RESULTS)
 		else:
-			sim.step([{}, {}])
+			sim.step([{}, {}, {}, {}])
 		return
-	for i in [0, 1] if versus else [0]:
-		if Controls.pressed(i, "start"):
-			_pause(i)
+	var inputs: Array = []
+	for i in sim.players.size():
+		var controller := 0 if story and i == 0 else (-1 if story else slot_controls[i])
+		if controller >= 0 and Controls.pressed(controller, "start"):
+			_pause(controller)
 			return
-	var right: Dictionary = Controls.input(1) if versus else cpu.think(sim)
-	var left: Dictionary = cpu_left.think(sim) if demo else Controls.input(0)
-	sim.step([left, right])
+		inputs.append(match_cpus[i].think(sim) if match_cpus[i] != null else Controls.input(controller))
+	if demo:
+		inputs[0] = cpu_left.think(sim)
+	sim.step(inputs)
 	for e in sim.events:
 		view.handle(e)
 		_sound_for(e)
@@ -512,10 +575,12 @@ func _count(e: Dictionary) -> void:
 func _sound_for(e: Dictionary) -> void:
 	var pan := _side_pan(int(e.get("side", 0)))
 	# Throws, power throws and specials use the thrower's own sounds.
-	var who: String = str(sim.players[int(e.get("side", 0))].character.get("id", ""))
+	var who: String = str(sim.players[int(e.get("player", e.get("side", 0)))].character.get("id", ""))
 	match e.type:
 		"ready":
 			Sfx.play("countdown", 0.8)
+		"ref_toss":
+			Sfx.play("lob", 0.8, -6.0)
 		"go":
 			Sfx.play("whistle", 1.15, -6.0)
 		"throw":
@@ -545,7 +610,7 @@ func _sound_for(e: Dictionary) -> void:
 			Sfx.play("land", 1.0, 0.0, pan)
 		"catch":
 			# Harder catches (more knockback) hit harder.
-			var knock := absf(sim.players[e.side].knock_vel)
+			var knock := absf(sim.players[int(e.get("player", e.side))].knock_vel)
 			Sfx.play("catch", 1.0 - minf(knock, 6.0) * 0.02, -3.0 + minf(knock, 6.0), pan)
 			_rumble(e.side, 0.7, clampf(0.3 + knock / 6.0, 0.3, 1.0), 0.16)
 		"bounce":
@@ -589,8 +654,17 @@ func _countdown_beeps() -> void:
 
 
 func _rumble(side: int, weak: float, strong: float, seconds: float) -> void:
-	if side == MatchSim.LEFT or versus:
-		_rumble_feel(side, weak, strong, seconds)
+	if online:
+		var o = net.om()
+		if o != null and side == o.local_side:
+			_rumble_feel(0, weak, strong, seconds)
+			if o.doubles and o.local_partner_human:
+				_rumble_feel(1, weak, strong, seconds)
+		return
+	for slot in sim.players.size():
+		var controller := 0 if story and slot == 0 else (-1 if story else slot_controls[slot])
+		if sim.players[slot].side == side and controller >= 0:
+			_rumble_feel(controller, weak, strong, seconds)
 
 
 ## Rumble scaled by Options > Controls > Rumble. Pulses shorter than about a
@@ -650,16 +724,26 @@ func _pause_input() -> void:
 func _results_input() -> void:
 	var n := Controls.menu_nudged()
 	if n.y != 0:
-		result_index = posmod(result_index + n.y, RESULT_OPTIONS.size())
+		result_index = posmod(result_index + n.y, _result_options().size())
 		Sfx.play("menu_move")
 	if screen_ticks < 40 or _confirm_device() == -1:
 		return
 	Sfx.play("menu_confirm")
-	match RESULT_OPTIONS[result_index]:
+	match _result_options()[result_index]:
+		"NEXT OPPONENT":
+			story_round += 1
+			_save_story()
+			_prepare_story()
+		"RETRY":
+			_prepare_story()
+		"FINISH STORY":
+			story_round = story_order.size()
+			_save_story()
+			_go(Screen.MAIN)
 		"REMATCH":
 			_go(Screen.VS)
 		"CHARACTER SELECT":
-			_open_select()
+			_go(Screen.SETUP)
 		"MAIN MENU":
 			_go(Screen.MAIN)
 
@@ -782,7 +866,7 @@ func _options_input() -> void:
 			Settings.apply()
 		"CONTROLS":
 			if options_row == 0:
-				bind_player = posmod(bind_player + step, 2)
+				bind_player = posmod(bind_player + step, Controls.PLAYERS)
 			elif options_row == 1:
 				bind_device = posmod(bind_device + step, 2)
 			elif options_row == 2:
@@ -885,6 +969,18 @@ func _draw() -> void:
 			_draw_main()
 		Screen.MIXTAPE:
 			tapes.draw()
+		Screen.TRAINING:
+			UI.outrun_background(self, SCREEN, frame / 60.0, 0.25)
+			UI.text(self, Vector2(960, 220), "TUTORIAL", 90, UI.YELLOW, UI.display, 5)
+			for i in 2:
+				UI.button(self, Rect2(560, 450 + i * 100, 800, 75), "INTERACTIVE MOVE LESSONS" if i == 0 else "DOUBLES BASICS", training_index == i, frame, 36)
+			_hint("%s SELECT     %s BACK" % [_a(), _b()])
+		Screen.DOUBLES_GUIDE:
+			_draw_doubles_guide()
+		Screen.SETUP:
+			_draw_setup()
+		Screen.STORY_MENU:
+			_draw_story_menu()
 		Screen.SELECT:
 			_draw_select()
 		Screen.COURT:
@@ -972,7 +1068,7 @@ func _draw_main() -> void:
 	draw_texture_rect(logo, Rect2(Vector2((SCREEN.x - size.x) / 2.0, 40), size), false)
 	var items := _main_items()
 	for i in items.size():
-		var r := Rect2(Vector2(660, 480 + i * 72), Vector2(600, 60))
+		var r := Rect2(Vector2(660, 450 + i * 72), Vector2(600, 60))
 		UI.button(self, r, items[i], i == main_index, frame, 40)
 	_hint("%s SELECT     %s BACK" % [_a(), _b()])
 
@@ -1100,6 +1196,17 @@ func _draw_vs() -> void:
 			HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)
 	var court_name: String = balance.courts[court].name
 	UI.text(self, Vector2(960, 80), court_name + " COURT", 48, Color.WHITE, UI.display, 6)
+
+	if story:
+		UI.text(self, Vector2(960, 160), "STORY  %d / %d  |  DIFFICULTY %d%%" % [story_round + 1, story_order.size(), roundi(pow(1.1, story_round) * 100)], 36, UI.YELLOW, UI.ui, 3)
+		var ladder: Array[String] = []
+		for i in story_order.size():
+			ladder.append(("[WIN] " if i < story_round else "") + str(balance.characters[story_order[i]].name))
+		var line := "  >  ".join(ladder)
+		UI.text(self, Vector2(960, 940), line, UI.fit_size(line, 28, 1780, UI.ui), Color.WHITE, UI.ui, 3)
+	elif doubles:
+		UI.text(self, Vector2(960, 160), "DOUBLES  |  TEAM A vs TEAM B", 40, UI.YELLOW, UI.ui, 3)
+		UI.text(self, Vector2(960, 930), "%s + %s   VS   %s + %s" % [balance.characters[slot_picks[0]].name, balance.characters[slot_picks[2]].name, balance.characters[slot_picks[1]].name, balance.characters[slot_picks[3]].name], 28, Color.WHITE, UI.ui, 3)
 
 
 func _draw_pause() -> void:
@@ -1274,11 +1381,18 @@ func _draw_results() -> void:
 	UI.text(self, Vector2(960, 470), "SET COUNTS", 44, Color.WHITE, UI.display, 5)
 	UI.text(self, Vector2(960, 590), "%d - %d" % [sim.sets_won[0], sim.sets_won[1]], 130, UI.YELLOW,
 		UI.ui, 10, HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)
+	if story:
+		var title := "STORY COMPLETE!" if sim.winner == 0 and story_round + 1 == story_order.size() else "STORY  %d / %d" % [story_round + 1, story_order.size()]
+		UI.text(self, Vector2(960, 80), title, 50, UI.YELLOW, UI.display, 4)
+	if doubles:
+		for side in [0, 1]:
+			var team := "%s + %s" % [sim.players[side].character.name, sim.players[side + 2].character.name]
+			UI.text(self, Vector2(470 if side == 0 else 1450, 860), team, UI.fit_size(team, 32, 700, UI.ui), Color.WHITE, UI.ui, 4)
 	if online:
 		net.draw_results_menu()
 	elif t > 40:
-		for i in RESULT_OPTIONS.size():
-			UI.button(self, Rect2(Vector2(760, 660 + i * 84), Vector2(400, 68)), RESULT_OPTIONS[i],
+		for i in _result_options().size():
+			UI.button(self, Rect2(Vector2(760, 660 + i * 84), Vector2(400, 68)), _result_options()[i],
 				i == result_index, frame, 28)
 
 
@@ -1289,3 +1403,174 @@ func _draw_toast() -> void:
 	var r := Rect2(Vector2(560, 960), Vector2(800, 64))
 	UI.slant_panel(self, r, Color(0.05, 0.0, 0.12, 0.85 * alpha), Color(UI.CYAN, alpha), 20, 3)
 	UI.text(self, Vector2(960, 1003), toast, 26, Color(UI.YELLOW, alpha), UI.ui, 4)
+
+
+func _result_options() -> Array:
+	if not story:
+		return RESULT_OPTIONS
+	if sim.winner != 0:
+		return ["RETRY", "MAIN MENU"]
+	return ["NEXT OPPONENT" if story_round + 1 < story_order.size() else "FINISH STORY", "MAIN MENU"]
+
+
+func _save_story(next_round := -1) -> void:
+	var save := ConfigFile.new()
+	save.set_value("story", "fighter", story_fighter)
+	save.set_value("story", "round", story_round if next_round < 0 else next_round)
+	save.set_value("story", "order", story_order)
+	save.save(story_save_path)
+
+
+func _load_story() -> bool:
+	var save := ConfigFile.new()
+	if save.load(story_save_path) != OK:
+		return false
+	var fighter := int(save.get_value("story", "fighter", -1))
+	var round_index := int(save.get_value("story", "round", -1))
+	var order = save.get_value("story", "order", [])
+	if fighter < 0 or fighter >= balance.characters.size() or not order is Array or order.size() != balance.characters.size() - 1:
+		return false
+	var seen := [fighter]
+	for opponent in order:
+		if not opponent is int or opponent < 0 or opponent >= balance.characters.size() or opponent in seen:
+			return false
+		seen.append(opponent)
+	if round_index < 0 or round_index >= order.size():
+		return false
+	story_fighter = fighter
+	story_round = round_index
+	story_order.assign(order)
+	return true
+
+
+func _prepare_story() -> void:
+	story = true
+	doubles = false
+	versus = false
+	pick = [story_fighter, story_order[story_round]]
+	court = story_round % balance.courts.size()
+	_go(Screen.VS)
+
+
+func _story_difficulty() -> Dictionary:
+	var params: Dictionary = balance.cpu.easy.duplicate(true)
+	var factor := pow(1.1, story_round)
+	for key in ["reaction_ticks", "hold_min", "hold_max"]:
+		params[key] = maxi(1, roundi(float(params[key]) / factor))
+	params.aim_error = maxf(8.0, float(params.aim_error) / factor)
+	params.dash_distance = maxf(95.0, 220.0 / factor)
+	for key in ["jump_chance", "slap_chance", "block_chance", "drop_chance", "special_chance", "ex_chance", "power_toss_chance", "curve_chance"]:
+		params[key] = minf(float(balance.cpu.hard[key]), (float(params[key]) + 0.05) * factor - 0.05)
+	return params
+
+
+func _story_menu_input() -> void:
+	var n := Controls.menu_nudged()
+	if n.y != 0:
+		story_menu_index = posmod(story_menu_index + n.y, 2)
+	if _back_pressed():
+		_go(Screen.MAIN)
+	elif _confirm_device() != -1:
+		if story_menu_index == 0:
+			if _load_story():
+				_prepare_story()
+		else:
+			story = true
+			doubles = false
+			versus = false
+			_open_select()
+
+
+func _draw_story_menu() -> void:
+	UI.outrun_background(self, SCREEN, frame / 60.0, 0.25)
+	UI.text(self, Vector2(960, 200), "STORY", 100, UI.YELLOW, UI.display, 5)
+	var save := ConfigFile.new()
+	var resumable: bool = save.load(story_save_path) == OK and int(save.get_value("story", "round", -1)) < balance.characters.size() - 1
+	UI.text(self, Vector2(960, 320), "FACE THE ROSTER. EACH OPPONENT IS 10% HARDER.", 30, Color.WHITE, UI.ui, 3)
+	for i in 2:
+		UI.button(self, Rect2(660, 450 + i * 100, 600, 75), ("CONTINUE" if resumable else "NO SAVED RUN") if i == 0 else "NEW STORY", story_menu_index == i, frame, 36)
+	_hint("%s SELECT     %s BACK" % [_a(), _b()])
+
+
+func _setup_slots() -> Array:
+	return [0, 2, 1, 3] if doubles else [0, 1]
+
+
+func _setup_input() -> void:
+	var slots := _setup_slots()
+	var n := Controls.menu_nudged()
+	var rows := slots.size() + 4
+	for controller in range(1, Controls.PLAYERS):
+		if Controls.pressed(controller, "start") and not slots.any(func(slot): return slot_controls[slot] == controller):
+			for slot in slots:
+				if slot_controls[slot] < 0:
+					slot_controls[slot] = controller
+					Sfx.play("menu_confirm")
+					break
+	if n.y != 0:
+		setup_row = posmod(setup_row + n.y, rows)
+		Sfx.play("menu_move")
+	if _back_pressed():
+		_go(Screen.MAIN)
+		return
+	if setup_row == 0 and n.x != 0:
+		doubles = not doubles
+	elif setup_row > 0 and setup_row <= slots.size():
+		var slot: int = slots[setup_row - 1]
+		if n.x != 0:
+			slot_picks[slot] = posmod(slot_picks[slot] + n.x, balance.characters.size())
+		if Controls.menu_pressed("jump") != -1:
+			var next := slot_controls[slot]
+			for attempt in 5:
+				next = posmod(next + 2, 5) - 1
+				if next == -1 or not slots.any(func(active): return slot_controls[active] == next):
+					break
+			slot_controls[slot] = next
+	elif setup_row == slots.size() + 1 and n.x != 0:
+		difficulty = posmod(difficulty + n.x, DIFFICULTIES.size())
+	elif setup_row == slots.size() + 2 and n.x != 0:
+		court = posmod(court + n.x, balance.courts.size())
+	if _confirm_device() != -1 and setup_row == rows - 1:
+		var humans := 0
+		for slot in slots:
+			humans += int(slot_controls[slot] >= 0)
+		if humans == 0:
+			toast = "ASSIGN AT LEAST ONE PLAYER"
+			toast_ticks = 180
+			return
+		pick = [slot_picks[0], slot_picks[1]]
+		versus = slot_controls[1] >= 0
+		_go(Screen.VS)
+
+
+func _draw_setup() -> void:
+	UI.outrun_background(self, SCREEN, frame / 60.0, 0.25)
+	UI.text(self, Vector2(960, 130), "VS MATCH SETUP", 76, UI.YELLOW, UI.display, 5)
+	var slots := _setup_slots()
+	var rows: Array = ["FORMAT:  < DOUBLES 2v2 >" if doubles else "FORMAT:  < SINGLES 1v1 >"]
+	for slot in slots:
+		var control := "CPU" if slot_controls[slot] < 0 else "PLAYER %d" % (slot_controls[slot] + 1)
+		rows.append("TEAM %s   %s   < %s >" % ["A" if slot % 2 == 0 else "B", control, balance.characters[slot_picks[slot]].name])
+	rows.append("CPU DIFFICULTY:  < %s >" % DIFFICULTIES[difficulty].to_upper())
+	rows.append("COURT:  < %s >" % balance.courts[court].name)
+	rows.append("START MATCH")
+	for i in rows.size():
+		UI.button(self, Rect2(360, 220 + i * 82, 1200, 68), rows[i], setup_row == i, frame, 30)
+	UI.text(self, Vector2(960, 940), "UP/DOWN: ROW   LEFT/RIGHT: CHANGE   %s: CPU / PLAYER   START: JOIN" % Controls.label(0, "jump"), 25, UI.CYAN, UI.ui, 2)
+	_hint("%s START MATCH     %s BACK" % [_a(), _b()])
+
+
+func _draw_doubles_guide() -> void:
+	UI.outrun_background(self, SCREEN, frame / 60.0, 0.25)
+	UI.text(self, Vector2(960, 150), "DOUBLES BASICS", 80, UI.YELLOW, UI.display, 5)
+	var lines := ["TWO PLAYERS PER SIDE. ONE DISC. ONE TEAM SCORE.",
+		"COVER DIFFERENT LANES: ONE HIGH, ONE LOW.",
+		"THE FIRST PLAYER TO REACH THE DISC CATCHES IT.",
+		"WHEN YOUR PARTNER GOES FOR THE CATCH, COVER THE OPEN SPACE.",
+		"MOVE THROUGH YOUR TEAMMATE FREELY. ALL YOUR MOVES STILL WORK.",
+		"EACH PLAYER HAS THEIR OWN POWER METER.",
+		"VS: ASSIGN PLAYERS OR CPUs TO ANY TEAM SLOT.",
+		"ONLINE: TWO MACHINES, EACH WITH A LOCAL OR CPU PARTNER."]
+	for i in lines.size():
+		UI.text(self, Vector2(960, 310 + i * 75), lines[i], 30, UI.CYAN if i % 2 == 0 else Color.WHITE, UI.ui, 3)
+	_hint("%s / %s BACK" % [_a(), _b()])

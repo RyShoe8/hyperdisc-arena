@@ -12,7 +12,7 @@ const RollbackSession := preload("res://scripts/net/rollback_session.gd")
 enum State { CONNECTING, LOBBY, PLAYING, ENDED, FAILED }
 
 ## Bump when the wire format or the rules change incompatibly.
-const PROTOCOL := 5  # 5: explicit curve takes priority over normal throw; prevents mixed-sim desyncs
+const PROTOCOL := 7  # 7: referee tosses after points change simulation timing
 const PKT_LOBBY := 1
 const RESEND_TICKS := 20
 const TIMEOUT_TICKS := 600
@@ -26,6 +26,11 @@ var failure := ""
 var opponent_left := false
 var local_name := "PLAYER"
 var remote_name := ""
+var doubles := false
+var local_partner_pick := 2
+var remote_partner_pick := 3
+var local_partner_human := false
+var remote_partner_human := false
 var local_pick := 0
 var local_locked := false
 var remote_pick := -1
@@ -105,12 +110,16 @@ func poll(local_input: Dictionary) -> Array[Dictionary]:
 # --- Lobby actions (called by the menus) ------------------------------------
 
 func set_pick(character: int, locked: bool) -> void:
+	if _start_sent or state != State.LOBBY:
+		return
 	local_pick = character
 	local_locked = locked
 	_send_pick()
 
 
 func set_court(index: int) -> void:
+	if _start_sent or state != State.LOBBY:
+		return
 	court = index
 	_send_pick()
 
@@ -182,15 +191,29 @@ func _on_message(msg) -> void:
 				if ping_samples.size() > 9:
 					ping_samples.pop_front()
 		"pick":
+			if state != State.LOBBY or _start_sent:
+				return
+			remote_partner_pick = clampi(int(msg.get("partner", 0)), 0, balance.characters.size() - 1)
+			remote_partner_human = bool(msg.get("partner_human", false))
 			remote_pick = clampi(int(msg.get("character", 0)), 0, balance.characters.size() - 1)
 			remote_locked = bool(msg.get("locked", false))
 			if not is_host:
+				var new_format := bool(msg.get("doubles", false))
+				if doubles != new_format:
+					local_locked = false
+					doubles = new_format
+					_send_pick()
 				court = clampi(int(msg.get("court", 0)), 0, balance.courts.size() - 1)
 		"start":
 			if not is_host and state == State.LOBBY:
 				mixtape_match_id = str(msg.get("mixtape", ""))
 				court = clampi(int(msg.get("court", 0)), 0, balance.courts.size() - 1)
 				input_delay = clampi(int(msg.get("delay", 2)), 0, 8)
+				doubles = bool(msg.get("doubles", false))
+				remote_partner_pick = clampi(int(msg.get("p3", 0)), 0, balance.characters.size() - 1)
+				local_partner_pick = clampi(int(msg.get("p4", 0)), 0, balance.characters.size() - 1)
+				local_partner_human = bool(msg.get("guest_partner_human", false))
+				remote_partner_human = bool(msg.get("host_partner_human", false))
 				_begin(int(msg.p1), int(msg.p2))
 			if not is_host:
 				_send({"t": "started"})
@@ -230,15 +253,19 @@ static func delay_for_ping(rtt_ms: int) -> int:
 
 
 func _send_pick() -> void:
-	_send({"t": "pick", "character": local_pick, "locked": local_locked, "court": court})
+	_send({"t": "pick", "character": local_pick, "locked": local_locked, "court": court, "doubles": doubles, "partner": local_partner_pick, "partner_human": local_partner_human})
 
 
 func _send_start() -> void:
-	_send({"t": "start", "court": court, "p1": local_pick, "p2": remote_pick, "delay": input_delay, "mixtape": mixtape_match_id})
+	_send({"t": "start", "court": court, "p1": local_pick, "p2": remote_pick, "delay": input_delay, "mixtape": mixtape_match_id, "doubles": doubles, "p3": local_partner_pick, "p4": remote_partner_pick, "host_partner_human": local_partner_human, "guest_partner_human": remote_partner_human})
 
 
 func _begin(p1: int, p2: int) -> void:
 	sim = MatchSim.new(balance, balance.characters[p1], balance.characters[p2], court)
+	if doubles:
+		var a := local_partner_pick if is_host else remote_partner_pick
+		var b := remote_partner_pick if is_host else local_partner_pick
+		sim = MatchSim.new(balance, balance.characters[p1], balance.characters[p2], court, [balance.characters[a], balance.characters[b]])
 	session = RollbackSession.new(sim, transport, local_side, input_delay)
 	state = State.PLAYING
 
@@ -262,3 +289,14 @@ func _fail(reason: String) -> void:
 	failure = reason
 	state = State.FAILED
 	transport.close()
+
+
+func configure_team(format_doubles: bool, partner: int, human: bool) -> void:
+	if state != State.LOBBY or _start_sent:
+		return
+	if is_host:
+		doubles = format_doubles
+	local_partner_pick = clampi(partner, 0, balance.characters.size() - 1)
+	local_partner_human = human
+	local_locked = false
+	_send_pick()

@@ -35,6 +35,7 @@ const PATTERN_NAMES := {
 
 class PlayerState:
 	var side: int
+	var slot: int
 	var character: Dictionary
 	var pos := Vector2.ZERO
 	var z := 0.0
@@ -71,6 +72,7 @@ class DiscState:
 	var vel := Vector2.ZERO
 	var curve := 0.0
 	var z := 0.0
+	var thrower_slot := 0
 	var thrower := -1
 	var speed := 0.0
 	var power := 1.0
@@ -114,7 +116,7 @@ var events: Array[Dictionary] = []
 
 
 func _init(balance: Dictionary, left_character: Dictionary, right_character: Dictionary,
-		court_index := 0) -> void:
+		court_index := 0, teammates: Array = []) -> void:
 	cfg = balance
 	court = cfg.courts[clampi(court_index, 0, cfg.courts.size() - 1)]
 	if court.zones != "stadium":
@@ -124,8 +126,16 @@ func _init(balance: Dictionary, left_character: Dictionary, right_character: Dic
 	for side in [LEFT, RIGHT]:
 		var p := PlayerState.new()
 		p.side = side
+		p.slot = side
 		p.character = left_character if side == LEFT else right_character
 		players.append(p)
+	if teammates.size() == 2:
+		for side in [LEFT, RIGHT]:
+			var p := PlayerState.new()
+			p.side = side
+			p.slot = players.size()
+			p.character = teammates[side]
+			players.append(p)
 	set_ticks_left = _set_length_ticks()
 	_start_ready(LEFT)
 
@@ -161,8 +171,8 @@ func side_of(x: float) -> int:
 	return LEFT if x < net_x() else RIGHT
 
 
-func ex_full(side: int) -> bool:
-	return players[side].ex >= int(cfg.ex.max)
+func ex_full(slot: int) -> bool:
+	return players[slot].ex >= int(cfg.ex.max)
 
 
 ## Goal zones on the wall defended by `defender`, as [{from, to, points}].
@@ -198,7 +208,7 @@ func landing_spot() -> Vector2:
 func state_hash() -> int:
 	var parts: Array = [tick, phase, phase_ticks, freeze_ticks, scores, sets_won, streak,
 		set_number, sudden_death, set_ticks_left, winner, server,
-		disc.state, disc.owner, disc.pos, disc.vel, disc.curve, disc.z, disc.thrower,
+		disc.state, disc.owner, disc.pos, disc.vel, disc.curve, disc.z, disc.thrower, disc.thrower_slot,
 		disc.speed, disc.rally, disc.pattern, disc.pattern_ticks, disc.ex, disc.base,
 		disc.air_kind, disc.air_to, disc.air_tick]
 	for p in players:
@@ -282,7 +292,7 @@ func step(inputs: Array) -> void:
 	events.clear()
 	tick += 1
 	# Presses are remembered even during hit-stop, so none are lost.
-	for side in [LEFT, RIGHT]:
+	for side in players.size():
 		_buffer_presses(players[side], inputs[side])
 		# Stick motions made during hit-stop count toward curve throws.
 		if phase == Phase.SERVE or phase == Phase.PLAY:
@@ -316,7 +326,7 @@ func step(inputs: Array) -> void:
 				_start_next_set()
 			return
 
-	for side in [LEFT, RIGHT]:
+	for side in players.size():
 		if phase != Phase.SERVE and phase != Phase.PLAY:
 			break
 		_update_player(players[side], _buffered(players[side], inputs[side]))
@@ -343,7 +353,7 @@ func _update_player(p: PlayerState, input: Dictionary) -> void:
 			p.z = 0.0
 			p.vz = 0.0
 			p.recovery_ticks = int(pc.landing_recovery_ticks)
-			events.append({"type": "land", "side": p.side})
+			events.append({"type": "land", "side": p.side, "player": p.slot})
 		if p.holding:
 			p.hold_ticks += 1
 			if input.get("a", false):
@@ -378,7 +388,7 @@ func _update_player(p: PlayerState, input: Dictionary) -> void:
 			p.hold_ticks += 1
 		if phase == Phase.SERVE and p.hold_ticks < int(cfg.match.serve_delay_ticks):
 			return
-		if input.get("slap", false) and ex_full(p.side):
+		if input.get("slap", false) and ex_full(p.slot):
 			_special(p, true, input)
 		elif input.get("b", false):
 			_lob(p, input)
@@ -413,7 +423,7 @@ func _update_player(p: PlayerState, input: Dictionary) -> void:
 			p.vz = float(pc.jump_velocity)
 			p.z = 0.001
 			_act(p, Act.JUMP)
-			events.append({"type": "jump", "side": p.side})
+			events.append({"type": "jump", "side": p.side, "player": p.slot})
 		elif move != Vector2.ZERO:
 			# Dash: A with a direction. A pressed a moment before the
 			# direction still counts, but only just (dash_buffer_ticks).
@@ -421,7 +431,7 @@ func _update_player(p: PlayerState, input: Dictionary) -> void:
 				p.dash_dir = move
 				p.dash_ticks = int(pc.dash_ticks)
 				p.buffer.clear()
-				events.append({"type": "dash", "side": p.side})
+				events.append({"type": "dash", "side": p.side, "player": p.slot})
 			else:
 				p.pos += move * float(pc.run_speed) * speed_mult
 		elif input.get("slap", false):
@@ -464,13 +474,14 @@ func _try_defend(p: PlayerState, input: Dictionary) -> bool:
 	var dist := p.pos.distance_to(disc.pos)
 	var power_toss: bool = (input.get("a", false) and input.get("b_down", false)) \
 		or (input.get("b", false) and input.get("a_down", false))
-	if power_toss and incoming and ex_full(p.side) and dist <= float(d.power_toss_radius) \
+	if power_toss and incoming and ex_full(p.slot) and dist <= float(d.power_toss_radius) \
 			and side_of(disc.pos.x) == p.side:
 		p.ex = 0
+		disc.thrower_slot = p.slot
 		_air(Air.TOSS, disc.pos, Vector2(p.pos.x, p.pos.y), 0.0, p.side,
 			int(cfg.air.toss_flight_ticks), float(cfg.air.toss_peak) * 1.2)
 		_act(p, Act.POWER_TOSS)
-		events.append({"type": "power_toss", "side": p.side})
+		events.append({"type": "power_toss", "side": p.side, "player": p.slot})
 		return true
 	if not incoming:
 		return false
@@ -498,7 +509,7 @@ func _update_charge(p: PlayerState) -> void:
 		return
 	p.charge += 1
 	if p.charge == int(cfg.charge.ticks_needed):
-		events.append({"type": "charge_ready", "side": p.side})
+		events.append({"type": "charge_ready", "side": p.side, "player": p.slot})
 
 
 func _update_disc() -> void:
@@ -548,13 +559,20 @@ func _update_flying() -> void:
 	if side_of(disc.pos.x) == disc.thrower and disc.vel.x * forward(disc.thrower) < 0.0:
 		# Deflected back off a barrier: the thrower has to deal with it.
 		defender = disc.thrower
-	var p := players[defender]
-	# Test the whole path travelled this tick, not just where the disc ended
-	# up: fast throws move further per tick than the catch circle is wide.
-	var touch := Geometry2D.get_closest_point_to_segment(p.pos, from, disc.pos)
-	if p.knock_ticks == 0 and not p.holding and side_of(touch.x) == defender \
-			and p.pos.distance_to(touch) <= float(cfg.player.catch_radius):
-		_catch(p)
+	# First contact along the swept path wins; slot order breaks exact ties.
+	var catcher: PlayerState = null
+	var first := INF
+	for p in players:
+		if p.side != defender or p.knock_ticks != 0 or p.holding:
+			continue
+		var touch := Geometry2D.get_closest_point_to_segment(p.pos, from, disc.pos)
+		if side_of(touch.x) == defender and p.pos.distance_to(touch) <= float(cfg.player.catch_radius):
+			var distance := from.distance_squared_to(touch)
+			if distance < first:
+				catcher = p
+				first = distance
+	if catcher != null:
+		_catch(catcher)
 		return
 
 	if disc.pos.x <= 0.0:
@@ -633,14 +651,20 @@ func _update_air() -> void:
 	disc.z = lerpf(disc.air_from_z, 0.0, t) + 4.0 * disc.air_peak * t * (1.0 - t)
 
 	var half := side_of(disc.pos.x)
-	var p := players[half]
-	if _may_catch_air(p) and not p.holding and p.knock_ticks == 0 \
-			and p.pos.distance_to(disc.pos) <= float(cfg.player.catch_radius):
-		var grounded := p.z <= 0.0 and t > 0.5 and disc.z <= float(cfg.air.catch_height)
-		var in_air := p.z > 0.0 and absf(disc.z - (p.z + 40.0)) <= float(cfg.player.jump_reach)
-		if grounded or in_air:
-			_catch(p)
-			return
+	var candidates := players.duplicate()
+	candidates.sort_custom(func(a, b):
+		var da: float = a.pos.distance_squared_to(disc.pos)
+		var db: float = b.pos.distance_squared_to(disc.pos)
+		return a.slot < b.slot if is_equal_approx(da, db) else da < db)
+	for p in candidates:
+		if p.side != half:
+			continue
+		if _may_catch_air(p) and not p.holding and p.knock_ticks == 0 and p.pos.distance_to(disc.pos) <= float(cfg.player.catch_radius):
+			var grounded: bool = p.z <= 0.0 and t > 0.5 and disc.z <= float(cfg.air.catch_height)
+			var in_air: bool = p.z > 0.0 and absf(disc.z - (p.z + 40.0)) <= float(cfg.player.jump_reach)
+			if grounded or in_air:
+				_catch(p)
+				return
 
 	if disc.air_tick < disc.air_flight:
 		return
@@ -654,10 +678,10 @@ func _update_air() -> void:
 			disc.z = 0.0
 			disc.pattern = Pattern.BUZZSAW
 			disc.pattern_ticks = 0
-			disc.speed = float(cfg.air.buzzsaw_speed) * float(players[disc.thrower].character.power)
+			disc.speed = float(cfg.air.buzzsaw_speed) * float(players[disc.thrower_slot].character.power)
 			disc.vel = Vector2(forward(disc.thrower) * disc.speed, 0.0)
 			disc.knock_mult = float(cfg.special.knock_mult)
-			events.append({"type": "buzzsaw", "side": disc.thrower})
+			events.append({"type": "buzzsaw", "side": disc.thrower, "player": disc.thrower_slot})
 		_:
 			_award_point(1 - landed_on, int(cfg.match.miss_points), "miss")
 
@@ -679,7 +703,7 @@ func _catch(p: PlayerState) -> void:
 	p.charged = was_air and p.charge >= int(cfg.charge.ticks_needed) and disc.air_kind != Air.REF
 	p.charge = 0
 	disc.state = Disc.HELD
-	disc.owner = p.side
+	disc.owner = p.slot
 	disc.rally += 1
 	disc.pattern = Pattern.NONE
 	p.holding = true
@@ -699,7 +723,7 @@ func _catch(p: PlayerState) -> void:
 			freeze_ticks = int(hs.fast_catch_ticks)
 	_gain_ex(p, int(cfg.ex.gain_catch))
 	_act(p, Act.CATCH)
-	events.append({"type": "catch", "side": p.side, "air": was_air, "special": was_special,
+	events.append({"type": "catch", "side": p.side, "player": p.slot, "air": was_air, "special": was_special,
 		"speed": speed, "charged": p.charged})
 	if phase == Phase.PLAY and p.serving:
 		phase = Phase.SERVE
@@ -737,7 +761,7 @@ func _throw(p: PlayerState, input: Dictionary, smash: bool, curve := 0) -> void:
 	disc.supersonic = supersonic or smash
 	_gain_ex(p, int(cfg.ex.gain_supersonic if supersonic else cfg.ex.gain_throw))
 	_act(p, Act.SMASH if smash else Act.THROW)
-	events.append({"type": "throw", "side": p.side, "supersonic": supersonic,
+	events.append({"type": "throw", "side": p.side, "player": p.slot, "supersonic": supersonic,
 		"curve": curve_dir != 0, "smash": smash})
 
 
@@ -792,7 +816,7 @@ func _special(p: PlayerState, ex: bool, input: Dictionary) -> void:
 	p.charged = false
 	freeze_ticks = int(s.launch_freeze_ticks)
 	_act(p, Act.SPECIAL)
-	events.append({"type": "special", "side": p.side, "ex": ex, "pattern": pattern,
+	events.append({"type": "special", "side": p.side, "player": p.slot, "ex": ex, "pattern": pattern,
 		"name": str(p.character.get("special_name", "SPECIAL"))})
 
 
@@ -809,13 +833,14 @@ func _lob(p: PlayerState, input: Dictionary) -> void:
 	target.y = clampf(target.y, margin, court_height() - margin)
 	var superlob := p.charged
 	p.charged = false
+	disc.thrower_slot = p.slot
 	_air(Air.SUPERLOB if superlob else Air.LOB, disc.pos, target, disc.z, p.side,
 		int(a.superlob_flight_ticks if superlob else a.lob_flight_ticks),
 		float(a.superlob_peak if superlob else a.lob_peak))
 	_release(p)
 	_gain_ex(p, int(cfg.ex.gain_throw))
 	_act(p, Act.LOB)
-	events.append({"type": "lob", "side": p.side, "super": superlob})
+	events.append({"type": "lob", "side": p.side, "player": p.slot, "super": superlob})
 
 
 func _slap(p: PlayerState, input: Dictionary) -> void:
@@ -835,24 +860,26 @@ func _slap(p: PlayerState, input: Dictionary) -> void:
 	disc.supersonic = true
 	_gain_ex(p, int(cfg.ex.gain_slap))
 	_act(p, Act.SLAP)
-	events.append({"type": "slap", "side": p.side})
+	events.append({"type": "slap", "side": p.side, "player": p.slot})
 
 
 func _drop_shot(p: PlayerState) -> void:
 	var a: Dictionary = cfg.air
 	var target := Vector2(net_x() + forward(p.side) * float(a.drop_x_from_net), p.pos.y)
+	disc.thrower_slot = p.slot
 	_air(Air.DROP, disc.pos, target, 0.0, p.side, int(a.drop_flight_ticks), float(a.drop_peak))
 	_act(p, Act.DROP)
-	events.append({"type": "drop", "side": p.side})
+	events.append({"type": "drop", "side": p.side, "player": p.slot})
 
 
 func _block(p: PlayerState) -> void:
 	var a: Dictionary = cfg.air
 	var target := Vector2(p.pos.x + forward(p.side) * float(a.toss_forward), p.pos.y)
+	disc.thrower_slot = p.slot
 	_air(Air.TOSS, disc.pos, target, 0.0, p.side, int(a.toss_flight_ticks), float(a.toss_peak))
 	_gain_ex(p, int(cfg.ex.gain_block))
 	_act(p, Act.BLOCK)
-	events.append({"type": "block", "side": p.side})
+	events.append({"type": "block", "side": p.side, "player": p.slot})
 
 
 ## Puts the disc in the air from `from` to `to`; `by` is who sent it there.
@@ -888,6 +915,7 @@ func _launch(p: PlayerState, vel: Vector2, speed: float, pattern: int) -> void:
 	disc.pos.y = clampf(disc.pos.y, disc_radius(), court_height() - disc_radius())
 	disc.state = Disc.FLYING
 	disc.thrower = p.side
+	disc.thrower_slot = p.slot
 	disc.speed = speed
 	disc.power = float(p.character.power)
 	_release(p)
@@ -895,6 +923,7 @@ func _launch(p: PlayerState, vel: Vector2, speed: float, pattern: int) -> void:
 
 func _release(p: PlayerState) -> void:
 	disc.thrower = p.side
+	disc.thrower_slot = p.slot
 	p.holding = false
 	p.hold_ticks = 0
 	p.serving = false
@@ -904,10 +933,10 @@ func _release(p: PlayerState) -> void:
 
 
 func _gain_ex(p: PlayerState, amount: int) -> void:
-	var was_full := ex_full(p.side)
+	var was_full := ex_full(p.slot)
 	p.ex = mini(p.ex + amount, int(cfg.ex.max))
-	if not was_full and ex_full(p.side):
-		events.append({"type": "ex_ready", "side": p.side})
+	if not was_full and ex_full(p.slot):
+		events.append({"type": "ex_ready", "side": p.side, "player": p.slot})
 
 
 func _act(p: PlayerState, action: int) -> void:
@@ -1022,7 +1051,9 @@ func _award_point(side: int, points: int, reason: String) -> void:
 	scores[side] += points
 	streak[side] += 1
 	streak[1 - side] = 0
-	_gain_ex(players[1 - side], int(cfg.ex.gain_conceded))
+	for p in players:
+		if p.side == 1 - side:
+			_gain_ex(p, int(cfg.ex.gain_conceded))
 	events.append({"type": "point", "side": side, "points": points, "reason": reason,
 		"pos": disc.pos, "scores": scores.duplicate()})
 	server = 1 - side  # the player who was scored on serves next
@@ -1079,7 +1110,7 @@ func _finish_match(side: int) -> void:
 
 func _reset_players() -> void:
 	for p in players:
-		p.pos = Vector2(home_x(p.side), court_height() / 2.0)
+		p.pos = Vector2(home_x(p.side), court_height() * (0.3 if p.slot < 2 else 0.7) if players.size() == 4 else court_height() / 2.0)
 		p.z = 0.0
 		p.vz = 0.0
 		p.holding = false
@@ -1110,14 +1141,16 @@ func _start_ready(side: int) -> void:
 
 
 ## The referee at the net lobs the disc to the server's spot.
-func _referee_toss() -> void:
+func _referee_toss(set_opening := true) -> void:
 	phase = Phase.PLAY
 	phase_ticks = 0
 	var from := Vector2(net_x(), court_height())
 	var to := Vector2(home_x(server) + forward(server) * 40.0, court_height() / 2.0)
 	var a: Dictionary = cfg.air
 	_air(Air.REF, from, to, 40.0, 1 - server, int(a.ref_flight_ticks), float(a.ref_peak))
-	events.append({"type": "go", "set": set_number})
+	events.append({"type": "ref_toss", "side": server})
+	if set_opening:
+		events.append({"type": "go", "set": set_number})
 
 
 func _give_serve(side: int) -> void:
@@ -1141,7 +1174,7 @@ func _start_serve(side: int) -> void:
 	disc.vel = Vector2.ZERO
 	disc.supersonic = false
 	disc.pattern = Pattern.NONE
-	_give_serve(side)
+	_referee_toss(false)
 
 
 func _park_disc() -> void:

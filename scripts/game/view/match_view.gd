@@ -9,6 +9,9 @@ const CourtProjection := preload("res://scripts/game/view/projection.gd")
 const CharacterArt := preload("res://scripts/game/view/character_art.gd")
 const PixelCrowd := preload("res://scripts/game/view/pixel_crowd.gd")
 
+const CELEBRATION_TICKS := 300  # Five seconds at 60 Hz.
+const CELEBRATION_SKIP_TICKS := 120
+
 const SPRITE_SCALE := 0.72
 const DISC_RADIUS := 21.0
 ## Flying discs are drawn at chest height with their shadow on the floor
@@ -44,19 +47,19 @@ var trail_color := Color.WHITE
 var disc_spin := 0.0
 var disc_art: Texture2D
 var disc_region := Rect2()
-var last_pos: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
-var moving: Array[bool] = [false, false]
-var run_phase: Array[int] = [0, 0]
+var last_pos: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]
+var moving: Array[bool] = [false, false, false, false]
+var run_phase: Array[int] = [0, 0, 0, 0]
 ## Smoothed travel heading selects authored front/rear run cycles.
-var run_heading: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
-var run_direction: Array[String] = ["run", "run"]
-var run_facing_right: Array[bool] = [true, false]
+var run_heading: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]
+var run_direction: Array[String] = ["run", "run", "run", "run"]
+var run_facing_right: Array[bool] = [true, false, true, false]
 ## Squash and stretch: movement this tick (court units), ticks since
 ## landing, and afterimages left behind by dashes and power throws.
-var vel: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
-var last_z: Array[float] = [0.0, 0.0]
-var land_ticks: Array[int] = [0, 0]
-var dive_age: Array[int] = [100, 100]
+var vel: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]
+var last_z: Array[float] = [0.0, 0.0, 0.0, 0.0]
+var land_ticks: Array[int] = [0, 0, 0, 0]
+var dive_age: Array[int] = [100, 100, 100, 100]
 var ghosts: Array[Dictionary] = []
 const LAND_TICKS := 8
 const GHOST_LIFE := 10
@@ -89,7 +92,7 @@ func _init(match_sim: MatchSim, character_ids: Array, player_names: Array[String
 	crowd = [load("res://assets/art/courts/%s_crowd_a.webp" % cid),
 		load("res://assets/art/courts/%s_crowd_b.webp" % cid)]
 	for p in sim.players:
-		last_pos[p.side] = p.pos
+		last_pos[p.slot] = p.pos
 	referee = CharacterArt.new("referee")
 	disc_art = load("res://assets/art/disc/hyperdisc.png")
 	disc_region = Rect2(disc_art.get_image().get_used_rect())
@@ -136,37 +139,37 @@ func tick() -> void:
 		g.age += 1
 	ghosts = ghosts.filter(func(g): return g.age < GHOST_LIFE)
 	for p in sim.players:
-		vel[p.side] = p.pos - last_pos[p.side]
-		dive_age[p.side] += 1
-		land_ticks[p.side] = maxi(0, land_ticks[p.side] - 1)
-		if last_z[p.side] > 0.0 and p.z <= 0.0:
-			land_ticks[p.side] = LAND_TICKS
-		last_z[p.side] = p.z
+		vel[p.slot] = p.pos - last_pos[p.slot]
+		dive_age[p.slot] += 1
+		land_ticks[p.slot] = maxi(0, land_ticks[p.slot] - 1)
+		if last_z[p.slot] > 0.0 and p.z <= 0.0:
+			land_ticks[p.slot] = LAND_TICKS
+		last_z[p.slot] = p.z
 		if _leaves_ghosts(p) and frame % 2 == 0 and Settings.high_effects():
 			var anim := _anim_for(p)
 			var pose := _pose(p, anim)
-			ghosts.append({"side": p.side, "frame": arts[p.side].frame_for(anim[0], anim[1]),
+			ghosts.append({"side": p.slot, "frame": arts[p.slot].frame_for(anim[0], anim[1]),
 				"ground": proj.air_point(p.pos, p.z) + pose.offset, "stretch": pose.stretch,
 				"lean": pose.lean, "age": 0,
 				"facing_right": p.dash_dir.x > 0.0 if anim[0] == "dash" and absf(p.dash_dir.x) > 0.2 else p.side == MatchSim.LEFT})
-		moving[p.side] = p.pos.distance_to(last_pos[p.side]) > 0.5
-		if moving[p.side]:
-			run_heading[p.side] = run_heading[p.side].lerp(vel[p.side].normalized(), 0.32)
-			var heading := run_heading[p.side]
-			var threshold := 0.45 if run_direction[p.side] != "run" else 0.65
+		moving[p.slot] = p.pos.distance_to(last_pos[p.slot]) > 0.5
+		if moving[p.slot]:
+			run_heading[p.slot] = run_heading[p.slot].lerp(vel[p.slot].normalized(), 0.32)
+			var heading := run_heading[p.slot]
+			var threshold := 0.45 if run_direction[p.slot] != "run" else 0.65
 			if absf(heading.y) > threshold:
-				run_direction[p.side] = "run_up" if heading.y < 0.0 else "run_down"
+				run_direction[p.slot] = "run_up" if heading.y < 0.0 else "run_down"
 				if absf(heading.x) > 0.35:
-					run_facing_right[p.side] = heading.x > 0.0
+					run_facing_right[p.slot] = heading.x > 0.0
 			else:
-				run_direction[p.side] = "run"
-			var dx: float = p.pos.x - last_pos[p.side].x
+				run_direction[p.slot] = "run"
+			var dx: float = p.pos.x - last_pos[p.slot].x
 			var backwards := dx < -0.1 if p.side == MatchSim.LEFT else dx > 0.1
-			run_phase[p.side] += -1 if backwards and run_direction[p.side] == "run" else 1
+			run_phase[p.slot] += -1 if backwards and run_direction[p.slot] == "run" else 1
 		else:
-			run_heading[p.side] = Vector2.ZERO
-			run_direction[p.side] = "run"
-		last_pos[p.side] = p.pos
+			run_heading[p.slot] = Vector2.ZERO
+			run_direction[p.slot] = "run"
+		last_pos[p.slot] = p.pos
 		if p.dash_ticks > 0 and frame % 3 == 0 and Settings.high_effects():
 			_dust(p.pos, 0.7)
 	_update_trail()
@@ -190,16 +193,18 @@ func _update_trail() -> void:
 ## Turns sim events into effects and overlays. Returns nothing; sounds and
 ## rumble are handled by the caller from the same events.
 func handle(e: Dictionary) -> void:
+	var actor := int(e.get("player", e.get("side", 0)))
 	if pixel_spectators != null:
 		pixel_spectators.handle(e)
 	var s := Settings.shake_scale()
 	match e.type:
 		"dash":
-			dive_age[e.side] = 0
+			dive_age[actor] = 0
 		"ready":
 			overlay = {"kind": "ready", "ticks": int(sim.cfg.match.ready_ticks), "set": e.set}
 		"go":
 			overlay = {"kind": "go", "ticks": 45}
+		"ref_toss":
 			_referee("lob", sim.server == MatchSim.RIGHT)
 		"throw":
 			trail_color = Color("ffb347") if e.supersonic else Color(1, 1, 1, 0.7)
@@ -212,23 +217,23 @@ func handle(e: Dictionary) -> void:
 			_burst(sim.disc.pos, Color.WHITE, 1.0)
 			shake = maxf(shake, 4.0 * s)
 		"special":
-			var id: String = arts[e.side].id
+			var id: String = arts[actor].id
 			trail_color = SPECIAL_COLORS.get(id, UI.PINK)
 			if e.ex:
 				trail_color = Color.WHITE
-			cutin = {"side": e.side, "name": e.name, "ex": e.ex, "ticks": 70}
+			cutin = {"side": actor, "name": e.name, "ex": e.ex, "ticks": 70}
 			_burst(sim.disc.pos, trail_color, 1.8)
 			shake = maxf(shake, 9.0 * s)
 		"catch":
 			var power: float = e.speed / float(sim.cfg.throw.base_speed)
 			if e.special:
-				_burst(sim.players[e.side].pos, Color.WHITE, 2.2)
+				_burst(sim.players[actor].pos, Color.WHITE, 2.2)
 				shake = maxf(shake, 12.0 * s)
 			elif power > 1.2:
-				_burst(sim.players[e.side].pos, Color.WHITE, 1.0 + power * 0.3)
+				_burst(sim.players[actor].pos, Color.WHITE, 1.0 + power * 0.3)
 				shake = maxf(shake, power * 3.0 * s)
 			else:
-				_ring(sim.players[e.side].pos, Color(1, 1, 1, 0.8), 0.6)
+				_ring(sim.players[actor].pos, Color(1, 1, 1, 0.8), 0.6)
 		"block", "power_toss":
 			if ref_anim == "idle": _referee("focus", sim.disc.pos.x > sim.net_x())
 			_burst(sim.disc.pos, UI.YELLOW, 1.1)
@@ -237,12 +242,12 @@ func handle(e: Dictionary) -> void:
 		"bounce", "barrier":
 			_ring(sim.disc.pos, Color(1, 1, 1, 0.7), 0.45)
 		"land":
-			_dust(sim.players[e.side].pos, 1.0)
+			_dust(sim.players[actor].pos, 1.0)
 		"jump":
-			_dust(sim.players[e.side].pos, 0.8)
+			_dust(sim.players[actor].pos, 0.8)
 		"charge_ready":
-			_ring(sim.players[e.side].pos, UI.YELLOW, 1.4)
-			banner(sim.players[e.side], "CHARGED!")
+			_ring(sim.players[actor].pos, UI.YELLOW, 1.4)
+			banner(sim.players[actor], "CHARGED!")
 		"ex_ready":
 			pass
 		"buzzsaw":
@@ -453,7 +458,7 @@ func _anim_for(p: MatchSim.PlayerState) -> Array:
 		return ["win" if sim.winner == p.side else "lose", celebration_ticks]
 	if p.dash_ticks > 0:
 		return ["dash", int(sim.cfg.player.dash_ticks) - p.dash_ticks]
-	if p.recovery_ticks > 0 and dive_age[p.side] <= int(sim.cfg.player.dash_ticks) + int(sim.cfg.player.dash_recovery_ticks):
+	if p.recovery_ticks > 0 and dive_age[p.slot] <= int(sim.cfg.player.dash_ticks) + int(sim.cfg.player.dash_recovery_ticks):
 		return ["dash", int(sim.cfg.player.dash_ticks) + int(sim.cfg.player.dash_recovery_ticks) - p.recovery_ticks]
 	# A throw made out of the knockback slide shows the throw, not the slide.
 	var acting: bool = ACTION_ANIMS.has(p.action) and p.action_ticks < ACTION_ANIMS[p.action][1] 		and p.action != MatchSim.Act.CATCH
@@ -474,9 +479,9 @@ func _anim_for(p: MatchSim.PlayerState) -> Array:
 		return ["hold", frame]
 	if p.charge > 0:
 		return ["charge", frame]
-	if moving[p.side]:
-		var direction: String = run_direction[p.side]
-		return [direction if arts[p.side].animations.has(direction) else "run", run_phase[p.side]]
+	if moving[p.slot]:
+		var direction: String = run_direction[p.slot]
+		return [direction if arts[p.slot].animations.has(direction) else "run", run_phase[p.slot]]
 	return ["idle", frame]
 
 
@@ -505,9 +510,9 @@ func _pose(p: MatchSim.PlayerState, anim: Array) -> Dictionary:
 			var b := 0.018 * sin(frame * 0.09 + p.side * 1.7)
 			stretch = Vector2(1.0 - b * 0.6, 1.0 + b)
 		"run", "run_up", "run_down":
-			var speed := clampf(vel[p.side].length() / run_speed, 0.0, 1.0)
-			lean = clampf(vel[p.side].x / run_speed, -1.0, 1.0) * 0.11
-			var step := absf(sin(run_phase[p.side] * 0.32))
+			var speed := clampf(vel[p.slot].length() / run_speed, 0.0, 1.0)
+			lean = clampf(vel[p.slot].x / run_speed, -1.0, 1.0) * 0.11
+			var step := absf(sin(run_phase[p.slot] * 0.32))
 			offset.y = -step * 3.0 * speed
 			stretch = Vector2(1.0 - 0.01 * step, 1.0 + 0.015 * step)
 		"dash":
@@ -554,31 +559,31 @@ func _pose(p: MatchSim.PlayerState, anim: Array) -> Dictionary:
 		"lose":
 			stretch = Vector2(1.04, 0.93)
 			lean = fwd * 0.07 + sin(frame * 0.04) * 0.02
-	if land_ticks[p.side] > 0 and p.z <= 0.0:
-		var k := float(land_ticks[p.side]) / LAND_TICKS
+	if land_ticks[p.slot] > 0 and p.z <= 0.0:
+		var k := float(land_ticks[p.slot]) / LAND_TICKS
 		stretch *= Vector2(1.0 + 0.15 * k, 1.0 - 0.14 * k)
 	return {"stretch": stretch, "lean": lean, "offset": offset}
 
 
 func _draw_player(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
-	var art = arts[p.side]
+	var art = arts[p.slot]
 	var anim := _anim_for(p)
 	var f: int = art.frame_for(anim[0], anim[1])
 	var pose := _pose(p, anim)
 	var ground: Vector2 = proj.air_point(p.pos, p.z) + pose.offset
 	var facing_right := p.side == MatchSim.LEFT
 	if anim[0] in ["run_up", "run_down"]:
-		facing_right = run_facing_right[p.side]
+		facing_right = run_facing_right[p.slot]
 	if anim[0] == "dash" and absf(p.dash_dir.x) > 0.2:
 		facing_right = p.dash_dir.x > 0.0
 	var c := UI.P1 if p.side == 0 else UI.P2
 	for g in ghosts:
-		if g.side == p.side:
+		if g.side == p.slot:
 			var fade := 1.0 - float(g.age) / GHOST_LIFE
 			art.draw(ci, g.frame, g.ground, g.facing_right, SPRITE_SCALE,
 				Color(c.r * 1.4, c.g * 1.4, c.b * 1.4, 0.4 * fade), g.stretch, g.lean)
 	var tint := Color.WHITE
-	if p.charged or (p.holding and sim.ex_full(p.side)):
+	if p.charged or (p.holding and sim.ex_full(p.slot)):
 		var glow := 0.5 + 0.5 * sin(frame * 0.35)
 		var aura := UI.YELLOW if p.charged else Color.WHITE
 		ci.draw_circle(ground - Vector2(0, 70), 70 + glow * 10, Color(aura, 0.18 + glow * 0.12))
@@ -587,7 +592,7 @@ func _draw_player(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
 	art.draw(ci, f, ground, facing_right, SPRITE_SCALE, tint, pose.stretch, pose.lean)
 	if Settings.show_catch_zones:
 		_catch_zone(ci, p)
-	if p.holding and sim.disc.owner == p.side and sim.phase != MatchSim.Phase.MATCH_OVER \
+	if p.holding and sim.disc.owner == p.slot and sim.phase != MatchSim.Phase.MATCH_OVER \
 			and sim.phase != MatchSim.Phase.POINT_PAUSE and sim.phase != MatchSim.Phase.SET_PAUSE:
 		var hand: Vector2 = art.point(f, "hand") * SPRITE_SCALE
 		if not facing_right:
@@ -599,7 +604,7 @@ func _draw_player(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
 	var head: Vector2 = art.point(f, "head") * SPRITE_SCALE
 	var tip := ground + Vector2(0, head.y - (44 if p.holding else 26))
 	ci.draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(-11, -15), tip + Vector2(11, -15)]), c)
-	UI.text(ci, tip + Vector2(0, -20), names[p.side], 20, c, UI.ui, 4)
+	UI.text(ci, tip + Vector2(0, -20), names[p.slot], 20, c, UI.ui, 4)
 
 
 func _draw_hold_timer(ci: CanvasItem, p: MatchSim.PlayerState, head: Vector2) -> void:
@@ -779,15 +784,27 @@ func _draw_hud(ci: CanvasItem) -> void:
 		UI.text(ci, Vector2(name_x, frame_rect.position.y + 88), who_name, UI.fit_size(who_name, 20, room, UI.ui),
 			Color.WHITE, UI.ui, 3, HORIZONTAL_ALIGNMENT_LEFT)
 
-	# Power throw meters along the bottom.
-	for side in [0, 1]:
-		var left: bool = side == 0
-		var r := Rect2(Vector2(40 if left else 1880 - 420, 1032), Vector2(420, 26))
-		var amount := float(sim.players[side].ex) / float(sim.cfg.ex.max)
+	if sim.players.size() == 4:
+		for slot in [2, 3]:
+			var x := 30.0 if slot == 2 else 1580.0
+			var art = arts[slot]
+			ci.draw_texture_rect_region(art.portrait, Rect2(x, 138, 80, 70), art.portrait_face)
+			UI.text(ci, Vector2(x + 90, 178), names[slot], 24, UI.P1 if slot == 2 else UI.P2, UI.ui, 3, HORIZONTAL_ALIGNMENT_LEFT)
+	# Individual power meters; score and set counters remain team based.
+	for slot in sim.players.size():
+		var left: bool = sim.players[slot].side == 0
+		var width := 300.0 if sim.players.size() == 4 else 420.0
+		var x := (40.0 if left else 1880.0 - width)
+		if slot >= 2:
+			x += 330.0 if left else -330.0
+		var r := Rect2(Vector2(x, 1032), Vector2(width, 26))
+		var amount := float(sim.players[slot].ex) / float(sim.cfg.ex.max)
 		var full: bool = amount >= 1.0
 		var col := UI.YELLOW if not full else (Color.WHITE if (frame / 6) % 2 == 0 else UI.PINK)
 		UI.meter(ci, r, amount, col, 10)
 		var label := "POWER THROW READY!" if full else "POWER THROW"
+		if sim.players.size() == 4:
+			label = names[slot] + (" READY!" if full else " POWER")
 		UI.text(ci, Vector2(r.position.x + (0.0 if left else r.size.x), r.position.y - 8), label, 28,
 			col if full else Color.WHITE, UI.display, 4,
 			HORIZONTAL_ALIGNMENT_LEFT if left else HORIZONTAL_ALIGNMENT_RIGHT)
@@ -859,7 +876,7 @@ func _draw_cutin(ci: CanvasItem) -> void:
 	var age := 70 - int(cutin.ticks)
 	var slide := clampf(age / 8.0, 0.0, 1.0)
 	var out := clampf((cutin.ticks - 0) / 10.0, 0.0, 1.0)
-	var left: bool = cutin.side == 0
+	var left: bool = sim.players[cutin.side].side == 0
 	var c: Color = Color.WHITE if cutin.ex else SPECIAL_COLORS.get(arts[cutin.side].id, UI.PINK)
 	# Below the court, over the front-row crowd: players are drawn upward from
 	# their feet, so nothing on court is ever hidden.
