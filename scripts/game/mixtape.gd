@@ -46,6 +46,7 @@ func _ready() -> void:
 ## effects (which get a similar lift) and held under a limiter so loud
 ## tracks can't clip.
 const MUSIC_GAIN_DB := 6.0
+const MENU_ATTENUATION_DB := -9.0
 func _music_bus() -> String:
 	if AudioServer.get_bus_index("Music") == -1:
 		AudioServer.add_bus()
@@ -60,7 +61,7 @@ func _music_bus() -> String:
 
 
 func _process(delta: float) -> void:
-	_player.volume_db = linear_to_db(maxf(0.0001, music_volume))
+	_player.volume_db = linear_to_db(maxf(0.0001, music_volume)) + (MENU_ATTENUATION_DB if _mode == "menu" else 0.0)
 	_catalog_elapsed += delta
 	if _catalog_elapsed >= 120.0:
 		_catalog_elapsed = 0.0
