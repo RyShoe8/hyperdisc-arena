@@ -1072,6 +1072,10 @@ func _draw_main() -> void:
 		UI.button(self, r, items[i], i == main_index, frame, 40)
 	_hint("%s SELECT     %s BACK" % [_a(), _b()])
 
+	var version := str(ProjectSettings.get_setting("application/config/version", ""))
+	UI.text(self, Vector2(SCREEN.x - 24, SCREEN.y - 40), "v" + version, 24, UI.DIM,
+		UI.ui, 3, HORIZONTAL_ALIGNMENT_RIGHT)
+
 
 func _draw_select() -> void:
 	UI.outrun_background(self, SCREEN, frame / 60.0, 0.55)
