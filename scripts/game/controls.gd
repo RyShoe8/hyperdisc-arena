@@ -83,8 +83,14 @@ var _stick_on := {}
 ## ticks, then every REPEAT_RATE ticks.
 const REPEAT_DELAY := 22
 const REPEAT_RATE := 6
+const MENU_STICK_THRESHOLD := 0.55
+const MENU_REPEAT_DELAY := 28
+const MENU_REPEAT_RATE := 11
 var _held := [[Vector2i.ZERO, 0], [Vector2i.ZERO, 0], [Vector2i.ZERO, 0], [Vector2i.ZERO, 0]]  # per player: [direction, ticks]
 var _pad_held := {}  # device -> [direction, ticks]
+var _menu_key_held := [[Vector2i.ZERO, 0], [Vector2i.ZERO, 0]]
+var _menu_pad_held := {}
+var _menu_wait_release := false
 
 
 func _init() -> void:
@@ -164,6 +170,13 @@ func _physics_process(_delta: float) -> void:
 	for device in _pad_now:
 		_pad_held[device] = _hold(_pad_held.get(device, [Vector2i.ZERO, 0]),
 			Vector2i(_pad_now[device].get("x", 0), _pad_now[device].get("y", 0)))
+		_menu_pad_held[device] = _hold(_menu_pad_held.get(device, [Vector2i.ZERO, 0]),
+			_menu_pad_direction(_pad_now[device]))
+	for i in 2:
+		var mk: Dictionary = MOVE_KEYS[i]
+		var keys := Vector2i(int(_key(mk.right)) - int(_key(mk.left)),
+			int(_key(mk.down)) - int(_key(mk.up)))
+		_menu_key_held[i] = _hold(_menu_key_held[i], keys)
 	_key_latch.clear()
 	_pad_latch.clear()
 
@@ -175,6 +188,31 @@ static func _hold(held: Array, dir: Vector2i) -> Array:
 static func _repeats(held: Array) -> bool:
 	var t: int = held[1]
 	return t >= REPEAT_DELAY and (t - REPEAT_DELAY) % REPEAT_RATE == 0
+
+
+func reset_menu_navigation() -> void:
+	# A held stick must return to neutral before it can move a newly opened menu.
+	_menu_wait_release = true
+
+
+static func _menu_nudge(held: Array) -> Vector2i:
+	var direction: Vector2i = held[0]
+	var ticks: int = held[1]
+	if direction != Vector2i.ZERO and (ticks == 0 or
+		(ticks >= MENU_REPEAT_DELAY and (ticks - MENU_REPEAT_DELAY) % MENU_REPEAT_RATE == 0)):
+		return direction
+	return Vector2i.ZERO
+
+
+static func _menu_pad_direction(pad: Dictionary) -> Vector2i:
+	var buttons: Dictionary = pad.get("buttons", {})
+	var dpad := Vector2i(
+		int(buttons.get(JOY_BUTTON_DPAD_RIGHT, false)) - int(buttons.get(JOY_BUTTON_DPAD_LEFT, false)),
+		int(buttons.get(JOY_BUTTON_DPAD_DOWN, false)) - int(buttons.get(JOY_BUTTON_DPAD_UP, false)))
+	if dpad != Vector2i.ZERO:
+		return dpad
+	var stick: Vector2 = pad.get("analog", Vector2.ZERO)
+	return snap8(stick) if stick.length() >= MENU_STICK_THRESHOLD else Vector2i.ZERO
 
 
 ## Some platforms (notably browsers) deliver controller input without ever
@@ -267,14 +305,23 @@ func any_pressed(button: String) -> bool:
 ## A direction just pushed on any keyboard or any controller (for menus).
 ## With only_player_one, player 2's slot is left out (they pick separately).
 func menu_nudged(only_player_one := false) -> Vector2i:
-	for i in [0] if only_player_one else range(PLAYERS):
-		var n := nudged(i)
+	if _menu_wait_release:
+		for held in _menu_key_held:
+			if held[0] != Vector2i.ZERO:
+				return Vector2i.ZERO
+		for held in _menu_pad_held.values():
+			if held[0] != Vector2i.ZERO:
+				return Vector2i.ZERO
+		_menu_wait_release = false
+		return Vector2i.ZERO
+	for i in [0] if only_player_one else range(2):
+		var n := _menu_nudge(_menu_key_held[i])
 		if n != Vector2i.ZERO:
 			return n
-	for device in _pad_now:
+	for device in _menu_pad_held:
 		if only_player_one and device == pads[1]:
 			continue
-		var n := pad_nudged(device)
+		var n := _menu_nudge(_menu_pad_held[device])
 		if n != Vector2i.ZERO:
 			return n
 	return Vector2i.ZERO

@@ -318,6 +318,7 @@ func _take_shot(tick: int) -> void:
 
 
 func _go(to: int) -> void:
+	Controls.reset_menu_navigation()
 	if move_preview != null:
 		move_preview.tick(false)
 	if tutorial != null and to != Screen.TUTORIAL:
@@ -354,7 +355,7 @@ func _title_input() -> void:
 
 
 func _main_items() -> Array:
-	var items := ["STORY", "2 PLAYER", "MULTIPLAYER", "TUTORIAL", "MIXTAPES"]
+	var items := ["STORY", "2 PLAYER", "MULTIPLAYER", "TUTORIAL", "MIXTAPES", "OPTIONS"]
 	if not OS.has_feature("web"):
 		items.append("QUIT")
 	return items
@@ -389,6 +390,8 @@ func _main_input() -> void:
 			_open_play_menu("multiplayer")
 		"MIXTAPES":
 			tapes.open()
+		"OPTIONS":
+			_open_options(Screen.MAIN)
 		"QUIT":
 			Online.quit_game()
 

@@ -94,7 +94,7 @@ func _run() -> void:
 	var game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
 	game.set_physics_process(false)
-	check(game._main_items() == ["STORY", "2 PLAYER", "MULTIPLAYER", "TUTORIAL", "MIXTAPES", "QUIT"], "approved menu order")
+	check(game._main_items() == ["STORY", "2 PLAYER", "MULTIPLAYER", "TUTORIAL", "MIXTAPES", "OPTIONS", "QUIT"], "approved menu order")
 	game._open_play_menu("local")
 	check(game._play_menu_items().size() == 2, "two simple local choices")
 	game._open_local_setup(true, [0, -1, 1, -1], game.Screen.PLAY_MENU)

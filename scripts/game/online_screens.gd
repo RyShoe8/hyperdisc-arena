@@ -818,6 +818,9 @@ func draw_lobby() -> void:
 	var o := om()
 	if o == null:
 		return
+	if o.is_host and lobby_row == 1:
+		_draw_online_court_select(o)
+		return
 	UI.outrun_background(ci, m.SCREEN, m.frame / 60.0, 0.55)
 	UI.slant_panel(ci, Rect2(560, 26, 800, 90), UI.YELLOW, UI.INK, 30, 5)
 	UI.text(ci, Vector2(960, 98), "ONLINE LOBBY", 64, UI.INK, UI.display, 2)
@@ -879,6 +882,19 @@ func draw_lobby() -> void:
 	else:
 		hint = "PICK YOUR PLAYER, %s TO LOCK IN     THE HOST PICKS THE COURT AND STARTS     %s BACK" % [m._a(), m._b()]
 	m._hint(hint)
+
+
+func _draw_online_court_select(o: OnlineMatch) -> void:
+	UI.outrun_background(m, m.SCREEN, m.frame / 60.0, 0.55)
+	UI.slant_panel(m, Rect2(430, 26, 1060, 90), UI.YELLOW, UI.INK, 30, 5)
+	UI.text(m, Vector2(960, 98), "CHOOSE THE COURT", 62, UI.INK, UI.display, 2)
+	var selected: int = o.court
+	var big := Rect2(Vector2(480, 170), Vector2(960, 530))
+	m.draw_texture_rect(m.court_thumbs[selected], big, false)
+	m.draw_rect(big, UI.YELLOW, false, 6)
+	UI.text(m, Vector2(960, 765), "<  %s  >" % m.balance.courts[selected].name.to_upper(), 48, UI.YELLOW, UI.display, 5)
+	var hint := "%s START MATCH" % m._a() if o.can_start() else "WAITING FOR %s TO PICK" % o.remote_name
+	m._hint("LEFT / RIGHT: COURT     %s     %s BACK" % [hint, m._b()])
 
 
 func draw_leave_menu() -> void:
