@@ -1073,8 +1073,8 @@ func _draw_main() -> void:
 	_hint("%s SELECT     %s BACK" % [_a(), _b()])
 
 	var version := str(ProjectSettings.get_setting("application/config/version", ""))
-	UI.text(self, Vector2(SCREEN.x - 24, SCREEN.y - 40), "v" + version, 24, UI.DIM,
-		UI.ui, 3, HORIZONTAL_ALIGNMENT_RIGHT)
+	UI.text(self, Vector2(24, SCREEN.y - 40), "v" + version, 24, UI.DIM,
+		UI.ui, 3, HORIZONTAL_ALIGNMENT_LEFT)
 
 
 func _draw_select() -> void:

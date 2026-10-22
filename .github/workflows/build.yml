@@ -65,13 +65,19 @@ jobs:
         run: ~/godot/godot --headless --import
 
       - name: Run tests
+        timeout-minutes: 5
         run: |
-          ~/godot/godot --headless --script res://tests/run_tests.gd
-          ~/godot/godot --headless --script res://tests/test_mixtape.gd
-          ~/godot/godot --headless --script res://tests/test_playbound_presence.gd
-          ~/godot/godot --headless --script res://tests/test_character_motion.gd
-          ~/godot/godot --headless --script res://tests/test_lobby.gd
-          ~/godot/godot --headless --script res://tests/test_modes.gd
+          set -o pipefail
+          for test in run_tests test_mixtape test_playbound_presence test_character_motion test_lobby test_modes; do
+            echo "Running $test"
+            log="$(mktemp)"
+            timeout 120s ~/godot/godot --headless --script "res://tests/$test.gd" 2>&1 | tee "$log"
+            if grep -q 'SCRIPT ERROR:' "$log"; then
+              echo "::error::Godot script error in $test"
+              exit 1
+            fi
+            rm "$log"
+          done
 
       - name: Export all platforms
         run: |

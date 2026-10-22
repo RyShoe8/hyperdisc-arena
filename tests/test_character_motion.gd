@@ -42,10 +42,10 @@ func _run() -> void:
 	view.tick()
 	assert(view._anim_for(p)[0]=="idle")
 	sim.server=sim.LEFT
-	view.handle({"type":"go"})
+	view.handle({"type":"ref_toss"})
 	assert(not view.ref_facing_right)
 	sim.server=sim.RIGHT
-	view.handle({"type":"go"})
+	view.handle({"type":"ref_toss"})
 	assert(view.ref_facing_right)
 	view.ref_anim="idle"
 	sim.disc.pos.x=0
