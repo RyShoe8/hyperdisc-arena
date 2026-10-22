@@ -22,7 +22,8 @@ func _init(main: Node2D) -> void:
 	host.add_child(arena)
 	arena.hide()
 
-func open(at := -1) -> void:
+func open(at := -1, device := -1) -> void:
+	Controls.make_player_one(device)
 	session = Session.new(host.balance)
 	if at < 0:
 		var progress := ConfigFile.new()
@@ -44,6 +45,13 @@ func _reset() -> void:
 	arena.queue_redraw()
 
 func tick() -> void:
+	var confirm := Controls.pressed(0, "a")
+	# At a drill boundary, the controller pressing Start Drill owns training.
+	if ready or session.passed or session.failed:
+		var device := Controls.menu_pressed("a")
+		if device >= 0:
+			Controls.make_player_one(device)
+			confirm = true
 	if Controls.pressed(0, "start"):
 		arena.hide()
 		host._go(host.Screen.MAIN)
@@ -58,7 +66,7 @@ func tick() -> void:
 				host._sound_for(e)
 		if settled > 15 and Controls.pressed(0, "b"):
 			_reset()
-		elif settled > 15 and Controls.pressed(0, "a"):
+		elif settled > 15 and confirm:
 			if session.passed:
 				if session.advance():
 					_save_progress(session.lesson)

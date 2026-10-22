@@ -250,7 +250,7 @@ func _physics_process(_delta: float) -> void:
 				_go(Screen.MAIN)
 			elif _confirm_device() != -1:
 				if training_index == 0:
-					tutorial.open()
+					tutorial.open(-1, _confirm_device())
 				else:
 					_go(Screen.DOUBLES_GUIDE)
 		Screen.DOUBLES_GUIDE:

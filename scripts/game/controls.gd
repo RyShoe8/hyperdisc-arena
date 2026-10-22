@@ -312,20 +312,28 @@ func anything_pressed() -> bool:
 	return false
 
 
-## Makes this controller player 1, moving any previous player-1 controller
-## to player 2. Called with the controller that starts a match.
+## Give a solo mode to the controller that selected it, swapping its previous
+## slot with player 1. Keep current samples so the menu press is not replayed.
 func make_player_one(device: int) -> void:
 	if device < 0 or pads[0] == device:
 		return
+	var previous_slot := pads.find(device)
 	var old := pads[0]
-	if pads[1] == device:
-		pads[1] = old
-	elif pads[1] < 0:
-		pads[1] = old
+	if previous_slot < 0:
+		for slot in range(1, PLAYERS):
+			if pads[slot] < 0:
+				previous_slot = slot
+				break
+	if previous_slot > 0:
+		pads[previous_slot] = old
 	pads[0] = device
-	using_pad[0] = true
-	_prev[0] = {}
-	_now[0] = {}
+	for slot in [0, previous_slot]:
+		if slot < 0:
+			continue
+		using_pad[slot] = pads[slot] >= 0
+		_now[slot] = _sample(slot)
+		_prev[slot] = _now[slot].duplicate()
+		_held[slot] = [Vector2i.ZERO, 0]
 
 
 func has_pad(player: int) -> bool:

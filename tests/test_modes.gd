@@ -121,6 +121,44 @@ func _run() -> void:
 	check(not game._load_story(), "finished Story does not resume beyond the roster")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.story_save_path))
 	game.story = false
+	var controls = root.get_node("Controls")
+	var original_pads: Array = controls.pads.duplicate()
+	var devices := [1000, 1001, 1002, 1003]
+	game._go(game.Screen.MAIN)
+	for device in devices:
+		controls.set_virtual_pad(device, "DualSense Wireless Controller", Vector2.ZERO, {})
+	controls.pads.assign(devices)
+	controls._physics_process(0.0)
+	game.tutorial.open(3, devices[3])
+	check(controls.pads[0] == devices[3] and controls.pads[3] == devices[0], "tutorial adopts selecting controller from slot four without duplicates")
+	game.tutorial.ready = false
+	game.tutorial.countdown = 0
+	controls.set_virtual_pad(devices[3], "DualSense Wireless Controller", Vector2.UP, {JOY_BUTTON_A: true})
+	controls._physics_process(0.0)
+	game.tutorial.tick()
+	check(not game.tutorial.session.sim.players[0].holding, "adopted controller can throw in tutorial")
+	controls.set_virtual_pad(devices[3], "DualSense Wireless Controller", Vector2.ZERO, {})
+	controls._physics_process(0.0)
+	controls.pads.assign(devices)
+	controls._physics_process(0.0)
+	game.tutorial.open(0)
+	game.tutorial.settled = 16
+	controls.set_virtual_pad(devices[2], "DualSense Wireless Controller", Vector2.ZERO, {JOY_BUTTON_A: true})
+	controls._physics_process(0.0)
+	game.tutorial.tick()
+	check(controls.pads[0] == devices[2] and not game.tutorial.ready, "Start Drill adopts a different controller at the ready screen")
+	controls.set_virtual_pad(devices[2], "DualSense Wireless Controller", Vector2.RIGHT, {})
+	controls._physics_process(0.0)
+	game.tutorial.countdown = 0
+	var before: float = game.tutorial.session.sim.players[0].pos.x
+	game.tutorial.tick()
+	check(game.tutorial.session.sim.players[0].pos.x > before, "adopted controller can move during drill")
+	game._go(game.Screen.MAIN)
+	for device in devices:
+		controls.remove_virtual_pad(device)
+	controls.pads.assign(original_pads)
+	controls._physics_process(0.0)
+	game._start_match()
 	if "--visual" in OS.get_cmdline_user_args():
 		var folder := ProjectSettings.globalize_path("res://.godot/mode_previews")
 		DirAccess.make_dir_recursive_absolute(folder)
