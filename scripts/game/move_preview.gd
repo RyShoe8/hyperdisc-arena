@@ -44,7 +44,7 @@ func tick(visible: bool) -> void:
 		return
 	if playing != selected:
 		player.stop()
-		player.stream = load("res://assets/moves/%02d.ogv" % selected)
+		player.stream = load("res://assets/moves/%02d.ogv" % Session.CLIP_IDS[selected])
 		playing = selected
 		player.play()
 	player.show()
@@ -74,7 +74,7 @@ func draw(area: Rect2) -> void:
 	player.position = video.position
 	player.size = video.size
 	var text: String = Session.LESSONS[selected][1]
-	for action in ["a", "b", "jump", "slap", "curve_high", "curve_low"]:
+	for action in ["a", "b", "slap", "curve_high", "curve_low"]:
 		text = text.replace("{" + action + "}", Controls.label(0, action))
 	for pair in [["curve_ms", host.balance.throw.motion_window_ticks], ["lob_ms", host.balance.air.lob_shallow_after_ticks], ["quick_ms", host.balance.throw.supersonic_window_ticks], ["charge_ms", host.balance.charge.ticks_needed]]:
 		text = text.replace("{" + pair[0] + "}", str(roundi(float(pair[1]) * 1000 / 60)))
@@ -82,9 +82,13 @@ func draw(area: Rect2) -> void:
 	UI.text(host, area.position + Vector2(50, area.size.y - 23), "UP / DOWN: SELECT MOVE", 23, UI.CYAN, null, 0, HORIZONTAL_ALIGNMENT_LEFT)
 
 func _draw_caption() -> void:
-	if not active or timelines.size() <= selected or video_rect.size == Vector2.ZERO:
+	if not active or video_rect.size == Vector2.ZERO:
 		return
-	var clip: Dictionary = timelines[selected]
+	var clip: Dictionary = {}
+	for entry in timelines:
+		if int(entry.get("lesson", -1)) == Session.CLIP_IDS[selected]:
+			clip = entry
+			break
 	var captions: Array = clip.get("captions", [])
 	if captions.is_empty(): return
 	var frame := clampi(int(player.stream_position * 30), 0, captions.size() - 1)
@@ -106,7 +110,7 @@ func _draw_caption() -> void:
 		if y != 0: parts.append("UP" if y < 0 else "DOWN")
 		if x != 0: parts.append("LEFT" if x < 0 else "RIGHT")
 		var button := false
-		for action in ["a", "b", "jump", "slap"]:
+		for action in ["a", "b", "slap"]:
 			if input.get(action, false):
 				parts.append(Controls.label(0, action))
 				button = true

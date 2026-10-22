@@ -28,9 +28,9 @@ const SNAP_DEGREES := 8.0
 ## Device ids for virtual (phone) controllers; real pads are far below this.
 const VIRTUAL_BASE := 1000
 ## Rebindable actions, in the order the options menu lists them.
-const ACTIONS := ["a", "b", "jump", "slap", "curve_high", "curve_low", "start"]
+const ACTIONS := ["a", "b", "utility", "slap", "curve_high", "curve_low", "start"]
 const ACTION_NAMES := {
-	"a": "THROW / DIVE / BLOCK", "b": "LOB / DROP SHOT", "jump": "JUMP",
+	"a": "THROW / DIVE / BLOCK", "b": "LOB / DROP SHOT", "utility": "MENU ACTION",
 	"slap": "SLAP / POWER THROW", "curve_high": "CURVE THROW HIGH", "curve_low": "CURVE THROW LOW",
 	"start": "PAUSE",
 }
@@ -39,14 +39,14 @@ const MOVE_KEYS := [
 	{"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT},
 ]
 const DEFAULT_KEYS := [
-	{"a": [KEY_J], "b": [KEY_K], "jump": [KEY_L], "slap": [KEY_I], "curve_high": [KEY_U],
+	{"a": [KEY_J], "b": [KEY_K], "utility": [KEY_L], "slap": [KEY_I], "curve_high": [KEY_U],
 		"curve_low": [KEY_O], "start": [KEY_ESCAPE, KEY_ENTER]},
-	{"a": [KEY_KP_1], "b": [KEY_KP_2], "jump": [KEY_KP_3], "slap": [KEY_KP_5], "curve_high": [KEY_KP_4],
+	{"a": [KEY_KP_1], "b": [KEY_KP_2], "utility": [KEY_KP_3], "slap": [KEY_KP_5], "curve_high": [KEY_KP_4],
 		"curve_low": [KEY_KP_6], "start": [KEY_BACKSPACE, KEY_KP_ENTER]},
 ]
 ## The shoulders throw curves: left bends it high, right bends it low.
 const DEFAULT_PAD := {
-	"a": [JOY_BUTTON_A], "b": [JOY_BUTTON_B], "jump": [JOY_BUTTON_X],
+	"a": [JOY_BUTTON_A], "b": [JOY_BUTTON_B], "utility": [JOY_BUTTON_X],
 	"slap": [JOY_BUTTON_Y], "curve_high": [JOY_BUTTON_LEFT_SHOULDER],
 	"curve_low": [JOY_BUTTON_RIGHT_SHOULDER], "start": [JOY_BUTTON_START],
 }
@@ -102,7 +102,7 @@ func _ready() -> void:
 func reset_bindings() -> void:
 	bindings = []
 	for i in PLAYERS:
-		bindings.append({"keys": DEFAULT_KEYS[i].duplicate(true) if i < 2 else {"a": [], "b": [], "jump": [], "slap": [], "curve_high": [], "curve_low": [], "start": []}, "pad": DEFAULT_PAD.duplicate(true)})
+		bindings.append({"keys": DEFAULT_KEYS[i].duplicate(true) if i < 2 else {"a": [], "b": [], "utility": [], "slap": [], "curve_high": [], "curve_low": [], "start": []}, "pad": DEFAULT_PAD.duplicate(true)})
 
 
 func get_bindings() -> Dictionary:
@@ -234,7 +234,7 @@ func input(player: int) -> Dictionary:
 	var s := _now[player]
 	return {"x": s.get("x", 0), "y": s.get("y", 0), "ma": s.get("ma", 0),
 		"a": pressed(player, "a"), "b": pressed(player, "b"),
-		"jump": pressed(player, "jump"), "slap": pressed(player, "slap"),
+		"slap": pressed(player, "slap"),
 		"a_down": s.get("a", false), "b_down": s.get("b", false), "soft": s.get("soft", false),
 		"curve_high": pressed(player, "curve_high") or (pressed(player, "a") and s.get("curve_high", false)),
 		"curve_low": pressed(player, "curve_low") or (pressed(player, "a") and s.get("curve_low", false))}
@@ -547,7 +547,7 @@ func _pad_state(device: int) -> Dictionary:
 	# Menus use the default layout on any controller, whatever the bindings:
 	# bottom face button confirms, right face button goes back.
 	return {"x": dir.x, "y": dir.y, "analog": analog, "buttons": buttons,
-		"a": buttons[JOY_BUTTON_A], "b": buttons[JOY_BUTTON_B], "jump": buttons[JOY_BUTTON_X],
+		"a": buttons[JOY_BUTTON_A], "b": buttons[JOY_BUTTON_B], "utility": buttons[JOY_BUTTON_X],
 		"slap": buttons[JOY_BUTTON_Y], "start": buttons[JOY_BUTTON_START]}
 
 
@@ -570,7 +570,7 @@ func _virtual_state(device: int) -> Dictionary:
 			JOY_BUTTON_RIGHT_STICK]:
 		buttons[k] = b.get(k, false)
 	return {"x": dir.x, "y": dir.y, "analog": analog, "buttons": buttons,
-		"a": buttons[JOY_BUTTON_A], "b": buttons[JOY_BUTTON_B], "jump": buttons[JOY_BUTTON_X],
+		"a": buttons[JOY_BUTTON_A], "b": buttons[JOY_BUTTON_B], "utility": buttons[JOY_BUTTON_X],
 		"slap": buttons[JOY_BUTTON_Y], "start": buttons[JOY_BUTTON_START]}
 
 

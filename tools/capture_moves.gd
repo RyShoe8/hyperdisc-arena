@@ -45,7 +45,7 @@ func _record() -> void:
 		session.lesson = lesson
 		session.reset()
 		view = view_script.new(session.sim, ["mick", "tiffany"], names)
-		var folder := output.path_join("%02d" % lesson)
+		var folder := output.path_join("%02d" % Session.CLIP_IDS[lesson])
 		DirAccess.make_dir_recursive_absolute(folder)
 		var complete_at := -1
 		var frame := 0
@@ -84,7 +84,7 @@ func _record() -> void:
 			printerr("Demo never completed: %d" % lesson)
 			quit(1)
 			return
-		manifest.append({"lesson": lesson, "name": Session.LESSONS[lesson][0], "frames": frame, "fps": 30, "inputs": inputs})
+		manifest.append({"lesson": Session.CLIP_IDS[lesson], "name": Session.LESSONS[lesson][0], "frames": frame, "fps": 30, "inputs": inputs})
 		print("RECORDED %02d %s (%d frames)" % [lesson, Session.LESSONS[lesson][0], frame])
 	var file := FileAccess.open(output.path_join("manifest.json"), FileAccess.WRITE)
 	file.store_string(JSON.stringify(manifest, "\t"))

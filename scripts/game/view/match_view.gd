@@ -14,10 +14,10 @@ const CELEBRATION_SKIP_TICKS := 120
 
 const SPRITE_SCALE := 0.72
 const DISC_RADIUS := 21.0
-## Flying discs are drawn at chest height with their shadow on the floor
+## Flying discs are drawn at mid-torso height with their shadow on the floor
 ## marking the real position, so a throw passing behind a player is seen to
 ## go behind them rather than through their body.
-const FLY_HEIGHT := 85.0
+const FLY_HEIGHT := 70.0
 const SPECIAL_COLORS := {
 	"mick": Color("ff2e88"), "tiffany": Color("2de2e6"), "pete": Color("ffd23f"),
 	"steve": Color("8ee6ad"), "vanessa": Color("2de2e6"), "keno": Color("ff4d2e"),

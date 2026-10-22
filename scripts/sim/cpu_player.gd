@@ -20,7 +20,6 @@ var _aim_offset := 0.0
 ## Decisions are rolled once per incoming disc, keyed by its identity.
 var _disc_key := ""
 var _defence: int = Defence.NONE
-var _will_jump := false
 
 
 func _init(cpu_side: int, difficulty: Dictionary, seed_value: int = 1) -> void:
@@ -117,18 +116,11 @@ func _think_defending(sim: MatchSim, me: MatchSim.PlayerState) -> Dictionary:
 					_defence = Defence.NONE
 					return _press({"a": true})
 
-	if air_to_me and _will_jump and me.z <= 0.0:
-		# Jump to snatch a lob before it lands, when it passes overhead.
-		if me.pos.distance_to(disc.pos) < float(sim.cfg.player.catch_radius) \
-				and disc.z > 50.0 and disc.z < 150.0:
-			_will_jump = false
-			return _press({"jump": true})
-
 	_refresh -= 1
 	if _refresh <= 0:
 		_refresh = int(params.reaction_ticks)
 		if air_to_me:
-			_target = disc.air_to if not _will_jump else disc.pos.lerp(disc.air_to, 0.5)
+			_target = disc.air_to
 		elif incoming:
 			_target = Vector2(sim.home_x(side), _predict_y(sim, me.pos.x) + _aim_offset)
 		else:
@@ -149,7 +141,6 @@ func _roll_decisions(disc: MatchSim.DiscState) -> void:
 	_disc_key = key
 	_aim_offset = rng.randf_range(-1.0, 1.0) * float(params.aim_error)
 	_defence = Defence.NONE
-	_will_jump = disc.state == MatchSim.Disc.AIR and rng.randf() < float(params.jump_chance)
 	if disc.state != MatchSim.Disc.FLYING or disc.thrower == side:
 		return
 	var roll := rng.randf()

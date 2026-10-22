@@ -10,7 +10,7 @@
 ## An input is a Dictionary:
 ##   x, y          -1|0|1 absolute stick direction
 ##   a, b          throw/dash/block and lob/drop, pressed this tick
-##   jump, slap    pressed this tick
+##   slap          pressed this tick
 ##   a_down, b_down  held (for the A+B power toss)
 ## Missing keys count as released, so older callers keep working.
 extends RefCounted
@@ -285,7 +285,7 @@ static func _load_object(o: Object, d: Dictionary) -> void:
 # --- Simulation ------------------------------------------------------------
 
 ## Buttons that are buffered (see PlayerState.buffer).
-const BUFFERED := ["a", "b", "jump", "slap", "curve_high", "curve_low"]
+const BUFFERED := ["a", "b", "slap", "curve_high", "curve_low"]
 
 
 func step(inputs: Array) -> void:
@@ -419,12 +419,7 @@ func _update_player(p: PlayerState, input: Dictionary) -> void:
 		p.recovery_ticks -= 1
 	else:
 		var move := move_dir(input)
-		if input.get("jump", false):
-			p.vz = float(pc.jump_velocity)
-			p.z = 0.001
-			_act(p, Act.JUMP)
-			events.append({"type": "jump", "side": p.side, "player": p.slot})
-		elif move != Vector2.ZERO:
+		if move != Vector2.ZERO:
 			# Dash: A with a direction. A pressed a moment before the
 			# direction still counts, but only just (dash_buffer_ticks).
 			if input.get("a", false) and int(p.buffer.get("a", 0)) < int(pc.dash_buffer_ticks):

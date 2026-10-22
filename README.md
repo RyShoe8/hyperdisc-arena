@@ -19,33 +19,35 @@ Open the folder in Godot 4.7 and press F5.
 
 ## Play modes
 
-The main menu is **Story, VS, Online, Tutorial, Mixtapes, Options, Quit**.
-Quit is omitted in browser builds; Online remains desktop-only.
+Main menu: **Story, 2 Player, Multiplayer, Tutorial, Mixtapes, Quit**.
+Start / Options on the main menu opens settings (graphics, audio, controls and
+move list). Settings also remains available while paused. Quit is omitted in
+browser builds.
 
-- **Story:** choose a fighter and face every other fighter in roster order.
-  Each opponent increases the CPU skill factor by 10%, starting at the easy
-  baseline. Reactions, aiming and move decisions improve within bounded limits;
-  character stats and scoring do not change. Wins save the next opponent;
-  losses offer Retry. Continue resumes a saved run. Story is singles.
-- **VS:** one-off Singles (1v1) or Doubles (2v2). Up/down chooses a setup row;
-  left/right changes the format, fighter, difficulty or court. On a fighter row,
-  Jump cycles CPU / Player 1–4, skipping players already assigned to another slot.
-  Team A has slots 1/3; Team B has slots 2/4. Select Start Match to play.
-  The default is Player 1 versus CPU. Extra local players use controllers.
-- **Online:** the existing host/join lobby supports singles and doubles across
-  two machines. Before locking in, the host uses Jump to change format. In doubles,
-  Slap cycles your partner's character and Player 2 presses Start to join or return
-  that slot to CPU. Each machine controls one team. Four independent online
-  clients are not supported yet. Both peers need the updated build (protocol 7).
-- **Tutorial:** the interactive move lessons plus a Doubles Basics guide.
+- **Story:** Continue, New Story, or Quick Match vs CPU. Story faces the roster
+  sequentially with a 10% CPU skill increase per opponent and saves after wins.
+- **2 Player:** Head to Head (local 1v1) or Team Up vs CPU (both humans on the
+  same side in doubles). Each opens one setup screen for characters, court,
+  CPU difficulty and player assignments.
+- **Multiplayer:** Local Doubles (up to four humans, with CPU fill) or Online
+  Lobbies. Online retains host/join, public lobby, friends/invites and direct
+  LAN/address connections. Choose singles/doubles inside the online lobby.
+  Browser builds show local doubles; online explains that the desktop game is
+  required. Online doubles uses two machines with a local or CPU partner per
+  machine; four independent clients are not supported.
+- **Tutorial:** Interactive Move Lessons or Doubles Basics.
+- **Mixtapes:** the existing music library and deck editor.
 
-Doubles uses one disc, shared team scoring, independent power meters, and the
-existing set rules. Teammates move through each other. CPU partners yield to
-better-positioned teammates and cover the other lane. Passing is not included.
+Local setup: up/down chooses a row; left/right changes its value. On a fighter
+row, the menu action button cycles CPU / Player 1-4, skipping players already assigned. Extra
+controllers can press Start to join an empty CPU slot. Back returns to the
+submenu that opened setup. Team A uses slots 1/3, Team B uses 2/4.
 
-To verify the new modes, run Godot with `--headless --path . --script tests/test_modes.gd`.
-For rendered screen captures, omit `--headless` and append `-- --visual`; captures
-are written to `.godot/mode_previews`.
+Doubles uses one disc, shared scoring, independent power meters, and existing
+set rules. Teammates can move through each other. CPU partners cover separate
+lanes. Passing is not included. Online peers must use the same updated build.
+
+Verify with Godot `--headless --path . --script tests/test_modes.gd`.
 
 ## Controls
 
@@ -60,7 +62,7 @@ can be rebound per player, for controller and keyboard, under
 | Move / aim | Left stick or D-pad | WASD | Arrows |
 | Throw (holding), dash (moving), block (standing still) | A / Cross | J | Numpad 1 |
 | Lob (holding), drop shot (as it arrives) | B / Circle | K | Numpad 2 |
-| Jump (catch lobs in the air) | X / Square | L | Numpad 3 |
+| Menu action (menus only) | X / Square | L | Numpad 3 |
 | Slap shot (as it arrives), power throw (holding, meter full) | Y / Triangle or RB / R1 | I | Numpad 5 |
 | Pause | Start / Options | Esc or Enter | Backspace |
 
@@ -83,22 +85,22 @@ the download, so playback also works offline.
 
 ## Tutorial
 
-Choose **Tutorial** from the main menu for 20 interactive exercises. Each
+Choose **Tutorial** from the main menu for 16 interactive exercises. Each
 lesson explains one move, shows the controller buttons and stick motion,
 and verifies the move using the real match simulation before unlocking
 the next lesson. Prompts follow your controller labels and custom bindings;
 keyboard input switches prompts to your keys.
 
 Defensive drills show the actual move radius and a live **PRESS NOW** cue.
-Jump drills calculate their timing window from the simulation; quick
-returns show the remaining held-disc time. Failed attempts can be retried
+Quick returns show the remaining held-disc time. Jumping and aerial
+move drills have been removed; dive with a direction plus Throw. Failed attempts can be retried
 without advancing. Progress resumes at the next unlocked lesson when you
 reopen the tutorial. Start / Options / Escape exits at any time.
 
 For visual checks, `--tutorial=N` after Godot's `--` opens a particular
 exercise (zero-based), and works with the existing `--shots` / `--out` flags.
 
-To regenerate the 20 move clips after a rules or art change:
+To regenerate the 16 move clips after a rules or art change:
 
 1. Run Godot with `--path . --script tools/capture_moves.gd -- --out=ABSOLUTE_DIR`.
 2. Run Godot with `--headless --path . --script tools/build_move_timelines.gd -- --out=ABSOLUTE_DIR`.

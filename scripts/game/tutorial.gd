@@ -29,6 +29,11 @@ func open(at := -1, device := -1) -> void:
 		var progress := ConfigFile.new()
 		progress.load("user://tutorial.cfg")
 		at = int(progress.get_value("tutorial", "next_lesson", 0))
+		if int(progress.get_value("tutorial", "revision", 1)) < 2:
+			var old_lesson := at
+			at = 0
+			for clip_id in Session.CLIP_IDS:
+				if clip_id < old_lesson: at += 1
 	session.lesson = clampi(at, 0, Session.LESSONS.size() - 1)
 	_reset()
 	host.online = false
@@ -79,7 +84,7 @@ func tick() -> void:
 				if session.failed:
 					_reset()
 				ready = false
-				countdown = 90
+				countdown = 60
 				settled = 0
 		view.tick()
 	elif countdown > 0:
@@ -97,6 +102,7 @@ func tick() -> void:
 
 func _save_progress(lesson: int) -> void:
 	var progress := ConfigFile.new()
+	progress.set_value("tutorial", "revision", 2)
 	progress.set_value("tutorial", "next_lesson", lesson)
 	progress.save("user://tutorial.cfg")
 
@@ -111,7 +117,7 @@ func _draw_arena() -> void:
 	if session.lesson == 0:
 		centre = session.target
 		radius = 35
-	elif session.lesson in [11, 12, 13, 17]:
+	elif session.lesson in [8, 9, 10, 14]:
 		radius = session.defence_radius()
 		color = UI.YELLOW if session.timing().now else UI.CYAN
 	elif s.disc.state == s.Disc.AIR:
@@ -119,10 +125,11 @@ func _draw_arena() -> void:
 	# Project a real floor-space circle, showing exactly where the move works.
 	var points := PackedVector2Array()
 	for i in 65:
-		points.append(view.proj.floor_point(centre + Vector2.from_angle(i * TAU / 64) * radius))
+		var point := centre + Vector2.from_angle(i * TAU / 64) * radius
+		points.append(view.proj.air_point(point, MatchView.FLY_HEIGHT) if s.disc.state == s.Disc.FLYING else view.proj.floor_point(point))
 	arena.draw_polyline(points, color, 4, true)
 	UI.text(arena, view.proj.floor_point(centre) + Vector2(0, 75),
-		"MOVE HERE" if session.lesson == 0 else "MOVE RANGE" if session.lesson in [11, 12, 13, 17] else "LANDING RING" if s.disc.state == s.Disc.AIR else "YOUR FLOOR CIRCLE",
+		"MOVE HERE" if session.lesson == 0 else "MOVE RANGE" if session.lesson in [8, 9, 10, 14] else "LANDING RING" if s.disc.state == s.Disc.AIR else "CATCH AREA" if s.disc.state == s.Disc.FLYING else "YOUR FLOOR CIRCLE",
 		24, color)
 
 func _label(action: String) -> String:
@@ -133,11 +140,11 @@ func draw() -> void:
 	var lesson: Array = Session.LESSONS[session.lesson]
 	UI.text(host, Vector2(55, 72), "HOW TO PLAY", 58, UI.YELLOW, UI.display, 0, HORIZONTAL_ALIGNMENT_LEFT)
 	UI.text(host, Vector2(1860, 66), "LESSON %02d / %02d" % [session.lesson + 1, Session.LESSONS.size()], 30, UI.CYAN, null, 0, HORIZONTAL_ALIGNMENT_RIGHT)
-	UI.meter(host, Rect2(55, 103, 1805, 14), (session.lesson + (1 if session.passed else 0)) / float(Session.LESSONS.size()), UI.CYAN, Session.LESSONS.size())
+	UI.meter(host, Rect2(55, 103, 1805, 11), (session.lesson + (1 if session.passed else 0)) / float(Session.LESSONS.size()), UI.CYAN, Session.LESSONS.size())
 	UI.slant_panel(host, Rect2(1335, 150, 535, 830), UI.DEEP, UI.CYAN, 15, 3)
 	UI.text(host, Vector2(1365, 207), lesson[0], UI.fit_size(lesson[0], 44, 470, UI.display), UI.YELLOW, UI.display, 0, HORIZONTAL_ALIGNMENT_LEFT)
 	var instructions: String = lesson[1]
-	for action in ["a", "b", "jump", "slap", "curve_high", "curve_low"]:
+	for action in ["a", "b", "slap", "curve_high", "curve_low"]:
 		instructions = instructions.replace("{" + action + "}", _label(action))
 	for pair in [["curve_ms", session.balance.throw.motion_window_ticks], ["lob_ms", session.balance.air.lob_shallow_after_ticks], ["quick_ms", session.balance.throw.supersonic_window_ticks], ["charge_ms", session.balance.charge.ticks_needed]]:
 		instructions = instructions.replace("{" + pair[0] + "}", str(roundi(float(pair[1]) * 1000 / 60)))
@@ -154,9 +161,7 @@ func draw() -> void:
 	UI.meter(host, Rect2(1370, 759, 465, 18), float(cue.value) if not ready else 0, color)
 	if session.lesson == 5:
 		_curve_sequence()
-	elif session.lesson in [8, 9, 19]:
-		_paragraph("Jump window: %.2f-%.2f s after GO.\nStay on the ring; the cue assumes you stay there." % [session.jump_window.x / 60.0, session.jump_window.y / 60.0], Vector2(1365, 817), 475, 22)
-	elif session.lesson == 10:
+	elif session.lesson == 7:
 		_paragraph("Catch > finish knockback > tap throw.\nThe quick-return clock counts held ticks, not hitstop or knockback.", Vector2(1365, 817), 475, 22)
 	else:
 		_paragraph("You play on the LEFT. The cyan ring shows the real floor position.\nTap = press and release. Hold = keep it down.", Vector2(1365, 817), 475, 22)
@@ -195,10 +200,9 @@ func _controller(centre: Vector2) -> void:
 	body.append(body[0])
 	host.draw_polyline(body, UI.PURPLE, 5, true)
 	var action: String = Session.LESSONS[session.lesson][2]
-	if session.lesson in [8, 9, 19] and session.stage == 0: action = "jump"
 	var lit: bool = ready or (not session.passed and not session.failed and countdown == 0 and session.timing().now)
 	var required: Array = Controls.bindings[0].pad.get(action, [])
-	if session.lesson == 17:
+	if session.lesson == 14:
 		required = required.duplicate()
 		required.append_array(Controls.bindings[0].pad.b)
 	elif session.lesson == 5:

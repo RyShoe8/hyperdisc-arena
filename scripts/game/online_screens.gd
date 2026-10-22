@@ -450,7 +450,7 @@ func lobby_input() -> void:
 	if bot:
 		_bot_lobby(o)
 		return
-	if Controls.pressed(0, "jump") and o.is_host and not o.local_locked:
+	if Controls.pressed(0, "utility") and o.is_host and not o.local_locked:
 		o.configure_team(not o.doubles, o.local_partner_pick, o.local_partner_human)
 	if o.doubles and not o.local_locked:
 		if Controls.pressed(0, "slap"):
@@ -670,7 +670,7 @@ func _bot_report(o: OnlineMatch) -> void:
 func draw_menu() -> void:
 	var ci = m
 	UI.outrun_background(ci, m.SCREEN, m.frame / 60.0, 0.4)
-	UI.text(ci, Vector2(960, 120), "ONLINE", 110, UI.YELLOW, UI.display, 9, HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)
+	UI.text(ci, Vector2(960, 120), "ONLINE LOBBIES", 110, UI.YELLOW, UI.display, 9, HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)
 	var who := ("SIGNED IN TO PLAYBOUND AS  %s" % Online.display_name()) if Online.signed_in() \
 		else "PLAYING AS  %s   -   NOT SIGNED IN" % Settings.player_name
 	UI.text(ci, Vector2(960, 180), who, 28, UI.CYAN, UI.ui, 4)
@@ -864,7 +864,7 @@ func draw_lobby() -> void:
 			var human: bool = o.local_partner_human if local else o.remote_partner_human
 			var label := "%s: %s" % ["PARTNER" if human else "CPU", m.balance.characters[partner].name]
 			UI.text(ci, Vector2(260 if side == 0 else 1660, 850), label, UI.fit_size(label, 26, 450, UI.ui), Color.WHITE, UI.ui, 3)
-	UI.text(ci, Vector2(960, 900), "HOST JUMP: FORMAT   SLAP: PARTNER CHARACTER   P2 START: JOIN / CPU", 22, UI.CYAN, UI.ui, 2)
+	UI.text(ci, Vector2(960, 900), "HOST %s: FORMAT   SLAP: PARTNER CHARACTER   P2 START: JOIN / CPU" % Controls.label(0, "utility"), 22, UI.CYAN, UI.ui, 2)
 	var court_name: String = m.balance.courts[o.court].name
 	var r := Rect2(Vector2(660, 700), Vector2(600, 84))
 	var court_label := ("<  COURT: %s  >" % court_name) if o.is_host else "COURT: %s" % court_name

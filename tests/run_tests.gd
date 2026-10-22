@@ -42,7 +42,7 @@ func _init() -> void:
 		"test_fast_roll_skipping_the_diagonal_curves",
 		"test_curve_motion_during_hitstop_counts",
 		"test_analog_snaps_to_straight_lines",
-		"test_jump_pressed_during_recovery_happens_when_free",
+		"test_jump_input_is_ignored",
 		"test_buffered_press_expires",
 		"test_throw_pressed_during_hitstop_is_kept",
 		"test_throw_out_of_catch_knockback",
@@ -66,7 +66,7 @@ func _init() -> void:
 		"test_catch_knocks_light_player_back",
 		"test_uncaught_lob_scores_miss_points",
 		"test_lob_caught_under_marker",
-		"test_jump_catches_lob_in_the_air",
+		"test_removed_jump_does_not_interrupt_ground_catch",
 		"test_smash_from_the_air",
 		"test_conceding_player_serves",
 		"test_hold_limit_forces_throw",
@@ -121,30 +121,7 @@ func test_tutorial_all_drills_are_completable() -> void:
 	for lesson in TutorialSession.LESSONS.size():
 		check(training.lesson == lesson, "lesson progression must be sequential")
 		for t in range(1, 240):
-			var p := training.sim.players[0]
-			var input := {}
-			match lesson:
-				0: input = {"x": 1 if p.pos.x < training.target.x else 0}
-				1: input = {"x": 1, "a": t == 1}
-				2: input = {"y": -1 if p.pos.y > 305 else 0}
-				3, 4: input = {"y": -1, "a": t == 1}
-				5:
-					input = {"y": 1 if t < 3 else 0, "x": 1 if t > 1 else 0, "a": t == 3}
-				6: input = {"b": t == 1}
-				7: input = {"jump": t == 1}
-				8, 9, 19:
-					input = {"jump": t == (training.jump_window.x + training.jump_window.y) / 2,
-						"a": lesson == 9 and p.holding and p.z > 0,
-						"b": lesson == 19 and p.holding and p.z > 0}
-				10: input = {"a": p.holding and p.knock_ticks == 0}
-				11: input = {"a": training.timing().now}
-				12: input = {"slap": training.timing().now}
-				13: input = {"b": training.timing().now}
-				14: input = {"a": p.holding and p.charged}
-				15: input = {"b": p.holding and p.charged}
-				16: input = {"slap": t == 1}
-				17: input = {"a": training.timing().now, "b": training.timing().now, "a_down": true, "b_down": true}
-				18: input = {"b": p.hold_ticks + 1 >= int(balance.air.lob_shallow_after_ticks)}
+			var input: Dictionary = preload("res://scripts/game/move_demo.gd").input(training, t)
 			training.step(input)
 			if training.passed or training.failed:
 				break
@@ -359,7 +336,7 @@ func test_lob_caught_under_marker() -> void:
 	check(Array(sim.scores) == [0, 0], "no points expected, got %s" % [sim.scores])
 
 
-func test_jump_catches_lob_in_the_air() -> void:
+func test_removed_jump_does_not_interrupt_ground_catch() -> void:
 	var sim := new_sim()
 	var receiver := sim.players[MatchSim.LEFT]
 	hold(sim, MatchSim.RIGHT)
@@ -374,8 +351,8 @@ func test_jump_catches_lob_in_the_air() -> void:
 		if receiver.holding:
 			caught_in_air = receiver.z > 0.0
 			break
-	check(receiver.holding, "a jumping player should catch the lob")
-	check(caught_in_air, "the catch should happen in the air")
+	check(receiver.holding, "receiver should still catch the descending lob")
+	check(not caught_in_air, "legacy jump input must leave catches grounded")
 
 
 func test_smash_from_the_air() -> void:
@@ -997,14 +974,14 @@ func test_every_character_has_own_throw_sounds() -> void:
 	for m in files:
 		check(FileAccess.file_exists("res://assets/sfx/" + m.get_string(1)), "%s exists" % m.get_string(1))
 
-func test_jump_pressed_during_recovery_happens_when_free() -> void:
+func test_jump_input_is_ignored() -> void:
 	var sim := new_sim()
 	hold(sim, MatchSim.RIGHT)
 	var p := sim.players[MatchSim.LEFT]
 	p.recovery_ticks = 3
 	sim.step([press({"jump": true}), IDLE])
 	run(sim, 4)
-	check(p.z > 0.0, "a jump pressed 3 ticks early still happens")
+	check(p.z == 0.0 and p.vz == 0.0, "removed jump input cannot lift the player")
 
 
 func test_buffered_press_expires() -> void:

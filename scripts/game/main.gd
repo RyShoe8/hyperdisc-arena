@@ -34,7 +34,7 @@ const COURT_NOTES := {
 }
 
 enum Screen { TITLE, MAIN, SELECT, COURT, VS, MATCH, PAUSED, OPTIONS, RESULTS,
-	ONLINE, ONLINE_WAIT, ONLINE_JOIN, ONLINE_LOBBY, ONLINE_SIGNIN, ONLINE_FRIENDS, ONLINE_ROOM, MIXTAPE, TUTORIAL, SETUP, STORY_MENU, TRAINING, DOUBLES_GUIDE }
+	ONLINE, ONLINE_WAIT, ONLINE_JOIN, ONLINE_LOBBY, ONLINE_SIGNIN, ONLINE_FRIENDS, ONLINE_ROOM, MIXTAPE, TUTORIAL, SETUP, STORY_MENU, TRAINING, DOUBLES_GUIDE, PLAY_MENU }
 
 var balance: Dictionary
 var sim: MatchSim
@@ -50,6 +50,9 @@ var story_fighter := 0
 var story_round := 0
 var story_order: Array[int] = []
 var story_menu_index := 0
+var play_menu_kind := "local"
+var play_menu_index := 0
+var setup_return: int = Screen.MAIN
 var training_index := 0
 var setup_row := 0
 var slot_picks: Array[int] = [0, 1, 2, 3]
@@ -256,6 +259,8 @@ func _physics_process(_delta: float) -> void:
 		Screen.DOUBLES_GUIDE:
 			if _back_pressed() or _confirm_device() != -1:
 				_go(Screen.TRAINING)
+		Screen.PLAY_MENU:
+			_play_menu_input()
 		Screen.SETUP:
 			_setup_input()
 		Screen.STORY_MENU:
@@ -349,15 +354,16 @@ func _title_input() -> void:
 
 
 func _main_items() -> Array:
-	var items := ["STORY", "VS", "ONLINE", "TUTORIAL", "MIXTAPES", "OPTIONS"]
-	if OS.has_feature("web"):
-		items.erase("ONLINE")  # browsers can't open UDP sockets
+	var items := ["STORY", "2 PLAYER", "MULTIPLAYER", "TUTORIAL", "MIXTAPES"]
 	if not OS.has_feature("web"):
 		items.append("QUIT")
 	return items
 
 
 func _main_input() -> void:
+	if Controls.menu_pressed("start") != -1:
+		_open_options(Screen.MAIN)
+		return
 	var items := _main_items()
 	var n := Controls.menu_nudged()
 	if n.y != 0:
@@ -377,15 +383,10 @@ func _main_input() -> void:
 		"STORY":
 			story_menu_index = 0 if _load_story() else 1
 			_go(Screen.STORY_MENU)
-		"VS":
-			story = false
-			setup_row = 0
-			_go(Screen.SETUP)
-		"ONLINE":
-			net.menu_index = 0
-			_go(Screen.ONLINE)
-		"OPTIONS":
-			_open_options(Screen.MAIN)
+		"2 PLAYER":
+			_open_play_menu("local")
+		"MULTIPLAYER":
+			_open_play_menu("multiplayer")
 		"MIXTAPES":
 			tapes.open()
 		"QUIT":
@@ -604,7 +605,7 @@ func _sound_for(e: Dictionary) -> void:
 			_rumble(e.side, 0.6, 0.7, 0.14)
 		"dash":
 			_rumble(e.side, 0.4, 0.15, 0.1)
-		"jump":
+		"utility":
 			Sfx.play("lob", 1.4, -10.0, pan)
 		"land":
 			Sfx.play("land", 1.0, 0.0, pan)
@@ -808,7 +809,7 @@ func _options_input() -> void:
 		pass
 	var rows := _option_rows()
 	# Shoulder-style tab switching: jump / slap buttons, or left/right on the tab row.
-	if Controls.menu_pressed("jump") != -1:
+	if Controls.menu_pressed("utility") != -1:
 		_switch_tab(-1)
 		return
 	if Controls.menu_pressed("slap") != -1:
@@ -977,6 +978,8 @@ func _draw() -> void:
 			_hint("%s SELECT     %s BACK" % [_a(), _b()])
 		Screen.DOUBLES_GUIDE:
 			_draw_doubles_guide()
+		Screen.PLAY_MENU:
+			_draw_play_menu()
 		Screen.SETUP:
 			_draw_setup()
 		Screen.STORY_MENU:
@@ -1070,7 +1073,7 @@ func _draw_main() -> void:
 	for i in items.size():
 		var r := Rect2(Vector2(660, 450 + i * 72), Vector2(600, 60))
 		UI.button(self, r, items[i], i == main_index, frame, 40)
-	_hint("%s SELECT     %s BACK" % [_a(), _b()])
+	_hint("%s SELECT     %s BACK     %s OPTIONS" % [_a(), _b(), Controls.label(0, "start")])
 
 	var version := str(ProjectSettings.get_setting("application/config/version", ""))
 	UI.text(self, Vector2(24, SCREEN.y - 40), "v" + version, 24, UI.DIM,
@@ -1280,9 +1283,9 @@ func _draw_options() -> void:
 		_draw_phone_overlay()
 		return
 	if OPTION_TABS[options_tab] == "MOVES":
-		_hint("UP / DOWN PICK MOVE     %s REPLAY     %s / %s SWITCH TAB     %s BACK" % [_a(), Controls.label(0, "jump"), Controls.label(0, "slap"), _b()])
+		_hint("UP / DOWN PICK MOVE     %s REPLAY     %s / %s SWITCH TAB     %s BACK" % [_a(), Controls.label(0, "utility"), Controls.label(0, "slap"), _b()])
 		return
-	_hint("%s / %s SWITCH TAB     %s CHANGE     %s BACK" % [Controls.label(0, "jump"),
+	_hint("%s / %s SWITCH TAB     %s CHANGE     %s BACK" % [Controls.label(0, "utility"),
 		Controls.label(0, "slap"), _a(), _b()])
 
 
@@ -1471,13 +1474,15 @@ func _story_difficulty() -> Dictionary:
 func _story_menu_input() -> void:
 	var n := Controls.menu_nudged()
 	if n.y != 0:
-		story_menu_index = posmod(story_menu_index + n.y, 2)
+		story_menu_index = posmod(story_menu_index + n.y, 3)
 	if _back_pressed():
 		_go(Screen.MAIN)
 	elif _confirm_device() != -1:
 		if story_menu_index == 0:
 			if _load_story():
 				_prepare_story()
+		elif story_menu_index == 2:
+			_open_local_setup(false, [0, -1, -1, -1], Screen.STORY_MENU)
 		else:
 			story = true
 			doubles = false
@@ -1491,8 +1496,9 @@ func _draw_story_menu() -> void:
 	var save := ConfigFile.new()
 	var resumable: bool = save.load(story_save_path) == OK and int(save.get_value("story", "round", -1)) < balance.characters.size() - 1
 	UI.text(self, Vector2(960, 320), "FACE THE ROSTER. EACH OPPONENT IS 10% HARDER.", 30, Color.WHITE, UI.ui, 3)
-	for i in 2:
-		UI.button(self, Rect2(660, 450 + i * 100, 600, 75), ("CONTINUE" if resumable else "NO SAVED RUN") if i == 0 else "NEW STORY", story_menu_index == i, frame, 36)
+	var items := ["CONTINUE" if resumable else "NO SAVED RUN", "NEW STORY", "QUICK MATCH vs CPU"]
+	for i in items.size():
+		UI.button(self, Rect2(560, 420 + i * 100, 800, 75), items[i], story_menu_index == i, frame, 36)
 	_hint("%s SELECT     %s BACK" % [_a(), _b()])
 
 
@@ -1515,7 +1521,7 @@ func _setup_input() -> void:
 		setup_row = posmod(setup_row + n.y, rows)
 		Sfx.play("menu_move")
 	if _back_pressed():
-		_go(Screen.MAIN)
+		_go(setup_return)
 		return
 	if setup_row == 0 and n.x != 0:
 		doubles = not doubles
@@ -1523,7 +1529,7 @@ func _setup_input() -> void:
 		var slot: int = slots[setup_row - 1]
 		if n.x != 0:
 			slot_picks[slot] = posmod(slot_picks[slot] + n.x, balance.characters.size())
-		if Controls.menu_pressed("jump") != -1:
+		if Controls.menu_pressed("utility") != -1:
 			var next := slot_controls[slot]
 			for attempt in 5:
 				next = posmod(next + 2, 5) - 1
@@ -1549,7 +1555,7 @@ func _setup_input() -> void:
 
 func _draw_setup() -> void:
 	UI.outrun_background(self, SCREEN, frame / 60.0, 0.25)
-	UI.text(self, Vector2(960, 130), "VS MATCH SETUP", 76, UI.YELLOW, UI.display, 5)
+	UI.text(self, Vector2(960, 130), "DOUBLES MATCH SETUP" if doubles else "SINGLES MATCH SETUP", 76, UI.YELLOW, UI.display, 5)
 	var slots := _setup_slots()
 	var rows: Array = ["FORMAT:  < DOUBLES 2v2 >" if doubles else "FORMAT:  < SINGLES 1v1 >"]
 	for slot in slots:
@@ -1560,7 +1566,7 @@ func _draw_setup() -> void:
 	rows.append("START MATCH")
 	for i in rows.size():
 		UI.button(self, Rect2(360, 220 + i * 82, 1200, 68), rows[i], setup_row == i, frame, 30)
-	UI.text(self, Vector2(960, 940), "UP/DOWN: ROW   LEFT/RIGHT: CHANGE   %s: CPU / PLAYER   START: JOIN" % Controls.label(0, "jump"), 25, UI.CYAN, UI.ui, 2)
+	UI.text(self, Vector2(960, 940), "UP/DOWN: ROW   LEFT/RIGHT: CHANGE   %s: CPU / PLAYER   START: JOIN" % Controls.label(0, "utility"), 25, UI.CYAN, UI.ui, 2)
 	_hint("%s START MATCH     %s BACK" % [_a(), _b()])
 
 
@@ -1578,3 +1584,61 @@ func _draw_doubles_guide() -> void:
 	for i in lines.size():
 		UI.text(self, Vector2(960, 310 + i * 75), lines[i], 30, UI.CYAN if i % 2 == 0 else Color.WHITE, UI.ui, 3)
 	_hint("%s / %s BACK" % [_a(), _b()])
+
+
+func _open_play_menu(kind: String) -> void:
+	play_menu_kind = kind
+	play_menu_index = 0
+	_go(Screen.PLAY_MENU)
+
+
+func _play_menu_items() -> Array:
+	if play_menu_kind == "local":
+		return ["HEAD TO HEAD  1v1", "TEAM UP vs CPU  2v2"]
+	return ["LOCAL DOUBLES  2v2", "ONLINE  1v1 / 2v2"]
+
+
+func _open_local_setup(team_match: bool, controllers: Array, return_to: int) -> void:
+	story = false
+	online = false
+	doubles = team_match
+	slot_controls.assign(controllers)
+	setup_row = 1
+	setup_return = return_to
+	_go(Screen.SETUP)
+
+
+func _play_menu_input() -> void:
+	var items := _play_menu_items()
+	var n := Controls.menu_nudged()
+	if n.y != 0:
+		play_menu_index = posmod(play_menu_index + n.y, items.size())
+		Sfx.play("menu_move")
+	if _back_pressed():
+		_go(Screen.MAIN)
+	elif _confirm_device() != -1:
+		Sfx.play("menu_confirm")
+		if play_menu_kind == "local":
+			if play_menu_index == 0:
+				_open_local_setup(false, [0, 1, -1, -1], Screen.PLAY_MENU)
+			else:
+				_open_local_setup(true, [0, -1, 1, -1], Screen.PLAY_MENU)
+		elif play_menu_index == 0:
+			_open_local_setup(true, [0, 2, 1, 3], Screen.PLAY_MENU)
+		elif OS.has_feature("web"):
+			toast = "ONLINE PLAY REQUIRES THE DESKTOP VERSION"
+			toast_ticks = 240
+		else:
+			net.menu_index = 0
+			_go(Screen.ONLINE)
+
+
+func _draw_play_menu() -> void:
+	UI.outrun_background(self, SCREEN, frame / 60.0, 0.25)
+	UI.text(self, Vector2(960, 200), "2 PLAYER" if play_menu_kind == "local" else "MULTIPLAYER", 90, UI.YELLOW, UI.display, 5)
+	var items := _play_menu_items()
+	for i in items.size():
+		UI.button(self, Rect2(460, 420 + i * 110, 1000, 80), items[i], play_menu_index == i, frame, 36)
+	var notes := ["TWO LOCAL PLAYERS ON OPPOSITE SIDES", "TWO LOCAL PLAYERS TOGETHER AGAINST TWO CPUs"] if play_menu_kind == "local" else ["UP TO FOUR LOCAL PLAYERS; CPUs CAN FILL ANY SLOT", "HOST OR JOIN A ROOM; CHOOSE SINGLES OR DOUBLES IN THE LOBBY"]
+	UI.text(self, Vector2(960, 760), notes[play_menu_index], 28, UI.CYAN, UI.ui, 3)
+	_hint("%s SELECT     %s BACK" % [_a(), _b()])
