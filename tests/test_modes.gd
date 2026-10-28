@@ -69,7 +69,7 @@ func _run() -> void:
 	for t in 2800:
 		for side in 2:
 			link[side].advance()
-			peers[side].poll({"y": t % 3 - 1, "a": t % 17 == 0, "partner": {"x": t % 3 - 1, "jump": t % 31 == 0, "curve_high": t % 19 == 0}})
+			peers[side].poll({"y": t % 3 - 1, "a": t % 17 == 0, "partner": {"x": t % 3 - 1, "dive": t % 31 == 0, "curve_left": t % 19 == 0}})
 		if not configured and host.state == Match.State.LOBBY and guest.state == Match.State.LOBBY:
 			host.configure_team(true, 4, true)
 			guest.configure_team(true, 5, false)

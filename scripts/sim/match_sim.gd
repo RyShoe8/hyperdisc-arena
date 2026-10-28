@@ -285,7 +285,7 @@ static func _load_object(o: Object, d: Dictionary) -> void:
 # --- Simulation ------------------------------------------------------------
 
 ## Buttons that are buffered (see PlayerState.buffer).
-const BUFFERED := ["a", "b", "slap", "curve_high", "curve_low"]
+const BUFFERED := ["a", "b", "slap", "power", "dive", "curve_left", "curve_right"]
 
 
 func step(inputs: Array) -> void:
@@ -388,14 +388,12 @@ func _update_player(p: PlayerState, input: Dictionary) -> void:
 			p.hold_ticks += 1
 		if phase == Phase.SERVE and p.hold_ticks < int(cfg.match.serve_delay_ticks):
 			return
-		if input.get("slap", false) and ex_full(p.slot):
+		if input.get("power", false) and ex_full(p.slot):
 			_special(p, true, input)
 		elif input.get("b", false):
 			_lob(p, input)
-		elif input.get("curve_high", false) or input.get("curve_low", false):
-			# One-button curve throws: high starts up and bends down (like
-			# 8-9-6), low starts down and bends up (like 2-3-6).
-			_throw(p, input, false, -1 if input.get("curve_high", false) else 1)
+		elif input.get("curve_left", false) or input.get("curve_right", false):
+			_throw(p, input, false, _curve_for(p, input))
 		elif input.get("a", false):
 			if p.charged:
 				_special(p, false, input)
@@ -420,9 +418,9 @@ func _update_player(p: PlayerState, input: Dictionary) -> void:
 	else:
 		var move := move_dir(input)
 		if move != Vector2.ZERO:
-			# Dash: A with a direction. A pressed a moment before the
-			# direction still counts, but only just (dash_buffer_ticks).
-			if input.get("a", false) and int(p.buffer.get("a", 0)) < int(pc.dash_buffer_ticks):
+			# Dive: its own button, with a direction. Pressed a moment before
+			# the direction still counts, but only just (dash_buffer_ticks).
+			if input.get("dive", false) and int(p.buffer.get("dive", 0)) < int(pc.dash_buffer_ticks):
 				p.dash_dir = move
 				p.dash_ticks = int(pc.dash_ticks)
 				p.buffer.clear()
@@ -460,16 +458,22 @@ static func move_dir(input: Dictionary) -> Vector2:
 	return v.normalized() if v != Vector2.ZERO else Vector2.ZERO
 
 
-## Block, slap, drop shot and power toss. Returns true if one happened.
+## The screen curve (1 = starts down and bends up, like 2-3-6) for a curve
+## button. Curve Left and Right bend the disc toward the thrower's own left
+## or right, so for the player facing left they're mirrored on screen.
+func _curve_for(p: PlayerState, input: Dictionary) -> int:
+	return forward(p.side) * (1 if input.get("curve_left", false) else -1)
+
+
+## Pop up, slap, drop shot and power toss. Returns true if one happened.
 func _try_defend(p: PlayerState, input: Dictionary) -> bool:
 	if p.dash_ticks > 0 or p.recovery_ticks > 0:
 		return false
 	var d: Dictionary = cfg.defence
 	var incoming := disc.state == Disc.FLYING and disc.thrower == 1 - p.side
 	var dist := p.pos.distance_to(disc.pos)
-	var power_toss: bool = (input.get("a", false) and input.get("b_down", false)) \
-		or (input.get("b", false) and input.get("a_down", false))
-	if power_toss and incoming and ex_full(p.slot) and dist <= float(d.power_toss_radius) \
+	# Power Move against an incoming disc spends the meter on a power toss.
+	if input.get("power", false) and incoming and ex_full(p.slot) and dist <= float(d.power_toss_radius) \
 			and side_of(disc.pos.x) == p.side:
 		p.ex = 0
 		disc.thrower_slot = p.slot
@@ -486,11 +490,8 @@ func _try_defend(p: PlayerState, input: Dictionary) -> bool:
 	if input.get("b", false) and dist <= float(d.slap_radius):
 		_drop_shot(p)
 		return true
-	# Block: A with the stick centred, or only lightly tilted ("soft"), so a
-	# resting thumb on an analog stick doesn't turn a block into a dash.
-	var move := Vector2(input.get("x", 0), input.get("y", 0))
-	var neutral: bool = move == Vector2.ZERO or input.get("soft", false)
-	if input.get("a", false) and neutral and dist <= float(d.block_radius):
+	# Pop up (block): A against an incoming disc, whatever the stick is doing.
+	if input.get("a", false) and dist <= float(d.block_radius):
 		_block(p)
 		return true
 	return false

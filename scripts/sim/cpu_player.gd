@@ -70,7 +70,7 @@ func _think_holding(sim: MatchSim, me: MatchSim.PlayerState) -> Dictionary:
 	var fwd := MatchSim.forward(side)
 	var aim := rng.randi_range(-1, 1)
 	if sim.ex_full(slot) and rng.randf() < float(params.ex_chance):
-		return _press({"slap": true, "y": aim})
+		return _press({"power": true, "y": aim})
 	if me.charged and rng.randf() < float(params.special_chance):
 		return _press({"a": true, "y": aim})
 	var roll := rng.randf()
@@ -101,7 +101,7 @@ func _think_defending(sim: MatchSim, me: MatchSim.PlayerState) -> Dictionary:
 			Defence.POWER_TOSS:
 				if sim.ex_full(slot) and dist <= float(d.power_toss_radius) and sim.side_of(disc.pos.x) == side:
 					_defence = Defence.NONE
-					return _press({"a": true, "b_down": true})
+					return _press({"power": true})
 			Defence.SLAP:
 				if dist <= float(d.slap_radius) * 0.9:
 					_defence = Defence.NONE
@@ -131,7 +131,7 @@ func _think_defending(sim: MatchSim, me: MatchSim.PlayerState) -> Dictionary:
 	var x := 0 if absf(delta.x) < dead_zone else int(signf(delta.x))
 	var y := 0 if absf(delta.y) < dead_zone else int(signf(delta.y))
 	var dash := (incoming or air_to_me) and delta.length() > float(params.dash_distance)
-	return {"x": x, "y": y, "a": dash, "b": false}
+	return {"x": x, "y": y, "dive": dash, "a": false, "b": false}
 
 
 func _roll_decisions(disc: MatchSim.DiscState) -> void:

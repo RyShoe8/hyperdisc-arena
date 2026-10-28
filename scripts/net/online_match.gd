@@ -12,7 +12,7 @@ const RollbackSession := preload("res://scripts/net/rollback_session.gd")
 enum State { CONNECTING, LOBBY, PLAYING, ENDED, FAILED }
 
 ## Bump when the wire format or the rules change incompatibly.
-const PROTOCOL := 8  # 8: grounded play; jumping removed
+const PROTOCOL := 9  # 9: seven separate actions (dive, power move, curve left / right); 8: grounded play; jumping removed
 const PKT_LOBBY := 1
 const RESEND_TICKS := 20
 const TIMEOUT_TICKS := 600

@@ -20,35 +20,40 @@ const PLAYERS := 4
 ## stick resting near the edge doesn't flicker between moving and stopping.
 const DEADZONE := 0.27
 const DEADZONE_RELEASE := 0.2
-## A stick tilted less than this is "soft": a block still counts as a block.
-const SOFT_TILT := 0.6
 ## Analog running within this many degrees of straight or an exact diagonal
 ## snaps onto it, so lining up on the disc is easy.
 const SNAP_DEGREES := 8.0
 ## Device ids for virtual (phone) controllers; real pads are far below this.
 const VIRTUAL_BASE := 1000
 ## Rebindable actions, in the order the options menu lists them.
-const ACTIONS := ["a", "b", "utility", "slap", "curve_high", "curve_low", "start"]
+const ACTIONS := ["a", "slap", "power", "b", "dive", "curve_left", "curve_right", "utility", "start"]
 const ACTION_NAMES := {
-	"a": "THROW / DIVE / BLOCK", "b": "LOB / DROP SHOT", "utility": "MENU ACTION",
-	"slap": "SLAP / POWER THROW", "curve_high": "CURVE THROW HIGH", "curve_low": "CURVE THROW LOW",
-	"start": "PAUSE",
+	"a": "THROW / POP UP", "slap": "SLAP", "power": "POWER MOVE", "b": "LOB / DROP SHOT",
+	"dive": "DIVE", "curve_left": "CURVE LEFT", "curve_right": "CURVE RIGHT",
+	"utility": "MENU ACTION", "start": "PAUSE",
 }
+## The analog triggers, bindable like buttons (ids past every real button).
+const TRIGGER_LEFT := 200
+const TRIGGER_RIGHT := 201
+## How far a trigger must be pulled to count as pressed.
+const TRIGGER_PRESS := 0.5
 const MOVE_KEYS := [
 	{"up": KEY_W, "down": KEY_S, "left": KEY_A, "right": KEY_D},
 	{"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT},
 ]
 const DEFAULT_KEYS := [
-	{"a": [KEY_J], "b": [KEY_K], "utility": [KEY_L], "slap": [KEY_I], "curve_high": [KEY_U],
-		"curve_low": [KEY_O], "start": [KEY_ESCAPE, KEY_ENTER]},
-	{"a": [KEY_KP_1], "b": [KEY_KP_2], "utility": [KEY_KP_3], "slap": [KEY_KP_5], "curve_high": [KEY_KP_4],
-		"curve_low": [KEY_KP_6], "start": [KEY_BACKSPACE, KEY_KP_ENTER]},
+	{"a": [KEY_J], "slap": [KEY_I], "power": [KEY_H], "b": [KEY_K], "dive": [KEY_L],
+		"curve_left": [KEY_U], "curve_right": [KEY_O], "utility": [KEY_L], "start": [KEY_ESCAPE, KEY_ENTER]},
+	{"a": [KEY_KP_1], "slap": [KEY_KP_5], "power": [KEY_KP_0], "b": [KEY_KP_2], "dive": [KEY_KP_3],
+		"curve_left": [KEY_KP_4], "curve_right": [KEY_KP_6], "utility": [KEY_KP_3],
+		"start": [KEY_BACKSPACE, KEY_KP_ENTER]},
 ]
-## The shoulders throw curves: left bends it high, right bends it low.
+## A throws and pops up, B lobs, X is the power move, Y slaps, the shoulders
+## curve and the right trigger dives. Menu action shares X (menus only).
 const DEFAULT_PAD := {
-	"a": [JOY_BUTTON_A], "b": [JOY_BUTTON_B], "utility": [JOY_BUTTON_X],
-	"slap": [JOY_BUTTON_Y], "curve_high": [JOY_BUTTON_LEFT_SHOULDER],
-	"curve_low": [JOY_BUTTON_RIGHT_SHOULDER], "start": [JOY_BUTTON_START],
+	"a": [JOY_BUTTON_A], "slap": [JOY_BUTTON_Y], "power": [JOY_BUTTON_X], "b": [JOY_BUTTON_B],
+	"dive": [TRIGGER_RIGHT], "curve_left": [JOY_BUTTON_LEFT_SHOULDER],
+	"curve_right": [JOY_BUTTON_RIGHT_SHOULDER], "utility": [JOY_BUTTON_X], "start": [JOY_BUTTON_START],
 }
 
 ## Controller device id per player slot, or -1 when the slot has none.
@@ -108,7 +113,12 @@ func _ready() -> void:
 func reset_bindings() -> void:
 	bindings = []
 	for i in PLAYERS:
-		bindings.append({"keys": DEFAULT_KEYS[i].duplicate(true) if i < 2 else {"a": [], "b": [], "utility": [], "slap": [], "curve_high": [], "curve_low": [], "start": []}, "pad": DEFAULT_PAD.duplicate(true)})
+		# Players 3 and 4 have no keyboard keys by default, only controllers.
+		var keys: Dictionary = DEFAULT_KEYS[i].duplicate(true) if i < 2 else {}
+		if i >= 2:
+			for action in ACTIONS:
+				keys[action] = []
+		bindings.append({"keys": keys, "pad": DEFAULT_PAD.duplicate(true)})
 
 
 func get_bindings() -> Dictionary:
@@ -126,9 +136,15 @@ func set_bindings(data: Dictionary) -> void:
 			for action in ACTIONS:
 				if src is Dictionary and src.get(action) is Array and not src[action].is_empty():
 					bindings[i][kind][action] = src[action].duplicate()
+			if not src is Dictionary:
+				continue
+			# Curve high / low became Curve Left / Right on the same buttons.
+			for pair in [["curve_high", "curve_left"], ["curve_low", "curve_right"]]:
+				if not src.has(pair[1]) and src.get(pair[0]) is Array and not src[pair[0]].is_empty():
+					bindings[i][kind][pair[1]] = src[pair[0]].duplicate()
 			# Saves from before the curve buttons had RB on slap: it's a curve
 			# button now, so take it off slap unless that would leave it empty.
-			if kind == "pad" and src is Dictionary and not src.has("curve_low"):
+			if kind == "pad" and not src.has("curve_low") and not src.has("curve_right"):
 				var slap: Array = bindings[i].pad.slap
 				if slap.size() > 1:
 					slap.erase(JOY_BUTTON_RIGHT_SHOULDER)
@@ -227,6 +243,11 @@ func _input(event: InputEvent) -> void:
 		if not _pad_latch.has(event.device):
 			_pad_latch[event.device] = {}
 		_pad_latch[event.device][event.button_index] = true
+	elif event is InputEventJoypadMotion and event.axis_value >= TRIGGER_PRESS \
+			and event.axis in [JOY_AXIS_TRIGGER_LEFT, JOY_AXIS_TRIGGER_RIGHT]:
+		if not _pad_latch.has(event.device):
+			_pad_latch[event.device] = {}
+		_pad_latch[event.device][TRIGGER_LEFT if event.axis == JOY_AXIS_TRIGGER_LEFT else TRIGGER_RIGHT] = true
 	if event is InputEventJoypadButton:
 		last_raw = "device %d button %d %s" % [event.device, event.button_index,
 			"down" if event.pressed else "up"]
@@ -251,6 +272,11 @@ func _try_capture(event: InputEvent) -> void:
 			bindings[c.player].pad[c.action] = [event.button_index]
 		c.done = true
 		get_viewport().set_input_as_handled()
+	elif c.kind == "pad" and event is InputEventJoypadMotion and event.axis_value >= TRIGGER_PRESS \
+			and event.axis in [JOY_AXIS_TRIGGER_LEFT, JOY_AXIS_TRIGGER_RIGHT]:
+		bindings[c.player].pad[c.action] = [TRIGGER_LEFT if event.axis == JOY_AXIS_TRIGGER_LEFT else TRIGGER_RIGHT]
+		c.done = true
+		get_viewport().set_input_as_handled()
 
 
 ## One line describing detected controllers, for the menu.
@@ -271,11 +297,10 @@ func diagnostics() -> String:
 func input(player: int) -> Dictionary:
 	var s := _now[player]
 	return {"x": s.get("x", 0), "y": s.get("y", 0), "ma": s.get("ma", 0),
-		"a": pressed(player, "a"), "b": pressed(player, "b"),
-		"slap": pressed(player, "slap"),
-		"a_down": s.get("a", false), "b_down": s.get("b", false), "soft": s.get("soft", false),
-		"curve_high": pressed(player, "curve_high") or (pressed(player, "a") and s.get("curve_high", false)),
-		"curve_low": pressed(player, "curve_low") or (pressed(player, "a") and s.get("curve_low", false))}
+		"a": pressed(player, "a"), "b": pressed(player, "b"), "slap": pressed(player, "slap"),
+		"power": pressed(player, "power"), "dive": pressed(player, "dive"),
+		"curve_left": pressed(player, "curve_left") or (pressed(player, "a") and s.get("curve_left", false)),
+		"curve_right": pressed(player, "curve_right") or (pressed(player, "a") and s.get("curve_right", false))}
 
 
 ## True on the tick a button goes down.
@@ -451,9 +476,11 @@ static func key_name(code: int) -> String:
 static func button_name(button: int, playstation: bool) -> String:
 	var xbox := {JOY_BUTTON_A: "A", JOY_BUTTON_B: "B", JOY_BUTTON_X: "X", JOY_BUTTON_Y: "Y",
 		JOY_BUTTON_LEFT_SHOULDER: "LB", JOY_BUTTON_RIGHT_SHOULDER: "RB", JOY_BUTTON_START: "START",
+		TRIGGER_LEFT: "LT", TRIGGER_RIGHT: "RT",
 		JOY_BUTTON_BACK: "BACK", JOY_BUTTON_LEFT_STICK: "L3", JOY_BUTTON_RIGHT_STICK: "R3"}
 	var ps := {JOY_BUTTON_A: "CROSS", JOY_BUTTON_B: "CIRCLE", JOY_BUTTON_X: "SQUARE",
 		JOY_BUTTON_Y: "TRIANGLE", JOY_BUTTON_LEFT_SHOULDER: "L1", JOY_BUTTON_RIGHT_SHOULDER: "R1",
+		TRIGGER_LEFT: "L2", TRIGGER_RIGHT: "R2",
 		JOY_BUTTON_START: "OPTIONS", JOY_BUTTON_BACK: "CREATE", JOY_BUTTON_LEFT_STICK: "L3",
 		JOY_BUTTON_RIGHT_STICK: "R3"}
 	var names := ps if playstation else xbox
@@ -519,9 +546,15 @@ func _key(code: int) -> bool:
 	return Input.is_physical_key_pressed(code) or _key_latch.has(code)
 
 
-## A controller button held now, or tapped since the last tick.
+## A controller button (or trigger) held now, or tapped since the last tick.
 func _button(device: int, button: int) -> bool:
-	return Input.is_joy_button_pressed(device, button) or _pad_latch.get(device, {}).has(button)
+	if _pad_latch.get(device, {}).has(button):
+		return true
+	if button == TRIGGER_LEFT:
+		return Input.get_joy_axis(device, JOY_AXIS_TRIGGER_LEFT) >= TRIGGER_PRESS
+	if button == TRIGGER_RIGHT:
+		return Input.get_joy_axis(device, JOY_AXIS_TRIGGER_RIGHT) >= TRIGGER_PRESS
+	return Input.is_joy_button_pressed(device, button)
 
 
 ## Applies the deadzone (with hysteresis) to a controller's stick.
@@ -562,7 +595,6 @@ func _sample(player: int) -> Dictionary:
 	# The analog stick also moves freely (any angle); D-pad and keys stay 8-way.
 	var raw: Vector2 = pad.get("analog", Vector2.ZERO)
 	out["ma"] = angle_step(snap_angle(raw)) if stick != Vector2.ZERO else 0
-	out["soft"] = raw != Vector2.ZERO and raw.length() < SOFT_TILT
 	return out
 
 
@@ -589,7 +621,7 @@ func _pad_state(device: int) -> Dictionary:
 	var buttons := {}
 	for b in [JOY_BUTTON_A, JOY_BUTTON_B, JOY_BUTTON_X, JOY_BUTTON_Y, JOY_BUTTON_LEFT_SHOULDER,
 			JOY_BUTTON_RIGHT_SHOULDER, JOY_BUTTON_START, JOY_BUTTON_BACK, JOY_BUTTON_LEFT_STICK,
-			JOY_BUTTON_RIGHT_STICK]:
+			JOY_BUTTON_RIGHT_STICK, TRIGGER_LEFT, TRIGGER_RIGHT]:
 		buttons[b] = _button(device, b)
 	# Menus use the default layout on any controller, whatever the bindings:
 	# bottom face button confirms, right face button goes back.
@@ -614,7 +646,7 @@ func _virtual_state(device: int) -> Dictionary:
 	var buttons := {}
 	for k in [JOY_BUTTON_A, JOY_BUTTON_B, JOY_BUTTON_X, JOY_BUTTON_Y, JOY_BUTTON_LEFT_SHOULDER,
 			JOY_BUTTON_RIGHT_SHOULDER, JOY_BUTTON_START, JOY_BUTTON_BACK, JOY_BUTTON_LEFT_STICK,
-			JOY_BUTTON_RIGHT_STICK]:
+			JOY_BUTTON_RIGHT_STICK, TRIGGER_LEFT, TRIGGER_RIGHT]:
 		buttons[k] = b.get(k, false)
 	return {"x": dir.x, "y": dir.y, "analog": analog, "buttons": buttons,
 		"a": buttons[JOY_BUTTON_A], "b": buttons[JOY_BUTTON_B], "utility": buttons[JOY_BUTTON_X],

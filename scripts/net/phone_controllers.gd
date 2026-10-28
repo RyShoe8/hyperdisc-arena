@@ -16,6 +16,7 @@ signal changed
 
 const HOST_LABEL := "HyperDisc Arena"
 const PAD_NAME := "Phone"
+const ControlsScript := preload("res://scripts/game/controls.gd")
 const MAX_PHONES := 2
 const SIGNAL_FAST_MS := 500
 const SIGNAL_IDLE_MS := 2000
@@ -264,6 +265,9 @@ func _on_input(controller_id: String, msg: Dictionary, now: int) -> void:
 	var buttons := {}
 	for bit in BUTTON_BITS:
 		buttons[BUTTON_BITS[bit]] = (bits >> bit) & 1 == 1
+	# The phone pad has analog triggers too (0..1); past halfway they press.
+	buttons[ControlsScript.TRIGGER_LEFT] = float(msg.get("lt", 0.0)) >= ControlsScript.TRIGGER_PRESS
+	buttons[ControlsScript.TRIGGER_RIGHT] = float(msg.get("rt", 0.0)) >= ControlsScript.TRIGGER_PRESS
 	var axes := Vector2(clampf(float(msg.get("lx", 0.0)), -1, 1), clampf(float(msg.get("ly", 0.0)), -1, 1))
 	var controls := get_node_or_null("/root/Controls")
 	if controls != null:

@@ -38,7 +38,7 @@ func _init() -> void:
 		"test_old_saves_free_rb_for_curves",
 		"test_online_delay_follows_ping",
 		"test_menu_direction_repeats_when_held",
-		"test_soft_tilt_still_blocks",
+		"test_pop_up_and_dive_are_separate",
 		"test_fast_roll_skipping_the_diagonal_curves",
 		"test_curve_motion_during_hitstop_counts",
 		"test_analog_snaps_to_straight_lines",
@@ -518,8 +518,8 @@ func test_full_ex_gauge_fires_ex_shot() -> void:
 	var sim := new_sim()
 	var p := hold(sim, MatchSim.LEFT)
 	p.ex = int(balance.ex.max)
-	sim.step([press({"slap": true}), IDLE])
-	check(sim.disc.ex and sim.disc.pattern != MatchSim.Pattern.NONE, "slap with a full gauge fires the EX shot")
+	sim.step([press({"power": true}), IDLE])
+	check(sim.disc.ex and sim.disc.pattern != MatchSim.Pattern.NONE, "Power Move with a full gauge fires the EX shot")
 	check(p.ex == 0, "the EX shot empties the gauge")
 	check(sim.disc.knock_mult >= float(balance.special.ex_knock_mult), "EX shots hit hardest")
 
@@ -530,8 +530,8 @@ func test_power_toss() -> void:
 	p.pos = Vector2(150, 300)
 	p.ex = int(balance.ex.max)
 	fly(sim, Vector2(400, 300), Vector2(-12, 0), MatchSim.RIGHT)
-	sim.step([press({"a": true, "b_down": true}), IDLE])
-	check(sim.disc.state == MatchSim.Disc.AIR and sim.disc.air_kind == MatchSim.Air.TOSS, "A+B flips the disc up")
+	sim.step([press({"power": true}), IDLE])
+	check(sim.disc.state == MatchSim.Disc.AIR and sim.disc.air_kind == MatchSim.Air.TOSS, "Power Move against a throw flips the disc up")
 	check(p.ex == 0, "power toss spends the gauge")
 
 
@@ -690,8 +690,8 @@ func test_save_and_load_state_replays_identically() -> void:
 
 
 func test_input_codec_round_trips() -> void:
-	var samples := [{"x": -1, "y": 1, "a": true, "b": false, "jump": true, "slap": false,
-		"a_down": true, "b_down": false, "ma": 48}, {"x": 0, "y": 0}, {"x": 1, "y": -1, "slap": true, "b_down": true,
+	var samples := [{"x": -1, "y": 1, "a": true, "b": false, "dive": true, "slap": false,
+		"power": true, "curve_right": true, "ma": 48}, {"x": 0, "y": 0}, {"x": 1, "y": -1, "slap": true, "curve_left": true,
 		"ma": 7}]
 	for input in samples:
 		var back := InputCodec.decode(InputCodec.encode(input))
@@ -749,7 +749,7 @@ func test_rollback_matches_offline_result() -> void:
 	var history := {}
 	for t in 1500:
 		var li := {"x": (t / 40) % 3 - 1, "y": (t / 25) % 3 - 1, "a": t % 17 == 0, "b": t % 53 == 0}
-		var ri := {"x": (t / 30) % 3 - 1, "y": (t / 35) % 3 - 1, "a": t % 19 == 0, "jump": t % 61 == 0}
+		var ri := {"x": (t / 30) % 3 - 1, "y": (t / 35) % 3 - 1, "a": t % 19 == 0, "dive": t % 61 == 0}
 		for side in [0, 1]:
 			link[side].advance()
 		for data in link[0].receive():
@@ -988,10 +988,11 @@ func test_buffered_press_expires() -> void:
 	var sim := new_sim()
 	hold(sim, MatchSim.RIGHT)
 	var p := sim.players[MatchSim.LEFT]
+	p.pos = Vector2(300, 300)
 	p.recovery_ticks = int(balance.player.input_buffer_ticks) + 4
-	sim.step([press({"jump": true}), IDLE])
-	run(sim, int(balance.player.input_buffer_ticks) + 8)
-	check(p.z == 0.0 and p.vz == 0.0, "a press made long before it could happen is dropped")
+	sim.step([press({"dive": true, "x": 0, "y": 1}), IDLE])
+	run(sim, int(balance.player.input_buffer_ticks) + 8, press({"x": 0, "y": 1}))
+	check(p.dash_ticks == 0, "a dive pressed long before it could happen is dropped")
 
 
 func test_throw_pressed_during_hitstop_is_kept() -> void:
@@ -1043,27 +1044,35 @@ func test_dash_buffer_is_short() -> void:
 		hold(sim, MatchSim.RIGHT)
 		var p := sim.players[MatchSim.LEFT]
 		p.pos = Vector2(300, 300)
-		sim.step([press({"a": true}), IDLE])
+		sim.step([press({"dive": true}), IDLE])
 		run(sim, gap - 1)
 		sim.step([press({"x": 0, "y": 1}), IDLE])
 		if gap <= int(balance.player.dash_buffer_ticks) - 1:
-			check(p.dash_ticks > 0, "A then a direction %d ticks later dashes" % gap)
+			check(p.dash_ticks > 0, "Dive then a direction %d ticks later dives" % gap)
 		else:
-			check(p.dash_ticks == 0, "A then a direction %d ticks later just runs" % gap)
+			check(p.dash_ticks == 0, "Dive then a direction %d ticks later just runs" % gap)
 
-func test_soft_tilt_still_blocks() -> void:
-	for soft in [true, false]:
-		var sim := new_sim()
-		var p := sim.players[MatchSim.LEFT]
-		p.pos = Vector2(300, 300)
-		fly(sim, Vector2(380, 300), Vector2(-6, 0), MatchSim.RIGHT)
-		sim.step([press({"a": true, "x": 0, "y": 1, "ma": 13, "soft": soft}), IDLE])
-		if soft:
-			check(sim.disc.state == MatchSim.Disc.AIR and p.dash_ticks == 0, "A with a light tilt blocks")
-		else:
-			check(p.dash_ticks > 0, "A with a full tilt still dashes")
-	var back := InputCodec.decode(InputCodec.encode({"soft": true, "ma": 48}))
-	check(back.soft and back.ma == 48, "the light-tilt flag survives the network")
+
+func test_pop_up_and_dive_are_separate() -> void:
+	# A pops up whatever the stick is doing; only Dive dives.
+	var sim := new_sim()
+	var p := sim.players[MatchSim.LEFT]
+	p.pos = Vector2(300, 300)
+	fly(sim, Vector2(380, 300), Vector2(-6, 0), MatchSim.RIGHT)
+	sim.step([press({"a": true, "x": 0, "y": 1, "ma": 13}), IDLE])
+	check(sim.disc.state == MatchSim.Disc.AIR and p.dash_ticks == 0, "A with the stick pushed still pops up")
+	var dive := new_sim()
+	var q := dive.players[MatchSim.LEFT]
+	q.pos = Vector2(300, 300)
+	fly(dive, Vector2(380, 300), Vector2(-6, 0), MatchSim.RIGHT)
+	dive.step([press({"dive": true, "x": 0, "y": 1}), IDLE])
+	check(q.dash_ticks > 0 and dive.disc.state == MatchSim.Disc.FLYING, "Dive with a direction dives")
+	var idle := new_sim()
+	hold(idle, MatchSim.RIGHT)
+	var r := idle.players[MatchSim.LEFT]
+	r.pos = Vector2(300, 300)
+	idle.step([press({"a": true, "x": 0, "y": 1}), IDLE])
+	check(r.dash_ticks == 0, "A with a direction no longer dives")
 
 
 func test_fast_roll_skipping_the_diagonal_curves() -> void:
@@ -1119,39 +1128,33 @@ func test_menu_direction_repeats_when_held() -> void:
 
 func test_shoulder_buttons_throw_curves() -> void:
 	var controls = ControlsScript.new()
-	for action in ["curve_high", "curve_low"]:
+	for action in ["curve_left", "curve_right"]:
 		controls._prev[0] = {action: true}
 		controls._now[0] = {action: true, "a": true}
-		check(controls.input(0)[action], "held shoulder modifies a new throw press")
+		check(controls.input(0)[action], "held curve button modifies a new throw press")
 		controls._prev[0] = {action: true, "a": true}
 		check(not controls.input(0)[action], "held buttons do not repeatedly throw")
 	controls.free()
+	# Curve Left bends the disc toward the thrower's own left: up the screen
+	# for the player facing right, down it for the player facing left.
 	for side in [MatchSim.LEFT, MatchSim.RIGHT]:
-		for action in ["curve_high", "curve_low"]:
-			var combined := new_sim()
-			var p := hold(combined, side)
-			p.pos = Vector2(200 if side == MatchSim.LEFT else combined.court_width()-200, combined.court_height()/2.0)
-			combined.disc.pos = p.pos
-			var inputs := [IDLE, IDLE]
-			inputs[side] = press({"a": true, action: true})
-			combined.step(inputs)
-			check(combined.disc.curve > 0 if action == "curve_high" else combined.disc.curve < 0,
-				"explicit curve wins over simultaneous normal throw on either side")
-	var low := new_sim()
-	var lp := hold(low, MatchSim.LEFT)
-	lp.pos = Vector2(200, low.court_height() / 2.0)
-	low.disc.pos = lp.pos
-	low.step([press({"curve_low": true}), IDLE])
-	check(low.disc.state == MatchSim.Disc.FLYING and low.disc.vel.y > 0.0 and low.disc.curve < 0.0,
-		"curve low starts down and bends up, like 2-3-6")
-	var high := new_sim()
-	var hp := hold(high, MatchSim.LEFT)
-	hp.pos = Vector2(200, high.court_height() / 2.0)
-	high.disc.pos = hp.pos
-	high.step([press({"curve_high": true}), IDLE])
-	check(high.disc.vel.y < 0.0 and high.disc.curve > 0.0, "curve high starts up and bends down, like 8-9-6")
-	var back := InputCodec.decode(InputCodec.encode({"curve_high": true, "curve_low": false}))
-	check(back.curve_high and not back.curve_low, "curve buttons survive the network")
+		var fwd := MatchSim.forward(side)
+		for action in ["curve_left", "curve_right"]:
+			for with_a in [false, true]:
+				var sim := new_sim()
+				var p := hold(sim, side)
+				p.pos = Vector2(200 if side == MatchSim.LEFT else sim.court_width() - 200, sim.court_height() / 2.0)
+				sim.disc.pos = p.pos
+				var inputs := [IDLE, IDLE]
+				inputs[side] = press({action: true, "a": with_a})
+				sim.step(inputs)
+				var toward_left := -fwd  # screen direction of the thrower's left
+				var bend := signf(sim.disc.curve)
+				check(sim.disc.state == MatchSim.Disc.FLYING, "%s throws" % action)
+				check(bend == (toward_left if action == "curve_left" else -toward_left),
+					"%s bends to the thrower's %s (side %d%s)" % [action, action.trim_prefix("curve_"), side, ", with A" if with_a else ""])
+	var back := InputCodec.decode(InputCodec.encode({"curve_left": true, "curve_right": false}))
+	check(back.curve_left and not back.curve_right, "curve buttons survive the network")
 
 
 func test_power_throws_follow_the_aim() -> void:
@@ -1167,7 +1170,7 @@ func test_power_throws_follow_the_aim() -> void:
 			p.pos = Vector2(200, mid)
 			sim.disc.pos = p.pos
 			p.ex = int(balance.ex.max)
-			sim.step([press({"slap": true, "y": aim}), IDLE])
+			sim.step([press({"power": true, "y": aim}), IDLE])
 			var total := 0.0
 			var heading := 0.0
 			for i in 26:
@@ -1185,7 +1188,13 @@ func test_old_saves_free_rb_for_curves() -> void:
 	var controls = ControlsScript.new()
 	controls.set_bindings({"players": [
 		{"keys": {}, "pad": {"slap": [JOY_BUTTON_Y, JOY_BUTTON_RIGHT_SHOULDER]}},
-		{"keys": {}, "pad": {}}]})
+		{"keys": {"curve_high": [KEY_Q]}, "pad": {"curve_high": [JOY_BUTTON_X], "curve_low": [JOY_BUTTON_B]}}]})
 	check(JOY_BUTTON_RIGHT_SHOULDER not in controls.bindings[0].pad.slap, "RB comes off slap in old saves")
-	check(controls.bindings[0].pad.curve_low == [JOY_BUTTON_RIGHT_SHOULDER], "and becomes curve low")
+	check(controls.bindings[0].pad.curve_right == [JOY_BUTTON_RIGHT_SHOULDER], "and becomes Curve Right")
+	check(controls.bindings[1].pad.curve_left == [JOY_BUTTON_X] and controls.bindings[1].pad.curve_right == [JOY_BUTTON_B],
+		"saved curve high / low buttons carry over to Curve Left / Right")
+	check(controls.bindings[1].keys.curve_left == [KEY_Q], "and saved keys do too")
+	check(controls.bindings[0].pad.dive == [ControlsScript.TRIGGER_RIGHT], "Dive defaults to the right trigger")
 	controls.free()
+
+

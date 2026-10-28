@@ -1,16 +1,15 @@
 ## Packs a sim input Dictionary into a small integer (17 bits, sent as 32)
 ## for the wire and back. Rollback compares inputs by these integers.
 ##
-## Bits 0-3: 8-way direction (x, y) used for aiming. Bits 4-9: buttons.
+## Bits 0-3: 8-way direction (x, y) used for aiming. Bits 4-9 and 16:
+## buttons (BUTTONS, in order).
 ## Bits 10-15: "ma", the analog stick's movement angle: 0 = none (move by
 ## x/y), 1..MOVE_ANGLES = that angle step, so running follows the stick
 ## freely while throws keep their 8-way aim.
-## Bit 16: "soft", the stick is only lightly tilted (a block still counts).
-## Bits 17-18: the curve-throw buttons (EXTRA_BUTTONS).
+
 extends RefCounted
 
-const BUTTONS := ["a", "b", "jump", "slap", "a_down", "b_down"]
-const EXTRA_BUTTONS := ["curve_high", "curve_low"]
+const BUTTONS := ["a", "b", "dive", "slap", "power", "curve_left", "curve_right"]
 const IDLE := 5  # x = 0, y = 0, no buttons
 const MOVE_ANGLES := 48  # 7.5 degree steps: includes straight and exact diagonals
 
@@ -19,25 +18,22 @@ static func encode(input: Dictionary) -> int:
 	var v := (clampi(int(input.get("x", 0)), -1, 1) + 1) | ((clampi(int(input.get("y", 0)), -1, 1) + 1) << 2)
 	for i in BUTTONS.size():
 		if input.get(BUTTONS[i], false):
-			v |= 1 << (4 + i)
+			v |= 1 << _bit(i)
 	v |= clampi(int(input.get("ma", 0)), 0, MOVE_ANGLES) << 10
-	if input.get("soft", false):
-		v |= 1 << 16
-	for i in EXTRA_BUTTONS.size():
-		if input.get(EXTRA_BUTTONS[i], false):
-			v |= 1 << (17 + i)
 	return v
 
 
 static func decode(v: int) -> Dictionary:
 	var out := {"x": (v & 3) - 1, "y": ((v >> 2) & 3) - 1}
 	for i in BUTTONS.size():
-		out[BUTTONS[i]] = (v >> (4 + i)) & 1 == 1
+		out[BUTTONS[i]] = (v >> _bit(i)) & 1 == 1
 	out["ma"] = (v >> 10) & 63
-	out["soft"] = (v >> 16) & 1 == 1
-	for i in EXTRA_BUTTONS.size():
-		out[EXTRA_BUTTONS[i]] = (v >> (17 + i)) & 1 == 1
 	return out
+
+
+## Bit for button i: 4-9 for the first six, then 16 up (10-15 hold "ma").
+static func _bit(i: int) -> int:
+	return 4 + i if i < 6 else 10 + i
 
 
 ## The movement angle step for a stick vector (1..MOVE_ANGLES), 0 if centred.

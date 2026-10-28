@@ -7,20 +7,20 @@ const Sim := preload("res://scripts/sim/match_sim.gd")
 const CLIP_IDS := [0, 1, 2, 3, 4, 5, 6, 10, 11, 12, 13, 14, 15, 16, 17, 18]
 const LESSONS := [
 	["MOVE", "Move into the cyan ring.", "move"],
-	["DIVE", "Hold a direction, then tap {a} while empty-handed.\nReach for the disc, then recover to your feet.", "a"],
+	["DIVE", "Hold a direction, then tap {dive} while empty-handed.\nReach for the disc, then recover to your feet.", "dive"],
 	["CATCH", "Line up your torso with the incoming disc.\nCatching is automatic: no button needed.", "move"],
 	["AIMED THROW", "With the disc, hold UP and tap {a}.\nYour stick aims the shot; you cannot move while holding.", "a"],
 	["WALL SHOT", "Hold UP and tap {a}.\nWatch your shot bounce off the side wall.", "a"],
-	["CURVE THROW", "Tap {curve_high} to curve it high or {curve_low} to curve it low.\nThe shoulder buttons throw curves instantly.", "curve_low"],
+	["CURVE THROW", "Tap {curve_left} or {curve_right} to bend the disc to your left or right.\nEach throws a curve instantly.", "curve_right"],
 	["LOB", "With the disc, tap {b} to lob over your opponent.\nEarly = deep lob. Waiting {lob_ms} ms = short lob.", "b"],
 	["QUICK RETURN", "Line up with the incoming disc.\nAfter the catch, tap {a} within {quick_ms} ms.", "a"],
-	["BLOCK", "Release the stick. Tap {a} on PRESS NOW.\nA block pops the disc up for a follow-up catch.", "a"],
+	["POP UP", "Tap {a} on PRESS NOW, before the catch.\nPopping the disc up sets up a follow-up catch.", "a"],
 	["SLAP", "Tap {slap} on PRESS NOW to return the disc instantly.\nAim with the stick; no catch needed.", "slap"],
 	["DROP SHOT", "Tap {b} on PRESS NOW, BEFORE the catch.\nThe disc drops just behind the net; a miss scores 2.", "b"],
 	["CHARGED SPECIAL", "Stand under the landing ring for {charge_ms} ms.\nAfter the charged catch, tap {a}. No full meter needed.", "a"],
 	["SUPER LOB", "Stand under the landing ring until the charged catch.\nThen tap {b}: the lob becomes a spinning ground shot.", "b"],
-	["POWER THROW", "The power meter is filled for this drill.\nWith the disc, tap {slap}. This spends the full meter.", "slap"],
-	["POWER TOSS", "The power meter is filled for this drill.\nPress {a} + {b} together on PRESS NOW to spend it.", "a"],
+	["POWER THROW", "The power meter is filled for this drill.\nWith the disc, tap {power}. This spends the full meter.", "power"],
+	["POWER TOSS", "The power meter is filled for this drill.\nTap {power} on PRESS NOW, before the catch, to spend it.", "power"],
 	["SHORT LOB", "With the disc, WAIT until SHORT LOB READY.\nThen tap {b}. Holding longer brings the landing closer to the net.", "b"],
 ]
 
@@ -106,7 +106,7 @@ func step(input: Dictionary) -> void:
 	last_input = input.duplicate()
 	var early_defence := false
 	if lesson in [8, 9, 10, 14]:
-		var action := "slap" if lesson == 9 else "b" if lesson == 10 else "a"
+		var action := "slap" if lesson == 9 else "b" if lesson == 10 else "power" if lesson == 14 else "a"
 		early_defence = input.get(action, false) and not timing().now
 	var held_ticks := sim.players[0].hold_ticks
 	elapsed += 1

@@ -6,7 +6,7 @@ static func input(session, tick: int) -> Dictionary:
 	var p = session.sim.players[0]
 	match session.lesson:
 		0: return {"x": 1 if p.pos.x < session.target.x else 0}
-		1: return {"x": 1, "a": tick == 9}
+		1: return {"x": 1, "dive": tick == 9}
 		2: return {"y": -1 if p.pos.y > 305 else 0}
 		3, 4: return {"y": -1, "a": tick == 15}
 		5: return {"y": 1 if tick >= 9 and tick < 20 else 0, "x": 1 if tick >= 13 else 0, "a": tick == 20}
@@ -17,7 +17,7 @@ static func input(session, tick: int) -> Dictionary:
 		10: return {"b": session.timing().now}
 		11: return {"a": p.holding and p.charged}
 		12: return {"b": p.holding and p.charged}
-		13: return {"slap": tick == 15}
-		14: return {"a": session.timing().now, "b": session.timing().now, "a_down": true, "b_down": true}
+		13: return {"power": tick == 15}
+		14: return {"power": session.timing().now}
 		15: return {"b": p.hold_ticks + 1 >= int(session.balance.air.lob_shallow_after_ticks)}
 	return {}

@@ -144,7 +144,7 @@ func draw() -> void:
 	UI.slant_panel(host, Rect2(1335, 150, 535, 830), UI.DEEP, UI.CYAN, 15, 3)
 	UI.text(host, Vector2(1365, 207), lesson[0], UI.fit_size(lesson[0], 44, 470, UI.display), UI.YELLOW, UI.display, 0, HORIZONTAL_ALIGNMENT_LEFT)
 	var instructions: String = lesson[1]
-	for action in ["a", "b", "slap", "curve_high", "curve_low"]:
+	for action in ["a", "b", "slap", "power", "dive", "curve_left", "curve_right"]:
 		instructions = instructions.replace("{" + action + "}", _label(action))
 	for pair in [["curve_ms", session.balance.throw.motion_window_ticks], ["lob_ms", session.balance.air.lob_shallow_after_ticks], ["quick_ms", session.balance.throw.supersonic_window_ticks], ["charge_ms", session.balance.charge.ticks_needed]]:
 		instructions = instructions.replace("{" + pair[0] + "}", str(roundi(float(pair[1]) * 1000 / 60)))
@@ -202,13 +202,10 @@ func _controller(centre: Vector2) -> void:
 	var action: String = Session.LESSONS[session.lesson][2]
 	var lit: bool = ready or (not session.passed and not session.failed and countdown == 0 and session.timing().now)
 	var required: Array = Controls.bindings[0].pad.get(action, [])
-	if session.lesson == 14:
+	if session.lesson == 5:
 		required = required.duplicate()
-		required.append_array(Controls.bindings[0].pad.b)
-	elif session.lesson == 5:
-		required = required.duplicate()
-		required.append_array(Controls.bindings[0].pad.curve_high)
-	var locations := {JOY_BUTTON_A: Vector2(130, 20), JOY_BUTTON_B: Vector2(177, -27), JOY_BUTTON_X: Vector2(83, -27), JOY_BUTTON_Y: Vector2(130, -74), JOY_BUTTON_LEFT_SHOULDER: Vector2(-170, -118), JOY_BUTTON_RIGHT_SHOULDER: Vector2(180, -118)}
+		required.append_array(Controls.bindings[0].pad.curve_left)
+	var locations := {JOY_BUTTON_A: Vector2(130, 20), JOY_BUTTON_B: Vector2(177, -27), JOY_BUTTON_X: Vector2(83, -27), JOY_BUTTON_Y: Vector2(130, -74), JOY_BUTTON_LEFT_SHOULDER: Vector2(-170, -118), JOY_BUTTON_RIGHT_SHOULDER: Vector2(180, -118), Controls.TRIGGER_LEFT: Vector2(-110, -150), Controls.TRIGGER_RIGHT: Vector2(120, -150)}
 	for button in locations:
 		var pos: Vector2 = centre + locations[button]
 		var active: bool = lit and button in required

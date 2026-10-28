@@ -74,7 +74,7 @@ func draw(area: Rect2) -> void:
 	player.position = video.position
 	player.size = video.size
 	var text: String = Session.LESSONS[selected][1]
-	for action in ["a", "b", "slap", "curve_high", "curve_low"]:
+	for action in ["a", "b", "slap", "power", "dive", "curve_left", "curve_right"]:
 		text = text.replace("{" + action + "}", Controls.label(0, action))
 	for pair in [["curve_ms", host.balance.throw.motion_window_ticks], ["lob_ms", host.balance.air.lob_shallow_after_ticks], ["quick_ms", host.balance.throw.supersonic_window_ticks], ["charge_ms", host.balance.charge.ticks_needed]]:
 		text = text.replace("{" + pair[0] + "}", str(roundi(float(pair[1]) * 1000 / 60)))

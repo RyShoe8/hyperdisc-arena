@@ -37,15 +37,21 @@ HyperDisc Arena v1 copies the rules of Data East's Windjammers (Neo Geo, 1994) a
 - Top and bottom walls bounce the disc. Each back wall is the goal: 3-point zones at the ends, a 5-point zone in the middle.
 - A disc that hits the net, a barrier or a player's back pops up into the air; a target marker shows where it will land.
 
-### Controls (stick + 2 buttons)
+### Controls (stick + 7 actions)
 
-| Input | Holding the disc | Not holding the disc |
-|---|---|---|
-| Stick | Aims the throw (8 directions); you cannot walk while holding | Run (8 directions) |
-| A | Throw. Straight, or curved if a quarter-circle (e.g. down, down-forward, forward) is entered first; each character has its own curve set | Dash / slide in the stick direction; also blocks |
-| B | Lob to a target spot | — |
-| A on contact, standing still | — | Block: pops the disc up into the air |
-| Tap A, then a direction | — | Mini-dash that also blocks |
+Each action has its own button, so no move depends on the stick position or a button combination.
+
+| Action | Controller | Keyboard (P1 / P2) | Holding the disc | Not holding the disc |
+|---|---|---|---|---|
+| Stick | Left stick / D-pad | WASD / arrows | Aims the throw; you can't walk while holding | Run |
+| Throw / Pop Up | A | J / numpad 1 | Throw (aimed with the stick; quarter-circle + A curves it) | Pop up an incoming disc into the air (block) |
+| Slap | Y | I / numpad 5 | — | Return an incoming disc instantly without catching |
+| Power Move | X | H / numpad 0 | Power throw (spends the full meter) | Power toss an incoming disc (spends the full meter) |
+| Lob | B | K / numpad 2 | Lob to a target spot | Drop shot an incoming disc just over the net |
+| Dive | RT | L / numpad 3 | — | Dive in the stick direction |
+| Curve Left / Right | LB / RB | U, O / numpad 4, 6 | Curve throw bending to the thrower's own left or right | — |
+
+All of these can be rebound in Options > Controls. Triggers can be bound like buttons, and phone controllers send their LT and RT as well.
 
 ### Throws
 
@@ -59,11 +65,11 @@ HyperDisc Arena v1 copies the rules of Data East's Windjammers (Neo Geo, 1994) a
 
 - **Catch** by touching the disc: walk into it or dash/slide to it.
 - **Knockback:** catching a strong throw pushes the catcher backward. Light characters get pushed far; a big enough mismatch carries the catcher (and disc) into their own goal. The catcher can throw out of the slide after a short lock (`knock_lock_ticks`); the supersonic window still opens when the slide ends.
-- **Input buffer:** throw, lob, jump and slap presses count for `input_buffer_ticks` (8), so a press made a moment early fires on the first tick it can: during recovery, hit-stop, the serve delay or just before a catch. Presses made during hit-stop don't age. For a dash, the A press may come at most `dash_buffer_ticks` (4) before the direction. Any move clears the buffer.
-- **Curve buttons:** the shoulders throw curves in one press: LB (U / numpad 4) starts high and bends down, RB (O / numpad 6) starts low and bends up. The quarter-circle motion still works too.
+- **Input buffer:** throw, lob, slap, power, dive and curve presses count for `input_buffer_ticks` (8), so a press made a moment early fires on the first tick it can: during recovery, hit-stop, the serve delay or just before a catch. Presses made during hit-stop don't age. For a dive, the Dive press may come at most `dash_buffer_ticks` (4) before the direction. Any move clears the buffer.
+- **Curve buttons:** Curve Left and Curve Right throw a curve in one press, bending toward the thrower's own left or right. For the player facing right, left is up the screen; for the player facing left, it's down. The quarter-circle motion still works too.
 - **Aimed power throws:** every special follows the stick at release, analog angle included. Cannon fires at the aimed angle (up to 28°); ricochet banks shallower with a light tilt; snake, zigzag and loop drift their whole path toward the aim and bounce that drift off the walls.
 - **Quick taps:** key and button presses are latched between ticks, so a tap shorter than one tick still registers. The stick starts moving at 27% travel and stops below 20% (hysteresis).
-- **Block / toss:** pressing A as the disc arrives pops it into the air instead of catching it, buying time.
+- **Pop up:** pressing A as the disc arrives pops it into the air instead of catching it, buying time. It works whatever the stick is doing.
 - Missing an airborne disc (lob, toss or pop-up that lands on your side) gives the opponent 2 points.
 
 ### Special (super) throws
@@ -142,7 +148,7 @@ These layer on top of the 1994 rules. Every value is a balance setting in the ad
 | Drop shot | B just before the disc arrives | Gently taps it so it drops just behind the net (a bunt) |
 | Charged super moves | Stand under an airborne disc to charge, then catch | Choose: power-disc special (our version of the original specials), super lob (lands and spins forward like a buzzsaw), super spin (circle + A; hits hard, bounces confusingly), super custom (release early, choose up or down start) |
 | EX gauge | Fills with offensive and defensive actions | Full gauge unlocks an EX super shot per character, near-impossible to return |
-| Power toss (super reset) | A + B while not holding the disc, gauge full | Defensive: spends the gauge to flip an incoming disc into the air so you can catch or charge it. Only on your half |
+| Power toss (super reset) | Power Move against an incoming disc, gauge full | Defensive: spends the gauge to flip an incoming disc into the air so you can catch or charge it. Only on your half |
 
 **Status (Oct 4, 2026):** implemented: supersonic, jump and air catch, smash, slap shot, drop shot, block into a toss, charged specials (one flight path per character), super lob buzzsaw, EX gauge and EX shot, power toss, hit-stop on big catches. Not yet: super spin and super custom.
 
