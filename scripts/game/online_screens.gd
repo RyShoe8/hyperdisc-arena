@@ -745,7 +745,11 @@ func draw_menu() -> void:
 	var items := menu_items()
 	for i in items.size():
 		UI.button(ci, Rect2(460, 420 + i * 110, 1000, 80), items[i][1], i == menu_index, m.frame, 36)
+	var id: String = items[clampi(menu_index, 0, items.size() - 1)][0]
 	UI.text(ci, Vector2(960, 800), items[clampi(menu_index, 0, items.size() - 1)][2], 28, UI.CYAN, UI.ui, 3)
+	if not Online.signed_in() and id != "lan":
+		UI.text(ci, Vector2(960, 850), "NEEDS A FREE PLAYBOUND ACCOUNT. NO ACCOUNT? YOU CAN CREATE ONE IN THE NEXT STEP",
+			26, Color.WHITE, UI.ui, 3)
 	if busy:
 		UI.text(ci, Vector2(960, 1000), "TALKING TO PLAYBOUND" + ".".repeat(1 + (m.frame / 20) % 3), 30, UI.YELLOW, UI.ui, 4)
 	var sign_out := ("     %s SIGN OUT" % Controls.label(0, "utility")) if Online.signed_in() else ""
@@ -809,7 +813,7 @@ func draw_wait() -> void:
 func draw_signin() -> void:
 	var ci = m
 	UI.outrun_background(ci, m.SCREEN, m.frame / 60.0, 0.55)
-	UI.text(ci, Vector2(960, 200), "SIGN IN WITH PLAYBOUND", 84, UI.YELLOW, UI.display, 7,
+	UI.text(ci, Vector2(960, 200), "SIGN IN OR CREATE AN ACCOUNT", 84, UI.YELLOW, UI.display, 7,
 		HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)
 	var info: Dictionary = Online.playbound.link_info()
 	if info.is_empty():
@@ -818,13 +822,15 @@ func draw_signin() -> void:
 		return
 	var url: String = str(info.url).get_slice("?", 0).trim_prefix("https://")
 	UI.text(ci, Vector2(960, 320), "YOUR BROWSER HAS OPENED  %s" % url.to_upper(), 34, Color.WHITE, UI.ui, 4)
-	UI.text(ci, Vector2(960, 370), "SIGN IN OR CREATE AN ACCOUNT THERE, THEN CHECK THIS CODE MATCHES:", 30, UI.DIM, UI.ui, 3)
-	var box := Rect2(Vector2(560, 410), Vector2(800, 170))
+	UI.text(ci, Vector2(960, 370), "SIGN IN THERE, OR PICK  CREATE A FREE ACCOUNT  IF YOU DON'T HAVE ONE.", 30, Color.WHITE, UI.ui, 3)
+	UI.text(ci, Vector2(960, 405), "THEN APPROVE THIS CODE:", 30, UI.DIM, UI.ui, 3)
+	var box := Rect2(Vector2(560, 430), Vector2(800, 170))
 	UI.slant_panel(ci, box, Color("120826"), UI.CYAN, 30, 6)
-	UI.text(ci, Vector2(960, 530), str(info.code), 110, UI.YELLOW, UI.display, 8)
+	UI.text(ci, Vector2(960, 550), str(info.code), 110, UI.YELLOW, UI.display, 8)
 	var left := maxi(0, int(info.expires_ms) - Time.get_ticks_msec()) / 1000
 	UI.text(ci, Vector2(960, 660), "WAITING FOR YOU TO APPROVE" + ".".repeat(1 + (m.frame / 20) % 3), 36, UI.CYAN, UI.ui, 4)
 	UI.text(ci, Vector2(960, 715), "CODE EXPIRES IN %d:%02d" % [left / 60, left % 60], 26, UI.DIM, UI.ui, 3)
+	UI.text(ci, Vector2(960, 770), "PLAYBOUND ACCOUNTS ARE FREE. LAN PLAY DOESN'T NEED ONE.", 26, UI.CYAN, UI.ui, 3)
 	m._hint("%s REOPEN THE PAGE     %s CANCEL" % [m._a(), m._b()])
 
 
