@@ -31,6 +31,9 @@ var local_partner_pick := 2
 var remote_partner_pick := 3
 var local_partner_human := false
 var remote_partner_human := false
+## CPU difficulty for CPU partners (index into main.gd DIFFICULTIES). The
+## host picks it; each machine runs its own CPU partner at that level.
+var difficulty := 1
 var local_pick := 0
 var local_locked := false
 var remote_pick := -1
@@ -204,6 +207,7 @@ func _on_message(msg) -> void:
 					doubles = new_format
 					_send_pick()
 				court = clampi(int(msg.get("court", 0)), 0, balance.courts.size() - 1)
+				difficulty = int(msg.get("difficulty", difficulty))
 		"start":
 			if not is_host and state == State.LOBBY:
 				mixtape_match_id = str(msg.get("mixtape", ""))
@@ -214,6 +218,7 @@ func _on_message(msg) -> void:
 				local_partner_pick = clampi(int(msg.get("p4", 0)), 0, balance.characters.size() - 1)
 				local_partner_human = bool(msg.get("guest_partner_human", false))
 				remote_partner_human = bool(msg.get("host_partner_human", false))
+				difficulty = int(msg.get("difficulty", difficulty))
 				_begin(int(msg.p1), int(msg.p2))
 			if not is_host:
 				_send({"t": "started"})
@@ -253,11 +258,13 @@ static func delay_for_ping(rtt_ms: int) -> int:
 
 
 func _send_pick() -> void:
-	_send({"t": "pick", "character": local_pick, "locked": local_locked, "court": court, "doubles": doubles, "partner": local_partner_pick, "partner_human": local_partner_human})
+	_send({"t": "pick", "character": local_pick, "locked": local_locked, "court": court, "doubles": doubles, "partner": local_partner_pick, "partner_human": local_partner_human,
+		"difficulty": difficulty})
 
 
 func _send_start() -> void:
-	_send({"t": "start", "court": court, "p1": local_pick, "p2": remote_pick, "delay": input_delay, "mixtape": mixtape_match_id, "doubles": doubles, "p3": local_partner_pick, "p4": remote_partner_pick, "host_partner_human": local_partner_human, "guest_partner_human": remote_partner_human})
+	_send({"t": "start", "court": court, "p1": local_pick, "p2": remote_pick, "delay": input_delay, "mixtape": mixtape_match_id, "doubles": doubles, "p3": local_partner_pick, "p4": remote_partner_pick, "host_partner_human": local_partner_human, "guest_partner_human": remote_partner_human,
+		"difficulty": difficulty})
 
 
 func _begin(p1: int, p2: int) -> void:
@@ -289,6 +296,13 @@ func _fail(reason: String) -> void:
 	failure = reason
 	state = State.FAILED
 	transport.close()
+
+
+## Host only: the CPU partners' difficulty.
+func set_difficulty(index: int) -> void:
+	if is_host and state == State.LOBBY and not _start_sent:
+		difficulty = index
+		_send_pick()
 
 
 func configure_team(format_doubles: bool, partner: int, human: bool) -> void:

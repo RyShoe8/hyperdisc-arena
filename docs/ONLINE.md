@@ -173,3 +173,12 @@ Run tests/test_playbound_presence.gd for registration and heartbeat recovery. Op
 ## Public lobby
 Sign into PlayBound, then choose Online > Lobby. Create Room advertises a two-player room; select a listed room to join without entering a code. The roster shows signed-in HyperDisc clients (online/playing), with left/right paging. Rooms disappear when full, closed, or stale. Client presence renews every 15 seconds and expires after 45 seconds; room heartbeats retain the existing 60-second expiry. The PlayBound /api/game-lobby/hyperdisc-arena routes must be deployed before using this build. Older clients do not advertise to this lobby. Room codes remain an internal Connect/invite identifier.
 
+
+## Menus
+
+Main menu > MULTIPLAYER has three options:
+- **ONLINE:** signs in to PlayBound if needed, then opens the PlayBound room lobby to create or join a room.
+- **LAN:** the same lobby layout for the local network. Hosts advertise their room on UDP port 7778 (`scripts/net/lan_discovery.gd`), and browsers find rooms by broadcasting a query. Join by address stays as a fallback for networks that block broadcasts.
+- **ADD FRIEND:** accept incoming friend requests, add players currently in the HyperDisc lobby, or search PlayBound names with a keyboard. It uses PlayBound's `/api/friends/requests`, `/search`, `/request` and `/accept`.
+
+Inside a room, both players see the same setup screen as VS: format, both teams, CPU difficulty, court and start. The host sets the format, difficulty and court; each player sets their own character and doubles partner. The guest presses READY and the host starts the match.

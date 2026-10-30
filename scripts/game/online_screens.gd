@@ -12,12 +12,27 @@ const UdpTransport := preload("res://scripts/net/udp_transport.gd")
 const UI := preload("res://scripts/game/ui/theme.gd")
 
 const ONLINE_RESULTS := ["DUB TAPES", "REMATCH", "LEAVE"]
+const LanDiscovery := preload("res://scripts/net/lan_discovery.gd")
+## The multiplayer menu: [id, label, what it does].
+const MENU := [
+	["online", "ONLINE", "PLAY ANYONE OVER THE INTERNET: CREATE OR JOIN A ROOM"],
+	["lan", "LAN", "PLAY SOMEONE ON THE SAME NETWORK: CREATE OR JOIN A ROOM"],
+	["add_friend", "ADD FRIEND", "ADD PLAYBOUND FRIENDS SO YOU CAN INVITE THEM TO YOUR ROOM"],
+]
 
 var m  # main.gd
 var menu_index := 0
 var typing := {}        # {field, value} while a text field is being edited
 var partner_cpu: CpuPlayer
-var lobby_row := 0      # 0 character grid, 1 court (host, once locked)
+var lobby_row := 0      # cursor in the room setup's editable rows
+## Where to go once PlayBound sign-in finishes: "browse" or "add_friend".
+var after_sign_in := ""
+## LAN: finds rooms while browsing; answers for our room while hosting.
+var lan_find := LanDiscovery.new()
+var lan_ad := LanDiscovery.new()
+var lan_index := 0
+var friend_index := 0
+var friend_sent := {}  # user id -> true once a request went out
 var leave_menu := false
 var leave_index := 0
 var vs_ticks := 0
@@ -53,7 +68,7 @@ func om() -> OnlineMatch:
 func handle_text(event: InputEvent) -> bool:
 	if typing.is_empty() or not (event is InputEventKey) or not event.pressed:
 		return false
-	var limit: int = {"name": 16, "room": 8}.get(typing.field, 64)
+	var limit: int = {"name": 16, "room": 8, "search": 24}.get(typing.field, 64)
 	match event.keycode:
 		KEY_ENTER, KEY_KP_ENTER:
 			_finish_typing(true)
@@ -90,7 +105,9 @@ func _finish_typing(keep: bool) -> void:
 	typing = {}
 	if not keep:
 		Sfx.play("menu_back")
-		if field == "address" or field == "room":
+		if field == "address":
+			open_lan()
+		elif field == "room":
 			m._go(m.Screen.ONLINE)
 		return
 	Sfx.play("menu_confirm")
@@ -103,30 +120,16 @@ func _finish_typing(keep: bool) -> void:
 		_connect(value)
 	elif field == "room" and value != "":
 		join_room(value)
+	elif field == "search":
+		friend_index = 0
+		Online.playbound.search_players(value)
 
 
 # --- Online menu ---------------------------------------------------------------
 
-## The menu rows for the current state: [id, label, enabled].
+## The multiplayer menu rows.
 func menu_items() -> Array:
-	var items := []
-	if Online.signed_in():
-		var online_count := 0
-		for f in Online.playbound.friends():
-			if f.online:
-				online_count += 1
-		items.append(["friends", "FRIENDS  (%d ONLINE)" % online_count, true])
-	else:
-		items.append(["sign_in", "SIGN IN WITH PLAYBOUND", true])
-	items.append(["browse", "LOBBY", true])
-	items.append(["host_lan", "HOST ON LAN", true])
-	items.append(["join_ip", "JOIN BY ADDRESS", true])
-	if Online.signed_in():
-		items.append(["sign_out", "SIGN OUT", true])
-	else:
-		items.append(["name", "NAME:  " + Settings.player_name, true])
-	items.append(["back", "BACK", true])
-	return items
+	return MENU
 
 
 func menu_input() -> void:
@@ -142,48 +145,54 @@ func menu_input() -> void:
 		Sfx.play("menu_back")
 		m._go(m.Screen.MAIN)
 		return
+	if Online.signed_in() and Controls.menu_pressed("utility") != -1:
+		Online.playbound.sign_out()
+		m.toast_msg("SIGNED OUT OF PLAYBOUND")
+		return
 	if m._confirm_device() == -1:
 		return
 	Sfx.play("menu_confirm")
 	match items[menu_index][0]:
-		"browse":
-			if not Online.signed_in():
-				sign_in()
-				return
-			browser_index = 0
-			Online.playbound.lobby_visible = true
-			Online.playbound.refresh_lobby_now()
-			m._go(m.Screen.ONLINE_ROOM)
-		"sign_in":
-			sign_in()
-		"friends":
-			friends_index = 0
-			Online.playbound.refresh_friends_now()
-			m._go(m.Screen.ONLINE_FRIENDS)
-		"host_room":
-			host_room()
-		"join_room":
-			typing = {"field": "room", "value": ""}
-			m._go(m.Screen.ONLINE_ROOM)
-		"host_lan":
-			host()
-		"join_ip":
-			typing = {"field": "address", "value": Settings.last_address}
-			m._go(m.Screen.ONLINE_JOIN)
-		"sign_out":
-			Online.playbound.sign_out()
-			m.toast_msg("SIGNED OUT OF PLAYBOUND")
-			menu_index = 0
-		"name":
-			typing = {"field": "name", "value": Settings.player_name}
-		"back":
-			m._go(m.Screen.MAIN)
+		"online":
+			if Online.signed_in():
+				open_browser()
+			else:
+				sign_in("browse")
+		"lan":
+			open_lan()
+		"add_friend":
+			if Online.signed_in():
+				open_add_friend()
+			else:
+				sign_in("add_friend")
+
+
+## The PlayBound room lobby (online play).
+func open_browser() -> void:
+	browser_index = 0
+	Online.playbound.lobby_visible = true
+	Online.playbound.refresh_lobby_now()
+	m._go(m.Screen.ONLINE_ROOM)
 
 
 func host() -> void:
 	Online.close()
+	lan_find.stop()
 	Online.host(Settings.host_port, net_lag, net_loss)
+	if Online.current != null:
+		lan_ad.advertise(Online.display_name(), Settings.host_port, str(OnlineMatch.build_hash()))
 	_after_connect_attempt()
+
+
+## Keeps our LAN room discoverable while it is open (hosting, before play).
+func _advertise_tick() -> void:
+	var o := om()
+	if o == null or not o.is_host or Online.room_code != "":
+		lan_ad.stop()
+		return
+	if lan_ad.active():
+		lan_ad.set_players(1 if o.state == OnlineMatch.State.CONNECTING else 2)
+		lan_ad.poll()
 
 
 func _connect(address: String) -> void:
@@ -229,7 +238,7 @@ func _after_connect_attempt() -> void:
 func join_input() -> void:
 	if m._back_pressed():
 		typing = {}
-		m._go(m.Screen.ONLINE)
+		open_lan()
 
 
 func browser_input() -> void:
@@ -291,7 +300,8 @@ func draw_browser() -> void:
 
 # --- PlayBound sign-in -----------------------------------------------------------
 
-func sign_in() -> void:
+func sign_in(then := "") -> void:
+	after_sign_in = then
 	Online.last_error = ""
 	Online.playbound.sign_in()
 	m._go(m.Screen.ONLINE_SIGNIN)
@@ -302,8 +312,14 @@ func signin_input() -> void:
 	if pb.is_signed_in():
 		Sfx.play("connect")
 		m.toast_msg("SIGNED IN AS %s" % pb.profile().display_name)
-		menu_index = 0
-		m._go(m.Screen.ONLINE)
+		match after_sign_in:
+			"browse":
+				open_browser()
+			"add_friend":
+				open_add_friend()
+			_:
+				m._go(m.Screen.ONLINE)
+		after_sign_in = ""
 		return
 	if not pb.signing_in() and m.screen_ticks > 30:
 		# Failed, expired or turned down; the reason is in last_error.
@@ -386,6 +402,7 @@ func invite_input() -> void:
 # --- Waiting for a connection ------------------------------------------------
 
 func wait_input() -> void:
+	_advertise_tick()
 	if m._back_pressed():
 		Online.close()
 		m._go(m.Screen.ONLINE)
@@ -440,55 +457,106 @@ func lobby_input() -> void:
 	if o == null:
 		m._go(m.Screen.ONLINE)
 		return
+	_advertise_tick()
 	o.poll({})
 	if o.state == OnlineMatch.State.FAILED:
 		_fail(o.failure)
 		return
 	if o.state == OnlineMatch.State.PLAYING:
+		lan_ad.stop()
 		_start_online_match()
 		return
 	if bot:
 		_bot_lobby(o)
 		return
-	if Controls.pressed(0, "utility") and o.is_host and not o.local_locked:
-		o.configure_team(not o.doubles, o.local_partner_pick, o.local_partner_human)
-	if o.doubles and not o.local_locked:
-		if Controls.pressed(0, "slap"):
-			o.configure_team(o.doubles, posmod(o.local_partner_pick + 1, m.balance.characters.size()), o.local_partner_human)
-		if Controls.pressed(1, "start"):
-			o.configure_team(o.doubles, o.local_partner_pick, not o.local_partner_human)
+	var rows := lobby_rows(o)
+	var editable := []
+	for i in rows.size():
+		if rows[i].edit:
+			editable.append(i)
+	lobby_row = clampi(lobby_row, 0, editable.size() - 1)
+	var row: Dictionary = rows[editable[lobby_row]]
 	var n := Controls.menu_nudged()
-	if lobby_row == 0:
-		if not o.local_locked and n != Vector2i.ZERO:
-			o.set_pick(m._grid_move(o.local_pick, n), false)
-			Sfx.play("menu_move")
-		if m._confirm_device() != -1 and not o.local_locked:
+	if n.y != 0:
+		lobby_row = posmod(lobby_row + n.y, editable.size())
+		Sfx.play("menu_move")
+	# A second local player joins as partner with START, like the VS setup.
+	if o.doubles and Controls.pressed(1, "start"):
+		o.configure_team(o.doubles, o.local_partner_pick, not o.local_partner_human)
+	if n.x != 0:
+		var count: int = m.balance.characters.size()
+		match row.id:
+			"format":
+				o.configure_team(not o.doubles, o.local_partner_pick, o.local_partner_human)
+			"pick":
+				o.set_pick(posmod(o.local_pick + n.x, count), false)
+			"partner":
+				o.configure_team(o.doubles, posmod(o.local_partner_pick + n.x, count), o.local_partner_human)
+			"difficulty":
+				o.set_difficulty(posmod(o.difficulty + n.x, m.DIFFICULTIES.size()))
+			"court":
+				o.set_court(posmod(o.court + n.x, m.balance.courts.size()))
+		Sfx.play("menu_move")
+	if row.id == "partner" and Controls.menu_pressed("utility") != -1:
+		o.configure_team(o.doubles, o.local_partner_pick, not o.local_partner_human)
+		Sfx.play("menu_move")
+	if m._confirm_device() != -1 and row.id == "go":
+		if o.is_host:
 			o.set_pick(o.local_pick, true)
-			Sfx.play("menu_confirm")
-			if o.is_host:
-				lobby_row = 1
-		elif m._back_pressed():
-			if o.local_locked:
-				o.set_pick(o.local_pick, false)
-				Sfx.play("menu_back")
-			else:
-				Sfx.play("menu_back")
-				Online.close()
-				m._go(m.Screen.ONLINE)
-	else:
-		if n.x != 0:
-			o.set_court(posmod(o.court + n.x, m.balance.courts.size()))
-			Sfx.play("menu_move")
-		if m._confirm_device() != -1:
 			if o.can_start():
 				Sfx.play("menu_confirm")
 				o.start()
 			else:
-				m.toast_msg("WAITING FOR %s TO PICK" % o.remote_name)
-		elif m._back_pressed():
-			lobby_row = 0
+				m.toast_msg("WAITING FOR %s TO BE READY" % o.remote_name)
+		else:
+			o.set_pick(o.local_pick, not o.local_locked)
+			Sfx.play("menu_confirm" if o.local_locked else "menu_back")
+	elif m._back_pressed():
+		if o.local_locked and not o.is_host:
 			o.set_pick(o.local_pick, false)
 			Sfx.play("menu_back")
+		else:
+			Sfx.play("menu_back")
+			lan_ad.stop()
+			Online.close()
+			m._go(m.Screen.ONLINE)
+
+
+## The room setup, laid out like the VS match setup: format, both teams,
+## CPU difficulty, court, then start. Each row: {id, label, edit}; the
+## host sets the shared rows and each player sets their own team.
+func lobby_rows(o: OnlineMatch) -> Array:
+	var chars: Array = m.balance.characters
+	var host_side: bool = o.is_host
+	var rows := []
+	rows.append({"id": "format", "edit": o.is_host,
+		"label": "FORMAT:  < %s >" % ("DOUBLES 2v2" if o.doubles else "SINGLES 1v1")})
+	for team in [0, 1]:
+		var mine: bool = (team == 0) == host_side
+		var name: String = o.local_name if mine else o.remote_name
+		var pick: int = o.local_pick if mine else o.remote_pick
+		var locked: bool = o.local_locked if mine else o.remote_locked
+		var label := "TEAM %s   %s   < %s >" % ["A" if team == 0 else "B", name.left(14),
+			chars[pick].name if pick >= 0 else "PICKING..."]
+		if locked:
+			label += "   READY"
+		rows.append({"id": "pick" if mine else "", "edit": mine, "label": label})
+		if o.doubles:
+			var partner: int = o.local_partner_pick if mine else o.remote_partner_pick
+			var human: bool = o.local_partner_human if mine else o.remote_partner_human
+			rows.append({"id": "partner" if mine else "", "edit": mine,
+				"label": "TEAM %s   %s   < %s >" % ["A" if team == 0 else "B",
+					("%s P2" % name.left(10)) if human else "CPU", chars[partner].name]})
+	rows.append({"id": "difficulty", "edit": o.is_host,
+		"label": "CPU DIFFICULTY:  < %s >" % m.DIFFICULTIES[o.difficulty].to_upper()})
+	rows.append({"id": "court", "edit": o.is_host, "label": "COURT:  < %s >" % m.balance.courts[o.court].name})
+	var go := ""
+	if o.is_host:
+		go = "START MATCH" if o.remote_locked else "WAITING FOR %s..." % o.remote_name.left(14)
+	else:
+		go = "READY!  WAITING FOR THE HOST" if o.local_locked else "READY"
+	rows.append({"id": "go", "edit": true, "label": go})
+	return rows
 
 
 func _bot_lobby(o: OnlineMatch) -> void:
@@ -513,7 +581,7 @@ func _start_online_match() -> void:
 		ids.append(o.sim.players[3].character.id)
 		names.append(((o.local_name if o.is_host else o.remote_name) + " / 2") if (o.local_partner_human if o.is_host else o.remote_partner_human) else "CPU A")
 		names.append(((o.remote_name if o.is_host else o.local_name) + " / 2") if (o.remote_partner_human if o.is_host else o.local_partner_human) else "CPU B")
-	partner_cpu = CpuPlayer.new(o.local_side + 2, m.balance.cpu.normal, int(Time.get_ticks_usec())) if o.doubles and not o.local_partner_human else null
+	partner_cpu = CpuPlayer.new(o.local_side + 2, m.balance.cpu[m.DIFFICULTIES[o.difficulty]], int(Time.get_ticks_usec())) if o.doubles and not o.local_partner_human else null
 	m.story = false
 	m.doubles = o.doubles
 	m.view = MatchView.new(o.sim, ids, names)
@@ -670,31 +738,18 @@ func _bot_report(o: OnlineMatch) -> void:
 func draw_menu() -> void:
 	var ci = m
 	UI.outrun_background(ci, m.SCREEN, m.frame / 60.0, 0.4)
-	UI.text(ci, Vector2(960, 120), "ONLINE LOBBIES", 110, UI.YELLOW, UI.display, 9, HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)
+	UI.text(ci, Vector2(960, 200), "MULTIPLAYER", 100, UI.YELLOW, UI.display, 5)
 	var who := ("SIGNED IN TO PLAYBOUND AS  %s" % Online.display_name()) if Online.signed_in() \
-		else "PLAYING AS  %s   -   NOT SIGNED IN" % Settings.player_name
-	UI.text(ci, Vector2(960, 180), who, 28, UI.CYAN, UI.ui, 4)
+		else "PLAYING AS  %s   -   NOT SIGNED IN" % Online.display_name()
+	UI.text(ci, Vector2(960, 300), who, 28, UI.CYAN, UI.ui, 4)
 	var items := menu_items()
 	for i in items.size():
-		var label: String = items[i][1]
-		if items[i][0] == "name" and typing.get("field", "") == "name":
-			label = "NAME:  " + typing.value + ("_" if (m.frame / 20) % 2 == 0 else " ")
-		UI.button(ci, Rect2(Vector2(560, 230 + i * 96), Vector2(800, 78)), label, i == menu_index, m.frame, 34, items[i][2])
+		UI.button(ci, Rect2(460, 420 + i * 110, 1000, 80), items[i][1], i == menu_index, m.frame, 36)
+	UI.text(ci, Vector2(960, 800), items[clampi(menu_index, 0, items.size() - 1)][2], 28, UI.CYAN, UI.ui, 3)
 	if busy:
 		UI.text(ci, Vector2(960, 1000), "TALKING TO PLAYBOUND" + ".".repeat(1 + (m.frame / 20) % 3), 30, UI.YELLOW, UI.ui, 4)
-	if typing.get("field", "") == "name":
-		m._hint("TYPE YOUR NAME, ENTER TO SAVE, ESC TO CANCEL")
-	else:
-		var id: String = items[clampi(menu_index, 0, items.size() - 1)][0]
-		var about: String = {
-			"sign_in": "USE YOUR PLAYBOUND ACCOUNT (OR MAKE ONE) FOR FRIENDS AND INVITES",
-			"friends": "SEE WHO'S ONLINE AND INVITE THEM TO PLAY",
-			"browse": "BROWSE PUBLIC ROOMS AND SEE PLAYERS ONLINE",
-
-			"host_lan": "PLAY SOMEONE ON THE SAME NETWORK",
-			"join_ip": "CONNECT STRAIGHT TO AN ADDRESS",
-		}.get(id, "")
-		m._hint("%s SELECT     %s BACK%s" % [m._a(), m._b(), ("     " + about) if about != "" else ""])
+	var sign_out := ("     %s SIGN OUT" % Controls.label(0, "utility")) if Online.signed_in() else ""
+	m._hint("%s SELECT     %s BACK%s" % [m._a(), m._b(), sign_out])
 
 
 func draw_join() -> void:
@@ -818,83 +873,24 @@ func draw_lobby() -> void:
 	var o := om()
 	if o == null:
 		return
-	if o.is_host and lobby_row == 1:
-		_draw_online_court_select(o)
-		return
-	UI.outrun_background(ci, m.SCREEN, m.frame / 60.0, 0.55)
-	UI.slant_panel(ci, Rect2(560, 26, 800, 90), UI.YELLOW, UI.INK, 30, 5)
-	UI.text(ci, Vector2(960, 98), "ONLINE LOBBY", 64, UI.INK, UI.display, 2)
-	var chars: Array = m.balance.characters
-	var cell := Vector2(210, 210)
-	var gap := 28
-	var grid_origin := Vector2(960 - cell.x * 1.5 - gap, 230)
-	var picks := {o.local_side: o.local_pick, 1 - o.local_side: o.remote_pick}
-	for i in chars.size():
-		var pos := grid_origin + Vector2((i % 3) * (cell.x + gap), (i / 3) * (cell.y + gap))
-		var r := Rect2(pos, cell)
-		ci.draw_rect(r.grow(4), UI.INK)
-		ci.draw_rect(r, Color("2a1250"))
-		ci.draw_texture_rect_region(m.portraits[i], r, Rect2(100, 40, 440, 440))
-		UI.text(ci, pos + Vector2(cell.x / 2, cell.y - 12), str(chars[i].name).to_upper(), 22, Color.WHITE, UI.ui, 4)
-	# Keep selection outlines above all portraits, including adjacent selections.
-	for i in chars.size():
-		var pos := grid_origin + Vector2((i % 3) * (cell.x + gap), (i / 3) * (cell.y + gap))
-		var r := Rect2(pos, cell)
-		for side in [0, 1]:
-			if picks[side] != i:
-				continue
-			var c := UI.P1 if side == 0 else UI.P2
-			ci.draw_rect(r.grow(4 + side * 6), c, false, 7)
-	for side in [0, 1]:
-		var who: int = picks[side]
-		if who < 0:
-			continue
-		var saved: int = m.pick[side]
-		m.pick[side] = who
-		m._draw_fighter_card(side, chars[who])
-		m.pick[side] = saved
-		var name: String = o.local_name if side == o.local_side else o.remote_name
-		var locked: bool = o.local_locked if side == o.local_side else o.remote_locked
-		var x := 240.0 if side == 0 else 1680.0
-		UI.text(ci, Vector2(x, 200), name, 44, UI.P1 if side == 0 else UI.P2, UI.display, 5)
-		if locked:
-			UI.text(ci, Vector2(x, 790), "READY!", 56, UI.YELLOW, UI.display, 6)
-	UI.text(ci, Vector2(960, 160), "DOUBLES 2v2" if o.doubles else "SINGLES 1v1", 30, UI.CYAN, UI.ui, 3)
+	UI.outrun_background(ci, m.SCREEN, m.frame / 60.0, 0.25)
+	var where := "LAN" if Online.room_code == "" else "ONLINE"
+	UI.text(ci, Vector2(960, 130), "%s %s MATCH SETUP" % [where, "DOUBLES" if o.doubles else "SINGLES"], 72,
+		UI.YELLOW, UI.display, 5)
+	var rows := lobby_rows(o)
+	var editable := []
+	for i in rows.size():
+		if rows[i].edit:
+			editable.append(i)
+	var selected: int = editable[clampi(lobby_row, 0, editable.size() - 1)]
+	for i in rows.size():
+		UI.button(ci, Rect2(360, 220 + i * 82, 1200, 68), rows[i].label, i == selected, m.frame, 30, rows[i].edit)
+	var help := "UP/DOWN: ROW   LEFT/RIGHT: CHANGE"
 	if o.doubles:
-		for side in [0, 1]:
-			var local: bool = side == o.local_side
-			var partner: int = o.local_partner_pick if local else o.remote_partner_pick
-			var human: bool = o.local_partner_human if local else o.remote_partner_human
-			var label := "%s: %s" % ["PARTNER" if human else "CPU", m.balance.characters[partner].name]
-			UI.text(ci, Vector2(260 if side == 0 else 1660, 850), label, UI.fit_size(label, 26, 450, UI.ui), Color.WHITE, UI.ui, 3)
-	UI.text(ci, Vector2(960, 900), "HOST %s: FORMAT   SLAP: PARTNER CHARACTER   P2 START: JOIN / CPU" % Controls.label(0, "utility"), 22, UI.CYAN, UI.ui, 2)
-	var court_name: String = m.balance.courts[o.court].name
-	var r := Rect2(Vector2(660, 700), Vector2(600, 84))
-	var court_label := ("<  COURT: %s  >" % court_name) if o.is_host else "COURT: %s" % court_name
-	UI.button(ci, r, court_label, o.is_host and lobby_row == 1, m.frame, 34)
-	var hint := ""
-	if o.is_host:
-		if lobby_row == 0:
-			hint = "PICK YOUR PLAYER, %s TO LOCK IN" % m._a()
-		else:
-			hint = ("%s START MATCH" % m._a()) if o.can_start() else "WAITING FOR %s TO LOCK IN" % o.remote_name
-		hint += "     %s BACK" % m._b()
-	else:
-		hint = "PICK YOUR PLAYER, %s TO LOCK IN     THE HOST PICKS THE COURT AND STARTS     %s BACK" % [m._a(), m._b()]
-	m._hint(hint)
-
-
-func _draw_online_court_select(o: OnlineMatch) -> void:
-	UI.outrun_background(m, m.SCREEN, m.frame / 60.0, 0.55)
-	UI.slant_panel(m, Rect2(430, 26, 1060, 90), UI.YELLOW, UI.INK, 30, 5)
-	UI.text(m, Vector2(960, 98), "CHOOSE THE COURT", 62, UI.INK, UI.display, 2)
-	var selected: int = o.court
-	var big := Rect2(Vector2(480, 170), Vector2(960, 530))
-	m.draw_texture_rect(m.court_thumbs[selected], big, false)
-	m.draw_rect(big, UI.YELLOW, false, 6)
-	UI.text(m, Vector2(960, 765), "<  %s  >" % m.balance.courts[selected].name.to_upper(), 48, UI.YELLOW, UI.display, 5)
-	var hint := "%s START MATCH" % m._a() if o.can_start() else "WAITING FOR %s TO PICK" % o.remote_name
-	m._hint("LEFT / RIGHT: COURT     %s     %s BACK" % [hint, m._b()])
+		help += "   %s: CPU / PLAYER 2 PARTNER   P2 START: JOIN" % Controls.label(0, "utility")
+	UI.text(ci, Vector2(960, 940), help, 25, UI.CYAN, UI.ui, 2)
+	var shared := "" if o.is_host else "     THE HOST SETS FORMAT, DIFFICULTY AND COURT"
+	m._hint("%s %s     %s LEAVE%s" % [m._a(), "START MATCH" if o.is_host else "READY", m._b(), shared])
 
 
 func draw_leave_menu() -> void:
@@ -914,3 +910,202 @@ func draw_results_menu() -> void:
 	for i in ONLINE_RESULTS.size():
 		UI.button(ci, Rect2(Vector2(760, 660 + i * 84), Vector2(400, 68)), ONLINE_RESULTS[i],
 			i == m.result_index, m.frame, 28)
+
+
+# --- LAN rooms ---------------------------------------------------------------------
+
+func open_lan() -> void:
+	lan_index = 0
+	lan_find.browse()
+	m._go(m.Screen.LAN_BROWSER)
+
+
+## LAN browser rows: [id, label]; rooms found on the network come last.
+func lan_rows() -> Array:
+	var rows := [["create", "CREATE ROOM"], ["address", "JOIN BY ADDRESS"]]
+	if not Online.signed_in():
+		var name := Settings.player_name
+		if typing.get("field", "") == "name":
+			name = typing.value + ("_" if (m.frame / 20) % 2 == 0 else " ")
+		rows.append(["name", "YOUR NAME:  " + name])
+	for room in lan_find.rooms():
+		var label := "%s'S ROOM  %d/2" % [room.name, room.players]
+		if room.build != str(OnlineMatch.build_hash()):
+			label += "  [UPDATE NEEDED]"
+		rows.append(["room", label, room])
+	return rows
+
+
+func lan_input() -> void:
+	lan_find.poll()
+	if not typing.is_empty():
+		return
+	var rows := lan_rows()
+	lan_index = clampi(lan_index, 0, rows.size() - 1)
+	var n := Controls.menu_nudged()
+	if n.y != 0:
+		lan_index = posmod(lan_index + n.y, rows.size())
+		Sfx.play("menu_move")
+	if m._back_pressed():
+		Sfx.play("menu_back")
+		lan_find.stop()
+		m._go(m.Screen.ONLINE)
+		return
+	if m._confirm_device() == -1:
+		return
+	Sfx.play("menu_confirm")
+	match rows[lan_index][0]:
+		"create":
+			host()
+		"address":
+			lan_find.stop()
+			typing = {"field": "address", "value": Settings.last_address}
+			m._go(m.Screen.ONLINE_JOIN)
+		"name":
+			typing = {"field": "name", "value": Settings.player_name}
+		"room":
+			var room: Dictionary = rows[lan_index][2]
+			if room.build != str(OnlineMatch.build_hash()):
+				m.toast_msg("DIFFERENT GAME VERSION - BOTH PLAYERS NEED THE SAME BUILD")
+				return
+			lan_find.stop()
+			Settings.last_address = "%s:%d" % [room.address, room.port]
+			Settings.save()
+			_connect(Settings.last_address)
+
+
+func draw_lan() -> void:
+	UI.outrun_background(m, m.SCREEN, m.frame / 60.0, 0.55)
+	UI.text(m, Vector2(960, 135), "LAN LOBBY", 80, UI.YELLOW, UI.display, 6)
+	UI.text(m, Vector2(960, 205), "PLAYING AS  %s" % Online.display_name(), 28, UI.CYAN, UI.ui, 3)
+	var rows := lan_rows()
+	var first := maxi(0, lan_index - 8)
+	for i in range(first, mini(first + 9, rows.size())):
+		UI.button(m, Rect2(460, 250 + (i - first) * 76, 1000, 64), rows[i][1], i == lan_index, m.frame, 30)
+	if lan_find.rooms().is_empty():
+		UI.text(m, Vector2(960, 250 + rows.size() * 76 + 40), "LOOKING FOR ROOMS ON YOUR NETWORK" + ".".repeat(1 + (m.frame / 20) % 3),
+			28, UI.DIM, UI.ui, 3)
+	if typing.get("field", "") == "name":
+		m._hint("TYPE YOUR NAME, ENTER TO SAVE, ESC TO CANCEL")
+	else:
+		m._hint("%s SELECT     %s BACK     ROOMS ON THIS NETWORK APPEAR HERE" % [m._a(), m._b()])
+
+
+# --- Add friend ----------------------------------------------------------------------
+
+func open_add_friend() -> void:
+	friend_index = 0
+	friend_sent = {}
+	Online.playbound.search_results = []
+	Online.playbound.refresh_friend_requests()
+	Online.playbound.lobby_visible = true
+	Online.playbound.refresh_lobby_now()
+	m._go(m.Screen.ONLINE_ADD_FRIEND)
+
+
+## Everything on the Add Friend screen, in order: [kind, label, data].
+## Kinds: search (the name field), header, result, request, player.
+func friend_rows() -> Array:
+	var pb = Online.playbound
+	var rows := []
+	var query: String = typing.get("value", "") + ("_" if (m.frame / 20) % 2 == 0 else " ") \
+		if typing.get("field", "") == "search" else ""
+	rows.append(["search", "SEARCH BY NAME:  " + query])
+	for u in pb.search_results:
+		rows.append(["result", u.name + "   " + _friend_status(u.id, u.status), u])
+	if not pb.friend_requests.is_empty():
+		rows.append(["header", "WANT TO BE YOUR FRIEND"])
+		for r in pb.friend_requests:
+			rows.append(["request", r.name + "   ACCEPT", r])
+	var friends := {}
+	for f in pb.friends():
+		friends[f.id] = true
+	var here := []
+	for p in pb.lobby_players:
+		var id := str(p.get("id", ""))
+		if id != "" and id != str(pb.profile().id) and not friends.has(id):
+			here.append(p)
+	if not here.is_empty():
+		rows.append(["header", "IN HYPERDISC NOW"])
+		for p in here:
+			rows.append(["player", str(p.name).to_upper().left(20) + "   " + _friend_status(str(p.id), "none"), p])
+	return rows
+
+
+func _friend_status(id: String, status: String) -> String:
+	if friend_sent.has(id) or status == "outgoing_request":
+		return "REQUEST SENT"
+	return {"friends": "FRIENDS", "incoming_request": "WANTS TO BE FRIENDS - SEE BELOW"}.get(status, "ADD")
+
+
+func add_friend_input() -> void:
+	if not typing.is_empty() or busy:
+		return
+	var rows := friend_rows()
+	var picks := []
+	for i in rows.size():
+		if rows[i][0] != "header":
+			picks.append(i)
+	friend_index = clampi(friend_index, 0, picks.size() - 1)
+	var n := Controls.menu_nudged()
+	if n.y != 0:
+		friend_index = posmod(friend_index + n.y, picks.size())
+		Sfx.play("menu_move")
+	if m._back_pressed():
+		Sfx.play("menu_back")
+		Online.playbound.lobby_visible = false
+		m._go(m.Screen.ONLINE)
+		return
+	if m._confirm_device() == -1:
+		return
+	var row: Array = rows[picks[friend_index]]
+	match row[0]:
+		"search":
+			Sfx.play("menu_confirm")
+			typing = {"field": "search", "value": ""}
+		"result", "player":
+			var id := str(row[2].id)
+			var status := str(row[2].get("status", "none"))
+			if friend_sent.has(id) or status != "none":
+				return
+			Sfx.play("menu_confirm")
+			busy = true
+			var err: String = await Online.playbound.send_friend_request(id)
+			busy = false
+			if err == "":
+				friend_sent[id] = true
+				m.toast_msg("FRIEND REQUEST SENT TO %s" % str(row[2].name).to_upper())
+			else:
+				m.toast_msg(err)
+		"request":
+			Sfx.play("menu_confirm")
+			busy = true
+			var err: String = await Online.playbound.accept_friend_request(str(row[2].id))
+			busy = false
+			m.toast_msg(err if err != "" else "YOU AND %s ARE NOW FRIENDS" % row[2].name)
+
+
+func draw_add_friend() -> void:
+	UI.outrun_background(m, m.SCREEN, m.frame / 60.0, 0.5)
+	UI.text(m, Vector2(960, 130), "ADD FRIEND", 90, UI.YELLOW, UI.display, 6)
+	var rows := friend_rows()
+	var picks := []
+	for i in rows.size():
+		if rows[i][0] != "header":
+			picks.append(i)
+	var selected: int = picks[clampi(friend_index, 0, picks.size() - 1)]
+	var first := clampi(selected - 5, 0, maxi(0, rows.size() - 10))
+	for i in range(first, mini(first + 10, rows.size())):
+		var y := 210 + (i - first) * 72
+		if rows[i][0] == "header":
+			UI.text(m, Vector2(960, y + 46), rows[i][1], 28, UI.CYAN, UI.ui, 3)
+		else:
+			UI.button(m, Rect2(460, y, 1000, 60), rows[i][1], i == selected, m.frame, 28)
+	if rows.size() == 1:
+		UI.text(m, Vector2(960, 420), "NOBODY ELSE IS IN HYPERDISC RIGHT NOW", 30, UI.DIM, UI.ui, 3)
+	if busy:
+		UI.text(m, Vector2(960, 1000), "TALKING TO PLAYBOUND" + ".".repeat(1 + (m.frame / 20) % 3), 30, UI.YELLOW, UI.ui, 4)
+	if typing.get("field", "") == "search":
+		m._hint("TYPE A PLAYBOUND NAME (3+ LETTERS), ENTER TO SEARCH, ESC TO CANCEL")
+	else:
+		m._hint("%s ADD / ACCEPT / SEARCH     %s BACK     SEARCHING NEEDS A KEYBOARD" % [m._a(), m._b()])

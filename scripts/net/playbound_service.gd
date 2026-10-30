@@ -314,6 +314,71 @@ func respond_to_invite(invite_id: String, accept: bool) -> void:
 		{"action": "accept" if accept else "decline"})
 
 
+# --- Adding friends --------------------------------------------------------------
+
+## Friend requests sent to us: {id (the request), user_id, name}.
+var friend_requests: Array[Dictionary] = []
+## Players found by name: {id, name, status}; status is PlayBound's
+## friendStatus (none, friends, outgoing_request, incoming_request).
+var search_results: Array[Dictionary] = []
+
+
+func refresh_friend_requests() -> void:
+	var res: Dictionary = await api.call_api(HTTPClient.METHOD_GET, "/api/friends/requests")
+	if not res._ok:
+		return
+	var list: Array[Dictionary] = []
+	for r in res.get("incoming", []):
+		var user: Dictionary = r.get("user", {}) if r.get("user") is Dictionary else {}
+		list.append({"id": str(r.get("id", "")), "user_id": str(user.get("id", "")),
+			"name": str(user.get("username", "Player")).to_upper()})
+	friend_requests = list
+	friends_changed.emit()
+
+
+## Looks players up by PlayBound username (at least 3 letters).
+func search_players(query: String) -> void:
+	search_results = []
+	if query.strip_edges().length() < 3:
+		friends_changed.emit()
+		return
+	var res: Dictionary = await api.call_api(HTTPClient.METHOD_GET,
+		"/api/friends/search?q=" + query.strip_edges().uri_encode())
+	if not res._ok:
+		error.emit("COULDN'T SEARCH: " + str(res.get("error", "PLAYBOUND UNREACHABLE")).to_upper())
+		return
+	var list: Array[Dictionary] = []
+	for u in res.get("users", []):
+		list.append({"id": str(u.get("id", "")), "name": str(u.get("username", "Player")).to_upper(),
+			"status": str(u.get("friendStatus", "none"))})
+	search_results = list
+	friends_changed.emit()
+
+
+## Sends a friend request. Returns "" when it went through, else the reason.
+func send_friend_request(user_id: String) -> String:
+	var res: Dictionary = await api.call_api(HTTPClient.METHOD_POST, "/api/friends/request",
+		{"targetUserId": user_id})
+	if not res._ok:
+		return str(res.get("error", "COULDN'T SEND THE FRIEND REQUEST")).to_upper()
+	for u in search_results:
+		if u.id == user_id:
+			u.status = "friends" if res.get("autoAccepted", false) else "outgoing_request"
+	refresh_friends_now()
+	return ""
+
+
+## Accepts a friend request sent to us. Returns "" or the reason it failed.
+func accept_friend_request(request_id: String) -> String:
+	var res: Dictionary = await api.call_api(HTTPClient.METHOD_POST, "/api/friends/accept",
+		{"requestId": request_id})
+	if not res._ok:
+		return str(res.get("error", "COULDN'T ACCEPT THE REQUEST")).to_upper()
+	refresh_friends_now()
+	await refresh_friend_requests()
+	return ""
+
+
 func set_presence(status: String) -> void:
 	_presence_status = "playing" if status == "in_match" else "online"
 	_next_heartbeat_ms = 0

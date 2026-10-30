@@ -72,6 +72,7 @@ func _run() -> void:
 			peers[side].poll({"y": t % 3 - 1, "a": t % 17 == 0, "partner": {"x": t % 3 - 1, "dive": t % 31 == 0, "curve_left": t % 19 == 0}})
 		if not configured and host.state == Match.State.LOBBY and guest.state == Match.State.LOBBY:
 			host.configure_team(true, 4, true)
+			host.set_difficulty(2)
 			guest.configure_team(true, 5, false)
 			host.set_pick(0, true)
 			guest.set_pick(1, true)
@@ -82,6 +83,7 @@ func _run() -> void:
 			host.start()
 			started = true
 	check(host.sim != null and guest.sim != null, "doubles lobby starts")
+	check(guest.difficulty == 2, "the host's CPU difficulty reaches the guest")
 	if host.sim != null and guest.sim != null:
 		check(host.sim.players.size() == 4 and guest.sim.players.size() == 4, "both peers use doubles")
 		check(host.sim.players[2].character.id == guest.sim.players[2].character.id and host.sim.players[3].character.id == guest.sim.players[3].character.id, "all four character picks agree")
@@ -94,12 +96,14 @@ func _run() -> void:
 	var game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
 	game.set_physics_process(false)
-	check(game._main_items() == ["STORY", "2 PLAYER", "MULTIPLAYER", "TUTORIAL", "MIXTAPES", "OPTIONS", "QUIT"], "approved menu order")
-	game._open_play_menu("local")
-	check(game._play_menu_items().size() == 2, "two simple local choices")
-	game._open_local_setup(true, [0, -1, 1, -1], game.Screen.PLAY_MENU)
+	check(game._main_items() == ["STORY", "VS", "MULTIPLAYER", "TUTORIAL", "MIXTAPES", "OPTIONS", "QUIT"], "approved menu order")
+	check(game.net.menu_items().map(func(item): return item[0]) == ["online", "lan", "add_friend"], "multiplayer offers online, LAN and add friend")
+	game.main_index = 1
+	game._open_local_setup(false, [0, 1, -1, -1], game.Screen.MAIN)
+	check(game.screen == game.Screen.SETUP and not game.doubles, "VS opens the singles match setup")
+	game._open_local_setup(true, [0, -1, 1, -1], game.Screen.MAIN)
 	check(game.doubles and game.slot_controls[0] == 0 and game.slot_controls[2] == 1 and game.slot_controls[1] == -1, "co-op preset places both humans on same team")
-	game._open_local_setup(false, [0, 1, -1, -1], game.Screen.PLAY_MENU)
+	game._open_local_setup(false, [0, 1, -1, -1], game.Screen.MAIN)
 	check(not game.doubles and game.slot_controls[1] == 1, "head-to-head preset places humans opposite")
 	game.doubles = true
 	game.pick.assign([0, 1])

@@ -13,7 +13,25 @@ func _run() -> void:
 	game.net._finish_typing(true)
 	assert(not game.net.typing.is_empty())
 	game.net._finish_typing(false)
-	assert(game.net.typing.is_empty() and game.screen==game.Screen.ONLINE)
+	assert(game.net.typing.is_empty() and game.screen==game.Screen.LAN_BROWSER)
+	game.net.lan_find.stop()
+	# LAN rooms: a host answers, a browser on the same machine finds it.
+	var Lan=load("res://scripts/net/lan_discovery.gd")
+	var ad=Lan.new()
+	var find=Lan.new()
+	assert(ad.advertise("HOSTY", 7777, "build-1"))
+	find.browse()
+	var found:=false
+	for i in 60:
+		ad.poll()
+		find.poll()
+		if find.rooms().size()==1:
+			found=true
+			break
+		OS.delay_msec(50)
+	assert(found and find.rooms()[0].name=="HOSTY" and find.rooms()[0].port==7777 and find.rooms()[0].build=="build-1")
+	ad.stop()
+	find.stop()
 	var service=load("res://scripts/net/playbound_service.gd").new()
 	var api=FakeApi.new()
 	service.api=api
