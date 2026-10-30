@@ -13,6 +13,8 @@ const UI := preload("res://scripts/game/ui/theme.gd")
 
 const ONLINE_RESULTS := ["DUB TAPES", "REMATCH", "LEAVE"]
 const LanDiscovery := preload("res://scripts/net/lan_discovery.gd")
+## The online lobby's buttons, above the list of public rooms.
+const BROWSER_BUTTONS := ["QUICK MATCH", "CREATE ROOM", "LEADERBOARD", "REFRESH"]
 ## The multiplayer menu: [id, label, what it does].
 const MENU := [
 	["online", "ONLINE", "PLAY ANYONE OVER THE INTERNET: CREATE OR JOIN A ROOM"],
@@ -29,6 +31,12 @@ var lobby_row := 0
 ## (our CPU partner's character), then the host's "difficulty" and "court",
 ## or the guest's "wait".
 var lobby_phase := "pick"
+## Quick match: searching is true while asking PlayBound for an opponent;
+## quick is true while we wait in our private room for one to join.
+var searching := false
+var quick := false
+var quick_poll_ticks := 0
+var leaderboard_index := 0
 var p1_locked := false
 var partner_locked := false
 ## Where to go once PlayBound sign-in finishes: "browse" or "add_friend".
@@ -239,7 +247,72 @@ func _after_connect_attempt() -> void:
 		m._go(m.Screen.ONLINE)
 		return
 	lobby_row = 0
+	# The host sets up straight away, while waiting for someone to join.
+	if Online.current.is_host:
+		_enter_lobby()
+	else:
+		m._go(m.Screen.ONLINE_WAIT)
+
+
+## Quick match: join the waiting player nearest our rating, or open a
+## private room and wait there (at the match setup) for the next one.
+func quick_match() -> void:
+	Online.close()
+	busy = true
+	searching = true
 	m._go(m.Screen.ONLINE_WAIT)
+	var res: Dictionary = await Online.playbound.matchmaking("queue", {"version": Online.playbound.build_id})
+	if m.screen != m.Screen.ONLINE_WAIT:
+		busy = false
+		searching = false
+		Online.playbound.matchmaking("cancel")
+		return
+	if str(res.get("joinCode", "")) != "":
+		busy = false
+		searching = false
+		join_room(str(res.joinCode))
+		return
+	if not res.get("host", false):
+		busy = false
+		searching = false
+		m.toast_msg(str(res.get("error", "MATCHMAKING UNAVAILABLE - TRY AGAIN")).to_upper())
+		m._go(m.Screen.ONLINE_ROOM)
+		return
+	await Online.host_room(false)
+	busy = false
+	searching = false
+	if m.screen != m.Screen.ONLINE_WAIT or Online.current == null:
+		Online.playbound.matchmaking("cancel")
+		if Online.current == null:
+			m.toast_msg(Online.last_error if Online.last_error != "" else "COULDN'T START A QUICK MATCH")
+			m._go(m.Screen.ONLINE_ROOM)
+		else:
+			Online.close()
+		return
+	await Online.playbound.matchmaking("room", {"joinCode": Online.room_code})
+	quick = true
+	quick_poll_ticks = 0
+	_after_connect_attempt()
+
+
+## Keeps our quick-match ticket alive while we wait; drops it once someone
+## has joined or we leave.
+func _quick_tick() -> void:
+	if not quick:
+		return
+	var o := om()
+	if o == null or o.state != OnlineMatch.State.CONNECTING:
+		_leave_quick()
+		return
+	quick_poll_ticks += 1
+	if quick_poll_ticks % 600 == 0:
+		Online.playbound.matchmaking("poll")
+
+
+func _leave_quick() -> void:
+	if quick:
+		quick = false
+		Online.playbound.matchmaking("cancel")
 
 
 func join_input() -> void:
@@ -259,16 +332,22 @@ func browser_input() -> void:
 		return
 	var rooms: Array = browser_rows
 	var n := Controls.menu_nudged()
-	browser_index = clampi(browser_index + n.y, 0, rooms.size() + 1)
+	browser_index = clampi(browser_index + n.y, 0, rooms.size() + BROWSER_BUTTONS.size() - 1)
 	player_page = clampi(player_page + n.x, 0, maxi(0, (Online.playbound.lobby_players.size()-1)/10))
 	if m._confirm_device() == -1:
 		return
-	if browser_index == 0:
-		host_room()
-	elif browser_index == 1:
-		Online.playbound.refresh_lobby_now()
+	if browser_index < BROWSER_BUTTONS.size():
+		match BROWSER_BUTTONS[browser_index]:
+			"QUICK MATCH":
+				quick_match()
+			"CREATE ROOM":
+				host_room()
+			"LEADERBOARD":
+				open_leaderboard()
+			"REFRESH":
+				Online.playbound.refresh_lobby_now()
 	else:
-		var room: Dictionary = rooms[browser_index-2]
+		var room: Dictionary = rooms[browser_index - BROWSER_BUTTONS.size()]
 		if str(room.version) != Online.playbound.build_id:
 			m.toast_msg("DIFFERENT GAME VERSION - BOTH PLAYERS NEED THE SAME BUILD")
 			return
@@ -279,32 +358,41 @@ func draw_browser() -> void:
 	UI.outrun_background(m, m.SCREEN, m.frame / 60.0, 0.55)
 	UI.text(m, Vector2(960, 135), "HYPERDISC LOBBY", 80, UI.YELLOW, UI.display, 6)
 	var pb = Online.playbound
+	var buttons := BROWSER_BUTTONS.size()
 	var selected_id := ""
-	if browser_index >= 2 and browser_index-2 < browser_rows.size():
-		selected_id = str(browser_rows[browser_index-2].id)
+	if browser_index >= buttons and browser_index - buttons < browser_rows.size():
+		selected_id = str(browser_rows[browser_index - buttons].id)
 	browser_rows = pb.lobby_rooms.duplicate(true)
 	if selected_id != "":
-		browser_index = 1
+		browser_index = buttons - 1
 		for i in browser_rows.size():
-			if str(browser_rows[i].id) == selected_id: browser_index = i+2
-	UI.text(m, Vector2(580, 225), "PUBLIC ROOMS", 36, UI.CYAN, UI.ui, 3)
-	UI.text(m, Vector2(1450, 225), "PLAYERS ONLINE (%d)" % pb.lobby_players.size(), 32, UI.CYAN, UI.ui, 3)
-	UI.button(m, Rect2(150,270,860,64), "CREATING ROOM..." if busy else "CREATE ROOM", browser_index==0,m.frame)
-	UI.button(m, Rect2(150,348,860,64), "REFRESH", browser_index==1,m.frame)
-	var first := maxi(0, browser_index-7)
-	for i in range(first, mini(first+6,pb.lobby_rooms.size())):
-		var room: Dictionary = pb.lobby_rooms[i]
-		var label := "%s'S ROOM  %d/%d" % [str(room.name).left(24).to_upper(),room.players,room.capacity]
+			if str(browser_rows[i].id) == selected_id: browser_index = i + buttons
+	UI.text(m, Vector2(580, 215), "PLAY", 36, UI.CYAN, UI.ui, 3)
+	UI.text(m, Vector2(1450, 215), "PLAYERS ONLINE (%d)" % pb.lobby_players.size(), 32, UI.CYAN, UI.ui, 3)
+	for i in buttons:
+		var label: String = BROWSER_BUTTONS[i]
+		if label == "CREATE ROOM" and busy and not searching:
+			label = "CREATING ROOM..."
+		UI.button(m, Rect2(150, 240 + i * 70, 860, 60), label, browser_index == i, m.frame)
+	UI.text(m, Vector2(580, 555), "PUBLIC ROOMS", 30, UI.CYAN, UI.ui, 3)
+	var first := maxi(0, browser_index - buttons - 3)
+	for i in range(first, mini(first + 4, browser_rows.size())):
+		var room: Dictionary = browser_rows[i]
+		var label := "%s'S ROOM  %d/%d" % [str(room.name).left(24).to_upper(), room.players, room.capacity]
 		if str(room.version) != pb.build_id: label += "  [UPDATE NEEDED]"
-		UI.button(m, Rect2(150,440+(i-first)*70,860,60),label,browser_index==i+2,m.frame)
-	if pb.lobby_rooms.is_empty():
-		UI.text(m, Vector2(580,515), "NO OPEN ROOMS - CREATE ONE", 28, UI.DIM, UI.ui, 3)
-	player_page=clampi(player_page,0,maxi(0,(pb.lobby_players.size()-1)/10))
-	for i in range(player_page*10,mini(player_page*10+10,pb.lobby_players.size())):
-		var player: Dictionary=pb.lobby_players[i]
-		UI.text(m, Vector2(1450,300+(i%10)*52),str(player.name).left(24).to_upper()+"  -  "+str(player.status).to_upper(),25,Color.WHITE,UI.ui,2)
-	UI.text(m,Vector2(960,925),pb.lobby_error if pb.lobby_error!="" else "YOUR PLAYBOUND NAME IS VISIBLE TO PLAYERS IN THIS GAME",24,UI.DIM,UI.ui,2)
-	m._hint("%s SELECT     %s BACK     LEFT / RIGHT: PLAYER PAGES" % [m._a(),m._b()])
+		UI.button(m, Rect2(150, 580 + (i - first) * 70, 860, 60), label, browser_index == i + buttons, m.frame)
+	if browser_rows.is_empty():
+		UI.text(m, Vector2(580, 620), "NO OPEN ROOMS - CREATE ONE OR QUICK MATCH", 26, UI.DIM, UI.ui, 3)
+	player_page = clampi(player_page, 0, maxi(0, (pb.lobby_players.size() - 1) / 10))
+	for i in range(player_page * 10, mini(player_page * 10 + 10, pb.lobby_players.size())):
+		var player: Dictionary = pb.lobby_players[i]
+		UI.text(m, Vector2(1450, 290 + (i % 10) * 52), str(player.name).left(24).to_upper() + "  -  " + str(player.status).to_upper(), 25, Color.WHITE, UI.ui, 2)
+	var about := {"QUICK MATCH": "PLAY SOMEONE RANDOM NEAR YOUR RATING - RANKED",
+		"CREATE ROOM": "OPEN A PUBLIC ROOM AND SET UP YOUR MATCH WHILE YOU WAIT",
+		"LEADERBOARD": "TOP PLAYERS BY RATING FROM ONLINE MATCHES"}
+	var note: String = about.get(BROWSER_BUTTONS[browser_index] if browser_index < buttons else "", "")
+	UI.text(m, Vector2(960, 925), pb.lobby_error if pb.lobby_error != "" else (note if note != "" else "YOUR PLAYBOUND NAME IS VISIBLE TO PLAYERS IN THIS GAME"), 24, UI.DIM, UI.ui, 2)
+	m._hint("%s SELECT     %s BACK     LEFT / RIGHT: PLAYER PAGES" % [m._a(), m._b()])
 
 
 # --- PlayBound sign-in -----------------------------------------------------------
@@ -356,7 +444,7 @@ func friends_input() -> void:
 	if m._back_pressed():
 		Sfx.play("menu_back")
 		# Back from inviting while hosting returns to the room.
-		m._go(m.Screen.ONLINE_WAIT if Online.current != null else m.Screen.ONLINE)
+		m._go(_room_screen())
 		return
 	if m._confirm_device() != -1 and not list.is_empty():
 		var friend: Dictionary = list[clampi(friends_index, 0, list.size() - 1)]
@@ -382,8 +470,15 @@ func invite(friend: Dictionary) -> void:
 		m.toast_msg(Online.last_error)
 	else:
 		m.toast_msg("INVITED %s - WAITING FOR THEM TO JOIN" % friend.display_name)
-	lobby_row = 0
-	m._go(m.Screen.ONLINE_WAIT)
+	_enter_lobby()
+
+
+## Where to return to when we have a room open: the setup for the host,
+## the connecting screen for a guest.
+func _room_screen() -> int:
+	if Online.current == null:
+		return m.Screen.ONLINE
+	return m.Screen.ONLINE_LOBBY if Online.current.is_host else m.Screen.ONLINE_WAIT
 
 
 ## An invite pop-up shows over any menu (never mid-match).
@@ -413,6 +508,7 @@ func invite_input() -> void:
 func wait_input() -> void:
 	_advertise_tick()
 	if m._back_pressed():
+		_leave_quick()
 		Online.close()
 		m._go(m.Screen.ONLINE)
 		return
@@ -440,7 +536,8 @@ func wait_input() -> void:
 
 func _enter_lobby() -> void:
 	var o := om()
-	lobby_row = 0
+	# lobby_row: 0 while the host waits for someone to join, 1 once they have.
+	lobby_row = 0 if o.state == OnlineMatch.State.CONNECTING else 1
 	lobby_phase = "pick"
 	p1_locked = false
 	partner_locked = false
@@ -453,6 +550,7 @@ func _enter_lobby() -> void:
 
 
 func _fail(reason: String) -> void:
+	_leave_quick()
 	Sfx.play("disconnect")
 	m.toast_msg(reason)
 	Online.close()
@@ -470,9 +568,21 @@ func lobby_input() -> void:
 		m._go(m.Screen.ONLINE)
 		return
 	_advertise_tick()
+	_quick_tick()
 	o.poll({})
 	if o.state == OnlineMatch.State.FAILED:
 		_fail(o.failure)
+		return
+	# Someone joined while we were setting up.
+	if o.state == OnlineMatch.State.LOBBY and lobby_row == 0:
+		lobby_row = 1
+		Sfx.play("connect")
+		m.toast_msg("%s JOINED" % o.remote_name)
+	if o.is_host and o.state == OnlineMatch.State.CONNECTING and Online.room_code != "" and not quick \
+			and Online.signed_in() and Controls.menu_pressed("slap") != -1:
+		friends_index = 0
+		Online.playbound.refresh_friends_now()
+		m._go(m.Screen.ONLINE_FRIENDS)
 		return
 	if o.state == OnlineMatch.State.PLAYING:
 		lan_ad.stop()
@@ -508,6 +618,7 @@ func lobby_input() -> void:
 				elif Controls.pressed(0, "b") or Controls.menu_key("back"):
 					Sfx.play("menu_back")
 					lan_ad.stop()
+					_leave_quick()
 					Online.close()
 					m._go(m.Screen.ONLINE)
 					return
@@ -568,6 +679,8 @@ func lobby_input() -> void:
 				if o.can_start():
 					Sfx.play("menu_confirm")
 					o.start()
+				elif o.state == OnlineMatch.State.CONNECTING:
+					m.toast_msg("WAITING FOR A PLAYER TO JOIN")
 				else:
 					m.toast_msg("WAITING FOR %s TO PICK" % o.remote_name)
 			elif m._back_pressed():
@@ -826,7 +939,7 @@ func draw_wait() -> void:
 	var o := om()
 	var hosting: bool = o != null and o.is_host
 	var dots := ".".repeat(1 + (m.frame / 20) % 3)
-	UI.text(ci, Vector2(960, 260), ("WAITING FOR A PLAYER" if hosting else "CONNECTING") + dots, 80, UI.YELLOW,
+	UI.text(ci, Vector2(960, 260), ("FINDING AN OPPONENT" if searching else ("WAITING FOR A PLAYER" if hosting else "CONNECTING")) + dots, 80, UI.YELLOW,
 		UI.display, 7, HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)
 	if hosting and Online.room_code != "":
 		UI.text(ci, Vector2(960, 390), "PUBLIC ROOM", 34, Color.WHITE, UI.ui, 4)
@@ -918,6 +1031,31 @@ func draw_invite() -> void:
 	UI.text(ci, Vector2(960, 620), "%s JOIN     %s NOT NOW" % [m._a(), m._b()], 36, UI.CYAN, UI.ui, 4)
 
 
+## The empty side of the setup while the host waits for someone to join.
+func _draw_waiting_panel(o: OnlineMatch) -> void:
+	var panel := Rect2(Vector2(1470, 330), Vector2(420, 420))
+	UI.slant_panel(m, panel, Color(0.07, 0.03, 0.15, 0.9), UI.P2, 24, 4)
+	var dots := ".".repeat(1 + (m.frame / 20) % 3)
+	var lines := []
+	if quick:
+		UI.text(m, Vector2(1680, 400), "FINDING AN", 40, UI.P2, UI.display, 5)
+		UI.text(m, Vector2(1680, 450), "OPPONENT" + dots, 40, UI.P2, UI.display, 5)
+		lines = ["RANKED QUICK MATCH", "SET UP WHILE YOU WAIT"]
+	else:
+		UI.text(m, Vector2(1680, 400), "WAITING FOR", 40, UI.P2, UI.display, 5)
+		UI.text(m, Vector2(1680, 450), "A PLAYER" + dots, 40, UI.P2, UI.display, 5)
+		if Online.room_code != "":
+			lines = ["%s'S ROOM" % Online.display_name().left(16), "OPEN IN THE ONLINE LOBBY"]
+			if Online.signed_in():
+				lines.append("%s: INVITE A FRIEND" % Controls.label(0, "slap"))
+		else:
+			lines = ["ON YOUR NETWORK AS", "%s'S ROOM" % Online.display_name().left(16), "OR JOIN BY ADDRESS:"]
+			for a in UdpTransport.local_addresses().slice(0, 2):
+				lines.append("%s:%d" % [a, Settings.host_port])
+	for i in lines.size():
+		UI.text(m, Vector2(1680, 530 + i * 40), lines[i], 24, Color.WHITE, UI.ui, 3)
+
+
 func draw_lobby() -> void:
 	var o := om()
 	if o == null:
@@ -975,6 +1113,8 @@ func draw_lobby() -> void:
 	if lobby_phase == "difficulty":
 		UI.button(m, Rect2(Vector2(660, 720), Vector2(600, 90)), "<  CPU %s  >" % m.DIFFICULTIES[o.difficulty].to_upper(),
 			true, m.frame, 42)
+	if o.state == OnlineMatch.State.CONNECTING:
+		_draw_waiting_panel(o)
 	var hint := ""
 	match lobby_phase:
 		"pick":
@@ -1004,6 +1144,10 @@ func draw_results_menu() -> void:
 	var ci = m
 	if m.screen_ticks <= 40:
 		return
+	if Mixtape.rating_ready:
+		var change := Mixtape.rating_change
+		UI.text(ci, Vector2(960, 630), "RATING  %s%d" % ["+" if change >= 0 else "", change], 40,
+			UI.YELLOW if change >= 0 else UI.P1, UI.display, 5)
 	for i in ONLINE_RESULTS.size():
 		UI.button(ci, Rect2(Vector2(760, 660 + i * 84), Vector2(400, 68)), ONLINE_RESULTS[i],
 			i == m.result_index, m.frame, 28)
@@ -1206,3 +1350,61 @@ func draw_add_friend() -> void:
 		m._hint("TYPE A PLAYBOUND NAME (3+ LETTERS), ENTER TO SEARCH, ESC TO CANCEL")
 	else:
 		m._hint("%s ADD / ACCEPT / SEARCH     %s BACK     SEARCHING NEEDS A KEYBOARD" % [m._a(), m._b()])
+
+
+# --- Leaderboard ------------------------------------------------------------------------
+
+func open_leaderboard() -> void:
+	leaderboard_index = 0
+	Online.playbound.leaderboard_top = []
+	Online.playbound.leaderboard_me = {}
+	Online.playbound.refresh_leaderboard()
+	m._go(m.Screen.ONLINE_LEADERBOARD)
+
+
+func leaderboard_input() -> void:
+	var n := Controls.menu_nudged()
+	var rows: int = Online.playbound.leaderboard_top.size()
+	if n.y != 0 and rows > 0:
+		leaderboard_index = clampi(leaderboard_index + n.y, 0, rows - 1)
+	if m._back_pressed():
+		Sfx.play("menu_back")
+		m._go(m.Screen.ONLINE_ROOM)
+	elif m._confirm_device() != -1:
+		Online.playbound.refresh_leaderboard()
+
+
+func draw_leaderboard() -> void:
+	UI.outrun_background(m, m.SCREEN, m.frame / 60.0, 0.5)
+	UI.text(m, Vector2(960, 130), "LEADERBOARD", 90, UI.YELLOW, UI.display, 6)
+	var pb = Online.playbound
+	var top: Array = pb.leaderboard_top
+	var mine := str(pb.leaderboard_me.get("userId", ""))
+	var header := Rect2(Vector2(360, 190), Vector2(1200, 44))
+	for col in [["RANK", 420, HORIZONTAL_ALIGNMENT_LEFT], ["PLAYER", 560, HORIZONTAL_ALIGNMENT_LEFT],
+			["RATING", 1250, HORIZONTAL_ALIGNMENT_RIGHT], ["W - L", 1500, HORIZONTAL_ALIGNMENT_RIGHT]]:
+		UI.text(m, Vector2(col[1], header.position.y + 32), col[0], 26, UI.CYAN, UI.ui, 3, col[2])
+	if top.is_empty():
+		var msg: String = pb.leaderboard_error if pb.leaderboard_error != "" else "NO RANKED MATCHES YET - PLAY A QUICK MATCH"
+		UI.text(m, Vector2(960, 480), msg, 32, UI.DIM, UI.ui, 3)
+	const ROWS := 11
+	var first := clampi(leaderboard_index - ROWS / 2, 0, maxi(0, top.size() - ROWS))
+	for row in mini(ROWS, top.size() - first):
+		var e: Dictionary = top[first + row]
+		var y := 250 + row * 58
+		var me: bool = str(e.get("userId", "")) == mine
+		var r := Rect2(Vector2(360, y), Vector2(1200, 50))
+		m.draw_rect(r, Color(UI.PINK, 0.35) if me else Color(0.07, 0.03, 0.15, 0.7))
+		if first + row == leaderboard_index:
+			m.draw_rect(r, UI.CYAN, false, 3)
+		var col := UI.YELLOW if int(e.rank) <= 3 else Color.WHITE
+		UI.text(m, Vector2(420, y + 36), "#%d" % int(e.rank), 30, col, UI.display, 4, HORIZONTAL_ALIGNMENT_LEFT)
+		UI.text(m, Vector2(560, y + 36), str(e.name).to_upper().left(22), 30, col, UI.display, 4, HORIZONTAL_ALIGNMENT_LEFT)
+		UI.text(m, Vector2(1250, y + 36), str(int(e.rating)), 30, col, UI.display, 4, HORIZONTAL_ALIGNMENT_RIGHT)
+		UI.text(m, Vector2(1500, y + 36), "%d - %d" % [int(e.wins), int(e.losses)], 28, Color.WHITE, UI.ui, 3, HORIZONTAL_ALIGNMENT_RIGHT)
+	var you := "YOU: UNRANKED - PLAY A RANKED ONLINE MATCH TO GET A RATING"
+	if not pb.leaderboard_me.is_empty():
+		var me: Dictionary = pb.leaderboard_me
+		you = "YOU:  #%d     RATING %d     %d WINS  -  %d LOSSES" % [int(me.rank), int(me.rating), int(me.wins), int(me.losses)]
+	UI.text(m, Vector2(960, 930), you, 30, UI.CYAN, UI.ui, 3)
+	m._hint("%s REFRESH     %s BACK     EVERY ONLINE MATCH BETWEEN SIGNED-IN PLAYERS COUNTS" % [m._a(), m._b()])

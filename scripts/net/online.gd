@@ -102,12 +102,12 @@ func join(address: String, lag_ms := 0, loss := 0.0) -> void:
 
 
 ## PlayBound Connect rooms (no ports, works across the internet).
-func host_room() -> void:
+func host_room(public := true) -> void:
 	last_error = ""
 	if signed_in() and Mixtape.catalog_ready() and not Mixtape.valid_deck():
 		last_error = "SAVE SIX VALID TAPES IN MIXTAPES BEFORE ONLINE PLAY"
 		return
-	await playbound.host_room()
+	await playbound.host_room(public)
 
 
 func join_room(code: String) -> void:

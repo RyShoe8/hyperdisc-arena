@@ -314,6 +314,34 @@ func respond_to_invite(invite_id: String, accept: bool) -> void:
 		{"action": "accept" if accept else "decline"})
 
 
+# --- Ranked: leaderboard and quick match ---------------------------------------------
+
+## The leaderboard: top players [{rank, name, rating, wins, losses, userId}]
+## and our own row (empty until we've played a ranked match).
+var leaderboard_top: Array = []
+var leaderboard_me: Dictionary = {}
+var leaderboard_error := ""
+
+
+func refresh_leaderboard() -> void:
+	leaderboard_error = ""
+	var res: Dictionary = await api.call_api(HTTPClient.METHOD_GET, "/api/game-ranked/hyperdisc-arena")
+	if not res._ok:
+		leaderboard_error = str(res.get("error", "LEADERBOARD UNAVAILABLE")).to_upper()
+		return
+	leaderboard_top = res.get("top", [])
+	leaderboard_me = res.get("me", {}) if res.get("me") is Dictionary else {}
+	friends_changed.emit()
+
+
+## Quick match: action queue {version} -> {joinCode} or {host}; room
+## {joinCode}; poll -> {status}; cancel.
+func matchmaking(action: String, body := {}) -> Dictionary:
+	var payload: Dictionary = body.duplicate()
+	payload["action"] = action
+	return await api.call_api(HTTPClient.METHOD_POST, "/api/game-matchmaking/hyperdisc-arena", payload)
+
+
 # --- Adding friends --------------------------------------------------------------
 
 ## Friend requests sent to us: {id (the request), user_id, name}.
@@ -443,13 +471,15 @@ func _session_expired() -> void:
 # --- Connect rooms -----------------------------------------------------------------
 
 ## Opens a room; match_ready fires with a WebRTC transport waiting for a guest.
-func host_room() -> void:
+## Opens a room. Public rooms are listed in the lobby; private ones (quick
+## match) are only reachable by their code.
+func host_room(public := true) -> void:
 	var res: Dictionary = await api.call_api(HTTPClient.METHOD_POST, "/api/multiplayer/%s/sessions" % GAME_SLUG,
 		{"gameVersion": build_id, "maxPlayers": 2}, false)
 	if not res._ok:
 		error.emit(str(res.get("error", "COULDN'T CREATE A ROOM")).to_upper())
 		return
-	_ready_transport(res, "host")
+	_ready_transport(res, "host", public)
 
 
 func join_room(code: String) -> void:
@@ -465,12 +495,12 @@ func join_room(code: String) -> void:
 	_ready_transport(res, "join")
 
 
-func _ready_transport(info: Dictionary, as_role: String) -> void:
+func _ready_transport(info: Dictionary, as_role: String, public := true) -> void:
 	var t := WebRtcTransport.new()
 	if t.start(api, info, "host" if as_role == "host" else "client") != OK:
 		error.emit(t.failure)
 		return
-	if as_role == "host" and is_signed_in():
+	if as_role == "host" and public and is_signed_in():
 		lobby_room = {"sessionId": str(info.sessionId), "hostToken": str(info.hostToken)}
 		_next_lobby_pulse_ms = 0
 	match_ready.emit({"role": as_role, "transport": t, "opponent": {}, "room_code": str(info.get("joinCode", ""))})

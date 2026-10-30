@@ -112,8 +112,14 @@ func poll(local_input: Dictionary) -> Array[Dictionary]:
 
 # --- Lobby actions (called by the menus) ------------------------------------
 
+## Picks can change in the lobby, and the host can set up while still
+## waiting for someone to join (their picks go out when the guest arrives).
+func _editable() -> bool:
+	return not _start_sent and (state == State.LOBBY or (is_host and state == State.CONNECTING))
+
+
 func set_pick(character: int, locked: bool) -> void:
-	if _start_sent or state != State.LOBBY:
+	if not _editable():
 		return
 	local_pick = character
 	local_locked = locked
@@ -121,7 +127,7 @@ func set_pick(character: int, locked: bool) -> void:
 
 
 func set_court(index: int) -> void:
-	if _start_sent or state != State.LOBBY:
+	if not _editable():
 		return
 	court = index
 	_send_pick()
@@ -300,13 +306,13 @@ func _fail(reason: String) -> void:
 
 ## Host only: the CPU partners' difficulty.
 func set_difficulty(index: int) -> void:
-	if is_host and state == State.LOBBY and not _start_sent:
+	if is_host and _editable():
 		difficulty = index
 		_send_pick()
 
 
 func configure_team(format_doubles: bool, partner: int, human: bool) -> void:
-	if state != State.LOBBY or _start_sent:
+	if not _editable():
 		return
 	if is_host:
 		doubles = format_doubles

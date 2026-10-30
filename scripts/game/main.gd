@@ -35,7 +35,7 @@ const COURT_NOTES := {
 
 enum Screen { TITLE, MAIN, SELECT, COURT, VS, MATCH, PAUSED, OPTIONS, RESULTS,
 	ONLINE, ONLINE_WAIT, ONLINE_JOIN, ONLINE_LOBBY, ONLINE_SIGNIN, ONLINE_FRIENDS, ONLINE_ROOM, MIXTAPE, TUTORIAL, SETUP, STORY_MENU, TRAINING, DOUBLES_GUIDE, LAN_BROWSER,
-	ONLINE_ADD_FRIEND }
+	ONLINE_ADD_FRIEND, ONLINE_LEADERBOARD }
 
 var balance: Dictionary
 var sim: MatchSim
@@ -216,6 +216,10 @@ func _read_args() -> void:
 					net.open_lan()
 				elif kv.size() > 1 and kv[1] == "add_friend":
 					net.open_add_friend()
+				elif kv.size() > 1 and kv[1] == "lobby":
+					net.open_browser()
+				elif kv.size() > 1 and kv[1] == "leaderboard":
+					net.open_leaderboard()
 	if demo:
 		_start_match()
 	if tutorial_lesson >= 0:
@@ -319,6 +323,8 @@ func _physics_process(_delta: float) -> void:
 			net.lan_input()
 		Screen.ONLINE_ADD_FRIEND:
 			net.add_friend_input()
+		Screen.ONLINE_LEADERBOARD:
+			net.leaderboard_input()
 	queue_redraw()
 
 
@@ -1065,6 +1071,8 @@ func _draw() -> void:
 			net.draw_lan()
 		Screen.ONLINE_ADD_FRIEND:
 			net.draw_add_friend()
+		Screen.ONLINE_LEADERBOARD:
+			net.draw_leaderboard()
 	if net.invite_modal_active():
 		net.draw_invite()
 	_draw_toast()

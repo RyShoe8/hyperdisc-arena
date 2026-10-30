@@ -15,6 +15,9 @@ var active_match := ""
 var match_info := {}
 var dub_candidates: Array = []
 var music_volume := 0.9
+## Our rating change from the last ranked match, once both results agree.
+var rating_change := 0
+var rating_ready := false
 var _player: AudioStreamPlayer
 var _playlist: Array = []
 var _index := 0
@@ -177,7 +180,11 @@ func begin_match(o) -> void:
 	match_info = {}
 	dub_candidates = []
 	_set_playlist(deck.duplicate())
-	if not Online.signed_in() or active_match == "" or not valid_deck() or not "session_id" in o.transport:
+	# Every signed-in online match registers (it counts for the leaderboard);
+	# without a valid deck there is just nothing to dub.
+	rating_change = 0
+	rating_ready = false
+	if not Online.signed_in() or active_match == "" or not "session_id" in o.transport:
 		active_match = ""
 		return
 	var res: Dictionary = await Online.api.call_api(HTTPClient.METHOD_POST, "/api/mixtape/match", {
@@ -222,6 +229,10 @@ func finish_match(o) -> void:
 			return
 		if res.get("winner", "") != "":
 			match_info = res
+			var change = res.get("ratingChange", null)
+			if change is Dictionary and change.has(_account):
+				rating_change = int(change[_account])
+				rating_ready = true
 			if str(res.winner) == _account:
 				var loser := str(players.get("client" if o.sim.winner == 0 else "host", ""))
 				dub_candidates = res.get("decks", {}).get(loser, [])
