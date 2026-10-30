@@ -24,7 +24,13 @@ var m  # main.gd
 var menu_index := 0
 var typing := {}        # {field, value} while a text field is being edited
 var partner_cpu: CpuPlayer
-var lobby_row := 0      # cursor in the room setup's editable rows
+var lobby_row := 0
+## The room setup follows the local match select: "pick" (characters), "cpu"
+## (our CPU partner's character), then the host's "difficulty" and "court",
+## or the guest's "wait".
+var lobby_phase := "pick"
+var p1_locked := false
+var partner_locked := false
 ## Where to go once PlayBound sign-in finishes: "browse" or "add_friend".
 var after_sign_in := ""
 ## LAN: finds rooms while browsing; answers for our room while hosting.
@@ -435,6 +441,9 @@ func wait_input() -> void:
 func _enter_lobby() -> void:
 	var o := om()
 	lobby_row = 0
+	lobby_phase = "pick"
+	p1_locked = false
+	partner_locked = false
 	announced_rematch = false
 	if bot:
 		o.set_pick(m.pick[o.local_side], false)
@@ -472,94 +481,126 @@ func lobby_input() -> void:
 	if bot:
 		_bot_lobby(o)
 		return
-	var rows := lobby_rows(o)
-	var editable := []
-	for i in rows.size():
-		if rows[i].edit:
-			editable.append(i)
-	lobby_row = clampi(lobby_row, 0, editable.size() - 1)
-	var row: Dictionary = rows[editable[lobby_row]]
-	var n := Controls.menu_nudged()
-	if n.y != 0:
-		lobby_row = posmod(lobby_row + n.y, editable.size())
-		Sfx.play("menu_move")
-	# A second local player joins as partner with START, like the VS setup.
-	if o.doubles and Controls.pressed(1, "start"):
-		o.configure_team(o.doubles, o.local_partner_pick, not o.local_partner_human)
-	if n.x != 0:
-		var count: int = m.balance.characters.size()
-		match row.id:
-			"format":
+	# The host changed the format, or something unlocked us: pick again.
+	if lobby_phase == "wait" and not o.local_locked:
+		lobby_phase = "pick"
+		p1_locked = false
+		partner_locked = false
+	var count: int = m.balance.characters.size()
+	match lobby_phase:
+		"pick":
+			if o.is_host and Controls.menu_pressed("utility") != -1 and not p1_locked:
 				o.configure_team(not o.doubles, o.local_partner_pick, o.local_partner_human)
-			"pick":
-				o.set_pick(posmod(o.local_pick + n.x, count), false)
-			"partner":
-				o.configure_team(o.doubles, posmod(o.local_partner_pick + n.x, count), o.local_partner_human)
-			"difficulty":
-				o.set_difficulty(posmod(o.difficulty + n.x, m.DIFFICULTIES.size()))
-			"court":
-				o.set_court(posmod(o.court + n.x, m.balance.courts.size()))
-		Sfx.play("menu_move")
-	if row.id == "partner" and Controls.menu_pressed("utility") != -1:
-		o.configure_team(o.doubles, o.local_partner_pick, not o.local_partner_human)
-		Sfx.play("menu_move")
-	if m._confirm_device() != -1 and row.id == "go":
-		if o.is_host:
-			o.set_pick(o.local_pick, true)
-			if o.can_start():
+				Sfx.play("menu_move")
+			# A second player on this machine joins as partner with START.
+			if o.doubles and Controls.pressed(1, "start"):
+				o.configure_team(o.doubles, o.local_partner_pick, not o.local_partner_human)
+				partner_locked = false
 				Sfx.play("menu_confirm")
-				o.start()
-			else:
-				m.toast_msg("WAITING FOR %s TO BE READY" % o.remote_name)
-		else:
-			o.set_pick(o.local_pick, not o.local_locked)
-			Sfx.play("menu_confirm" if o.local_locked else "menu_back")
-	elif m._back_pressed():
-		if o.local_locked and not o.is_host:
-			o.set_pick(o.local_pick, false)
-			Sfx.play("menu_back")
-		else:
-			Sfx.play("menu_back")
-			lan_ad.stop()
-			Online.close()
-			m._go(m.Screen.ONLINE)
+			if not p1_locked:
+				var n := Controls.nudged(0)
+				if n != Vector2i.ZERO:
+					o.set_pick(m._grid_move(o.local_pick, n), false)
+					Sfx.play("menu_move")
+				if Controls.pressed(0, "a") or Controls.menu_key("confirm"):
+					p1_locked = true
+					Sfx.play("menu_confirm")
+				elif Controls.pressed(0, "b") or Controls.menu_key("back"):
+					Sfx.play("menu_back")
+					lan_ad.stop()
+					Online.close()
+					m._go(m.Screen.ONLINE)
+					return
+			elif Controls.pressed(0, "b") or Controls.menu_key("back"):
+				p1_locked = false
+				Sfx.play("menu_back")
+			if o.doubles and o.local_partner_human:
+				if not partner_locked:
+					var n := Controls.nudged(1)
+					if n != Vector2i.ZERO:
+						o.configure_team(o.doubles, m._grid_move(o.local_partner_pick, n), true)
+						Sfx.play("menu_move", 1.1)
+					if Controls.pressed(1, "a"):
+						partner_locked = true
+						Sfx.play("menu_confirm")
+				elif Controls.pressed(1, "b"):
+					partner_locked = false
+			var partner_done: bool = not o.doubles or (o.local_partner_human and partner_locked)
+			if p1_locked and partner_done:
+				_lobby_done(o)
+			elif p1_locked and o.doubles and not o.local_partner_human:
+				lobby_phase = "cpu"
+		"cpu":
+			var n := Controls.menu_nudged()
+			if n != Vector2i.ZERO:
+				o.configure_team(o.doubles, m._grid_move(o.local_partner_pick, n), false)
+				Sfx.play("menu_move")
+			if m._confirm_device() != -1:
+				Sfx.play("menu_confirm")
+				_lobby_done(o)
+			elif m._back_pressed():
+				Sfx.play("menu_back")
+				lobby_phase = "pick"
+				p1_locked = false
+		"wait":
+			if m._back_pressed():
+				Sfx.play("menu_back")
+				o.set_pick(o.local_pick, false)
+				lobby_phase = "pick"
+				p1_locked = false
+		"difficulty":
+			var n := Controls.menu_nudged()
+			if n.x != 0:
+				o.set_difficulty(posmod(o.difficulty + n.x, m.DIFFICULTIES.size()))
+				Sfx.play("menu_move")
+			if m._confirm_device() != -1:
+				Sfx.play("menu_confirm")
+				lobby_phase = "court"
+			elif m._back_pressed():
+				Sfx.play("menu_back")
+				_lobby_unlock(o)
+		"court":
+			var n := Controls.menu_nudged()
+			if n.x != 0:
+				o.set_court(posmod(o.court + n.x, m.balance.courts.size()))
+				Sfx.play("menu_move")
+			if m._confirm_device() != -1:
+				if o.can_start():
+					Sfx.play("menu_confirm")
+					o.start()
+				else:
+					m.toast_msg("WAITING FOR %s TO PICK" % o.remote_name)
+			elif m._back_pressed():
+				Sfx.play("menu_back")
+				if _room_has_cpu(o):
+					lobby_phase = "difficulty"
+				else:
+					_lobby_unlock(o)
 
 
-## The room setup, laid out like the VS match setup: format, both teams,
-## CPU difficulty, court, then start. Each row: {id, label, edit}; the
-## host sets the shared rows and each player sets their own team.
-func lobby_rows(o: OnlineMatch) -> Array:
-	var chars: Array = m.balance.characters
-	var host_side: bool = o.is_host
-	var rows := []
-	rows.append({"id": "format", "edit": o.is_host,
-		"label": "FORMAT:  < %s >" % ("DOUBLES 2v2" if o.doubles else "SINGLES 1v1")})
-	for team in [0, 1]:
-		var mine: bool = (team == 0) == host_side
-		var name: String = o.local_name if mine else o.remote_name
-		var pick: int = o.local_pick if mine else o.remote_pick
-		var locked: bool = o.local_locked if mine else o.remote_locked
-		var label := "TEAM %s   %s   < %s >" % ["A" if team == 0 else "B", name.left(14),
-			chars[pick].name if pick >= 0 else "PICKING..."]
-		if locked:
-			label += "   READY"
-		rows.append({"id": "pick" if mine else "", "edit": mine, "label": label})
-		if o.doubles:
-			var partner: int = o.local_partner_pick if mine else o.remote_partner_pick
-			var human: bool = o.local_partner_human if mine else o.remote_partner_human
-			rows.append({"id": "partner" if mine else "", "edit": mine,
-				"label": "TEAM %s   %s   < %s >" % ["A" if team == 0 else "B",
-					("%s P2" % name.left(10)) if human else "CPU", chars[partner].name]})
-	rows.append({"id": "difficulty", "edit": o.is_host,
-		"label": "CPU DIFFICULTY:  < %s >" % m.DIFFICULTIES[o.difficulty].to_upper()})
-	rows.append({"id": "court", "edit": o.is_host, "label": "COURT:  < %s >" % m.balance.courts[o.court].name})
-	var go := ""
-	if o.is_host:
-		go = "START MATCH" if o.remote_locked else "WAITING FOR %s..." % o.remote_name.left(14)
+## Our picks are made: lock them in. The host goes on to difficulty (when a
+## CPU plays) and the court; the guest waits for the host to start.
+func _lobby_done(o: OnlineMatch) -> void:
+	o.set_pick(o.local_pick, true)
+	if not o.is_host:
+		lobby_phase = "wait"
+	elif _room_has_cpu(o):
+		lobby_phase = "difficulty"
 	else:
-		go = "READY!  WAITING FOR THE HOST" if o.local_locked else "READY"
-	rows.append({"id": "go", "edit": true, "label": go})
-	return rows
+		lobby_phase = "court"
+
+
+func _lobby_unlock(o: OnlineMatch) -> void:
+	o.set_pick(o.local_pick, false)
+	lobby_phase = "pick"
+	p1_locked = false
+	partner_locked = false
+
+
+func _room_has_cpu(o: OnlineMatch) -> bool:
+	return o.doubles and (not o.local_partner_human or not o.remote_partner_human)
+
+
 
 
 func _bot_lobby(o: OnlineMatch) -> void:
@@ -878,28 +919,75 @@ func draw_invite() -> void:
 
 
 func draw_lobby() -> void:
-	var ci = m
 	var o := om()
 	if o == null:
 		return
-	UI.outrun_background(ci, m.SCREEN, m.frame / 60.0, 0.25)
 	var where := "LAN" if Online.room_code == "" else "ONLINE"
-	UI.text(ci, Vector2(960, 130), "%s %s MATCH SETUP" % [where, "DOUBLES" if o.doubles else "SINGLES"], 72,
-		UI.YELLOW, UI.display, 5)
-	var rows := lobby_rows(o)
-	var editable := []
-	for i in rows.size():
-		if rows[i].edit:
-			editable.append(i)
-	var selected: int = editable[clampi(lobby_row, 0, editable.size() - 1)]
-	for i in rows.size():
-		UI.button(ci, Rect2(360, 220 + i * 82, 1200, 68), rows[i].label, i == selected, m.frame, 30, rows[i].edit)
-	var help := "UP/DOWN: ROW   LEFT/RIGHT: CHANGE"
-	if o.doubles:
-		help += "   %s: CPU / PLAYER 2 PARTNER   P2 START: JOIN" % Controls.label(0, "utility")
-	UI.text(ci, Vector2(960, 940), help, 25, UI.CYAN, UI.ui, 2)
-	var shared := "" if o.is_host else "     THE HOST SETS FORMAT, DIFFICULTY AND COURT"
-	m._hint("%s %s     %s LEAVE%s" % [m._a(), "START MATCH" if o.is_host else "READY", m._b(), shared])
+	if lobby_phase == "court":
+		m.court = o.court
+		var go := ("%s START MATCH" % m._a()) if o.can_start() else "WAITING FOR %s TO PICK" % o.remote_name
+		m._draw_court_select("LEFT / RIGHT: COURT     %s     %s BACK" % [go, m._b()])
+		return
+	UI.outrun_background(m, m.SCREEN, m.frame / 60.0, 0.55)
+	var title := "SELECT YOUR PLAYER" if not o.doubles else "SELECT YOUR PLAYERS"
+	if lobby_phase == "cpu":
+		title = "SELECT CPU PARTNER"
+	elif lobby_phase == "difficulty":
+		title = "SELECT DIFFICULTY"
+	elif lobby_phase == "wait":
+		title = "WAITING FOR THE HOST"
+	UI.slant_panel(m, Rect2(510, 26, 900, 90), UI.YELLOW, UI.INK, 30, 5)
+	UI.text(m, Vector2(960, 98), title, 60, UI.INK, UI.display, 2)
+	UI.text(m, Vector2(960, 160), "%s  -  %s" % [where, "DOUBLES 2v2" if o.doubles else "SINGLES 1v1"], 30, UI.CYAN, UI.ui, 3)
+	# Slots: 0 and 2 are the host's team, 1 and 3 the guest's.
+	var entries := []
+	for slot in ([0, 2, 1, 3] if o.doubles else [0, 1]):
+		var mine: bool = (slot % 2 == 0) == o.is_host
+		var partner: bool = slot >= 2
+		var index: int
+		var human := true
+		var tag: String
+		var ready: bool = o.local_locked if mine else o.remote_locked
+		if partner:
+			index = o.local_partner_pick if mine else o.remote_partner_pick
+			human = o.local_partner_human if mine else o.remote_partner_human
+			tag = (((o.local_name if mine else o.remote_name).left(5) + " 2") if human else "CPU")
+		else:
+			index = o.local_pick if mine else o.remote_pick
+			tag = (o.local_name if mine else o.remote_name).left(8)
+		if index < 0:
+			continue
+		var choosing: bool = false
+		if mine and not ready:
+			choosing = (not partner and not p1_locked) or (partner and ((human and not partner_locked) or (not human and lobby_phase == "cpu")))
+		entries.append({"slot": slot, "pick": index, "label": tag, "color": m._slot_color(slot), "flash": choosing,
+			"ready": ready})
+	m._draw_select_grid(entries)
+	for e in entries:
+		if o.doubles:
+			m._draw_mini_card(e.slot % 2 == 0, e.slot / 2, e.pick, e.color, e.label, e.ready)
+		else:
+			m.pick[e.slot] = e.pick
+			m._draw_fighter_card(e.slot, m.balance.characters[e.pick], e.pick)
+			UI.text(m, Vector2(240 if e.slot == 0 else 1680, 200), e.label, 44, e.color, UI.display, 5)
+			if e.ready:
+				UI.text(m, Vector2(240 if e.slot == 0 else 1680, 790), "READY!", 56, UI.YELLOW, UI.display, 6)
+	if lobby_phase == "difficulty":
+		UI.button(m, Rect2(Vector2(660, 720), Vector2(600, 90)), "<  CPU %s  >" % m.DIFFICULTIES[o.difficulty].to_upper(),
+			true, m.frame, 42)
+	var hint := ""
+	match lobby_phase:
+		"pick":
+			hint = "STICK: CHOOSE     %s LOCK IN     %s %s" % [m._a(), m._b(), "CHANGE" if p1_locked else "LEAVE"]
+			if o.is_host and not p1_locked:
+				hint += "     %s: SINGLES / DOUBLES" % Controls.label(0, "utility")
+			if o.doubles:
+				hint += "     P2 START: PARTNER JOINS"
+		"wait":
+			hint = "THE HOST PICKS DIFFICULTY AND COURT, THEN STARTS     %s CHANGE PICK" % m._b()
+		_:
+			hint = "%s CONFIRM     %s BACK" % [m._a(), m._b()]
+	m._hint(hint)
 
 
 func draw_leave_menu() -> void:

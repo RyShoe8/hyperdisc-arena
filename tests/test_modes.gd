@@ -100,7 +100,11 @@ func _run() -> void:
 	check(game.net.menu_items().map(func(item): return item[0]) == ["online", "lan", "add_friend"], "multiplayer offers online, LAN and add friend")
 	game.main_index = 1
 	game._open_local_setup(false, [0, 1, -1, -1], game.Screen.MAIN)
-	check(game.screen == game.Screen.SETUP and not game.doubles, "VS opens the singles match setup")
+	check(game.screen == game.Screen.SELECT and not game.doubles and game.setup_phase == "pick", "match setup opens the character select")
+	game._open_local_setup(false, [0, -1, -1, -1], game.Screen.MAIN)
+	check(game._cpu_slots() == [1], "the empty side is a CPU, picked after the players")
+	game._open_local_setup(true, [0, -1, -1, -1], game.Screen.MAIN)
+	check(game._cpu_slots() == [2, 1, 3], "doubles: partner and both opponents start as CPUs")
 	game._open_local_setup(true, [0, -1, 1, -1], game.Screen.MAIN)
 	check(game.doubles and game.slot_controls[0] == 0 and game.slot_controls[2] == 1 and game.slot_controls[1] == -1, "co-op preset places both humans on same team")
 	game._open_local_setup(false, [0, 1, -1, -1], game.Screen.MAIN)

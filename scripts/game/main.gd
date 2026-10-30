@@ -53,7 +53,13 @@ var story_order: Array[int] = []
 var story_menu_index := 0
 var setup_return: int = Screen.MAIN
 var training_index := 0
-var setup_row := 0
+var setup_row := 0      # format screen: 0 singles, 1 doubles
+## Match select (every mode but Story): who has locked in, and what player 1
+## is choosing once the humans have: "pick", "cpu" (CPU characters, one slot
+## at a time) or "difficulty".
+var slot_locked: Array[bool] = [false, false, false, false]
+var setup_phase := "pick"
+var cpu_turn := -1
 var slot_picks: Array[int] = [0, 1, 2, 3]
 # Simulation slots alternate sides: 0/2 = Team A, 1/3 = Team B.
 var slot_controls: Array[int] = [0, -1, -1, -1]
@@ -200,6 +206,12 @@ func _read_args() -> void:
 					"friends": Screen.ONLINE_FRIENDS, "mixtape": Screen.MIXTAPE}
 				if kv.size() > 1 and names.has(kv[1]):
 					_go(names[kv[1]])
+				elif kv.size() > 1 and kv[1] in ["select_doubles", "setup"]:
+					if kv[1] == "setup":
+						setup_return = Screen.MAIN
+						_go(Screen.SETUP)
+					else:
+						_open_local_setup(true, [0, -1, 1, -1], Screen.MAIN)
 				elif kv.size() > 1 and kv[1] == "lan":
 					net.open_lan()
 				elif kv.size() > 1 and kv[1] == "add_friend":
@@ -397,7 +409,9 @@ func _main_input() -> void:
 			story_menu_index = 0 if _load_story() else 1
 			_go(Screen.STORY_MENU)
 		"VS":
-			_open_local_setup(false, [0, 1, -1, -1], Screen.MAIN)
+			setup_row = 0
+			setup_return = Screen.MAIN
+			_go(Screen.SETUP)
 		"MULTIPLAYER":
 			if OS.has_feature("web"):
 				toast_msg("ONLINE AND LAN PLAY NEED THE DESKTOP VERSION")
@@ -431,6 +445,9 @@ func _grid_move(i: int, n: Vector2i) -> int:
 
 
 func _select_input() -> void:
+	if not story:
+		_match_select_input()
+		return
 	if versus:
 		for p in [0, 1]:
 			var n := Controls.nudged(p)
@@ -506,6 +523,13 @@ func _court_input() -> void:
 		Sfx.play("menu_back")
 		picked = [false, false]
 		select_step = 0 if versus else 2
+		if not story:
+			# Back to the last choice made: difficulty, or the players' picks.
+			if _cpu_slots().is_empty():
+				setup_phase = "pick"
+				slot_locked[0] = false
+			else:
+				setup_phase = "difficulty"
 		_go(Screen.SELECT)
 
 
@@ -763,7 +787,7 @@ func _results_input() -> void:
 		"REMATCH":
 			_go(Screen.VS)
 		"CHARACTER SELECT":
-			_go(Screen.SETUP)
+			_open_local_setup(doubles, slot_controls.duplicate(), Screen.MAIN)
 		"MAIN MENU":
 			_go(Screen.MAIN)
 
@@ -1104,6 +1128,9 @@ func _draw_main() -> void:
 
 
 func _draw_select() -> void:
+	if not story:
+		_draw_match_select()
+		return
 	UI.outrun_background(self, SCREEN, frame / 60.0, 0.55)
 	var title := "SELECT YOUR PLAYER"
 	if not versus:
@@ -1158,11 +1185,11 @@ func _draw_select() -> void:
 		_hint("%s CONFIRM     %s BACK" % [_a(), _b()])
 
 
-func _draw_fighter_card(who: int, c: Dictionary) -> void:
+func _draw_fighter_card(who: int, c: Dictionary, index := -1) -> void:
 	var left: bool = who == 0
 	var x := 40.0 if left else 1480.0
 	var col := UI.P1 if left else UI.P2
-	var art: Texture2D = select_art[pick[who]]
+	var art: Texture2D = select_art[pick[who] if index < 0 else index]
 	var bob := sin(frame * 0.06 + who) * 6.0
 	draw_set_transform(Vector2(x + 200, 600 + bob), 0.0, Vector2(1.0 if left else -1.0, 1.0) * 0.76)
 	draw_texture(art, Vector2(-400, -500))
@@ -1181,7 +1208,7 @@ func _draw_fighter_card(who: int, c: Dictionary) -> void:
 			clampf(bars[i][1], 0.08, 1.0), UI.YELLOW if i == 0 else UI.ZONE_5, 8)
 
 
-func _draw_court_select() -> void:
+func _draw_court_select(hint := "") -> void:
 	UI.outrun_background(self, SCREEN, frame / 60.0, 0.55)
 	UI.slant_panel(self, Rect2(610, 26, 700, 90), UI.YELLOW, UI.INK, 30, 5)
 	UI.text(self, Vector2(960, 98), "SELECT COURT", 64, UI.INK, UI.display, 2)
@@ -1201,7 +1228,7 @@ func _draw_court_select() -> void:
 		draw_texture_rect(court_thumbs[i], r, false, Color(1, 1, 1, 1.0 if i == court else 0.45))
 		if i == court:
 			draw_rect(r.grow(3), UI.YELLOW, false, 4)
-	_hint("%s CONFIRM     %s BACK" % [_a(), _b()])
+	_hint(hint if hint != "" else "%s CONFIRM     %s BACK" % [_a(), _b()])
 
 
 func _draw_vs() -> void:
@@ -1530,67 +1557,28 @@ func _setup_slots() -> Array:
 
 
 func _setup_input() -> void:
-	var slots := _setup_slots()
 	var n := Controls.menu_nudged()
-	var rows := slots.size() + 4
-	for controller in range(1, Controls.PLAYERS):
-		if Controls.pressed(controller, "start") and not slots.any(func(slot): return slot_controls[slot] == controller):
-			for slot in slots:
-				if slot_controls[slot] < 0:
-					slot_controls[slot] = controller
-					Sfx.play("menu_confirm")
-					break
-	if n.y != 0:
-		setup_row = posmod(setup_row + n.y, rows)
+	if n.y != 0 or n.x != 0:
+		setup_row = 1 - setup_row
 		Sfx.play("menu_move")
 	if _back_pressed():
+		Sfx.play("menu_back")
 		_go(setup_return)
-		return
-	if setup_row == 0 and n.x != 0:
-		doubles = not doubles
-	elif setup_row > 0 and setup_row <= slots.size():
-		var slot: int = slots[setup_row - 1]
-		if n.x != 0:
-			slot_picks[slot] = posmod(slot_picks[slot] + n.x, balance.characters.size())
-		if Controls.menu_pressed("utility") != -1:
-			var next := slot_controls[slot]
-			for attempt in 5:
-				next = posmod(next + 2, 5) - 1
-				if next == -1 or not slots.any(func(active): return slot_controls[active] == next):
-					break
-			slot_controls[slot] = next
-	elif setup_row == slots.size() + 1 and n.x != 0:
-		difficulty = posmod(difficulty + n.x, DIFFICULTIES.size())
-	elif setup_row == slots.size() + 2 and n.x != 0:
-		court = posmod(court + n.x, balance.courts.size())
-	if _confirm_device() != -1 and setup_row == rows - 1:
-		var humans := 0
-		for slot in slots:
-			humans += int(slot_controls[slot] >= 0)
-		if humans == 0:
-			toast = "ASSIGN AT LEAST ONE PLAYER"
-			toast_ticks = 180
-			return
-		pick = [slot_picks[0], slot_picks[1]]
-		versus = slot_controls[1] >= 0
-		_go(Screen.VS)
+	elif _confirm_device() != -1:
+		Sfx.play("menu_confirm")
+		_open_local_setup(setup_row == 1, [0, -1, -1, -1], Screen.SETUP)
 
 
 func _draw_setup() -> void:
 	UI.outrun_background(self, SCREEN, frame / 60.0, 0.25)
-	UI.text(self, Vector2(960, 130), "DOUBLES MATCH SETUP" if doubles else "SINGLES MATCH SETUP", 76, UI.YELLOW, UI.display, 5)
-	var slots := _setup_slots()
-	var rows: Array = ["FORMAT:  < DOUBLES 2v2 >" if doubles else "FORMAT:  < SINGLES 1v1 >"]
-	for slot in slots:
-		var control := "CPU" if slot_controls[slot] < 0 else "PLAYER %d" % (slot_controls[slot] + 1)
-		rows.append("TEAM %s   %s   < %s >" % ["A" if slot % 2 == 0 else "B", control, balance.characters[slot_picks[slot]].name])
-	rows.append("CPU DIFFICULTY:  < %s >" % DIFFICULTIES[difficulty].to_upper())
-	rows.append("COURT:  < %s >" % balance.courts[court].name)
-	rows.append("START MATCH")
-	for i in rows.size():
-		UI.button(self, Rect2(360, 220 + i * 82, 1200, 68), rows[i], setup_row == i, frame, 30)
-	UI.text(self, Vector2(960, 940), "UP/DOWN: ROW   LEFT/RIGHT: CHANGE   %s: CPU / PLAYER   START: JOIN" % Controls.label(0, "utility"), 25, UI.CYAN, UI.ui, 2)
-	_hint("%s START MATCH     %s BACK" % [_a(), _b()])
+	UI.text(self, Vector2(960, 200), "VS", 110, UI.YELLOW, UI.display, 6)
+	var items := ["SINGLES  1v1", "DOUBLES  2v2"]
+	var notes := ["ONE PLAYER EACH SIDE", "TWO PLAYERS EACH SIDE: ONE DISC, ONE TEAM SCORE"]
+	for i in items.size():
+		UI.button(self, Rect2(560, 420 + i * 110, 800, 80), items[i], setup_row == i, frame, 40)
+	UI.text(self, Vector2(960, 700), notes[setup_row], 28, UI.CYAN, UI.ui, 3)
+	UI.text(self, Vector2(960, 750), "FRIENDS JOIN ON THE NEXT SCREEN; EMPTY SLOTS ARE PLAYED BY THE CPU", 26, Color.WHITE, UI.ui, 3)
+	_hint("%s SELECT     %s BACK" % [_a(), _b()])
 
 
 func _draw_doubles_guide() -> void:
@@ -1609,13 +1597,256 @@ func _draw_doubles_guide() -> void:
 	_hint("%s / %s BACK" % [_a(), _b()])
 
 
+## Opens the match select: the character grid with every slot's card. The
+## given controllers sit in slots 0-3 (-1 = CPU); more players join with
+## START.
 func _open_local_setup(team_match: bool, controllers: Array, return_to: int) -> void:
 	story = false
 	online = false
 	doubles = team_match
 	slot_controls.assign(controllers)
-	setup_row = 1
+	if not doubles:
+		slot_controls[2] = -1
+		slot_controls[3] = -1
+	slot_locked.assign([false, false, false, false])
+	setup_phase = "pick"
+	cpu_turn = -1
 	setup_return = return_to
-	_go(Screen.SETUP)
+	_go(Screen.SELECT)
+
+
+## Slots played by the CPU, in pick order.
+func _cpu_slots() -> Array:
+	return _setup_slots().filter(func(slot): return slot_controls[slot] < 0)
+
+
+## A player's slot, or -1.
+func _slot_of(controller: int) -> int:
+	for slot in _setup_slots():
+		if slot_controls[slot] == controller:
+			return slot
+	return -1
+
+
+func _match_select_input() -> void:
+	var slots := _setup_slots()
+	match setup_phase:
+		"pick":
+			# More players join with START, taking the first CPU slot (the
+			# other side first, then partners).
+			for controller in range(1, Controls.PLAYERS):
+				if Controls.pressed(controller, "start") and _slot_of(controller) < 0:
+					for slot in [1, 2, 3] if doubles else [1]:
+						if slot_controls[slot] < 0:
+							slot_controls[slot] = controller
+							slot_locked[slot] = false
+							Sfx.play("menu_confirm")
+							break
+			for slot in slots:
+				var c: int = slot_controls[slot]
+				if c < 0:
+					continue
+				var confirm: bool = Controls.pressed(c, "a") or (c == 0 and Controls.menu_key("confirm"))
+				var back: bool = Controls.pressed(c, "b") or (c == 0 and Controls.menu_key("back"))
+				if slot_locked[slot]:
+					if back:
+						slot_locked[slot] = false
+						Sfx.play("menu_back")
+					continue
+				var n := Controls.nudged(c)
+				if n != Vector2i.ZERO:
+					slot_picks[slot] = _grid_move(slot_picks[slot], n)
+					Sfx.play("menu_move", 1.0 + slot * 0.05)
+				if confirm:
+					slot_locked[slot] = true
+					Sfx.play("menu_confirm")
+				elif back:
+					Sfx.play("menu_back")
+					if c == 0:
+						_go(setup_return)
+						return
+					slot_controls[slot] = -1  # leave: a CPU takes the slot
+				elif doubles and c != 0 and Controls.pressed(c, "utility"):
+					# Switch teams: into a free slot on the other side.
+					for other in ([1, 3] if slot % 2 == 0 else [0, 2]):
+						if slot_controls[other] < 0:
+							slot_controls[other] = c
+							slot_controls[slot] = -1
+							slot_picks[other] = slot_picks[slot]
+							Sfx.play("menu_move")
+							break
+			var humans := slots.filter(func(slot): return slot_controls[slot] >= 0)
+			if not humans.is_empty() and humans.all(func(slot): return slot_locked[slot]) and screen_ticks > 10:
+				var cpus := _cpu_slots()
+				if cpus.is_empty():
+					_to_court()
+				else:
+					setup_phase = "cpu"
+					cpu_turn = cpus[0]
+		"cpu":
+			var n := Controls.menu_nudged()
+			if n != Vector2i.ZERO:
+				slot_picks[cpu_turn] = _grid_move(slot_picks[cpu_turn], n)
+				Sfx.play("menu_move")
+			var cpus := _cpu_slots()
+			var at := cpus.find(cpu_turn)
+			if _confirm_device() != -1:
+				Sfx.play("menu_confirm")
+				if at + 1 < cpus.size():
+					cpu_turn = cpus[at + 1]
+				else:
+					setup_phase = "difficulty"
+			elif _back_pressed():
+				Sfx.play("menu_back")
+				if at > 0:
+					cpu_turn = cpus[at - 1]
+				else:
+					setup_phase = "pick"
+					slot_locked[_slot_of(0)] = false
+		"difficulty":
+			var n := Controls.menu_nudged()
+			if n.x != 0:
+				difficulty = posmod(difficulty + n.x, DIFFICULTIES.size())
+				Sfx.play("menu_move")
+			if _confirm_device() != -1:
+				Sfx.play("menu_confirm")
+				_to_court()
+			elif _back_pressed():
+				Sfx.play("menu_back")
+				setup_phase = "cpu"
+				cpu_turn = _cpu_slots()[-1]
+
+
+func _to_court() -> void:
+	pick = [slot_picks[0], slot_picks[1]]
+	versus = slot_controls[1] >= 0
+	_go(Screen.COURT)
+
+
+## The character grid with every slot's outline and tag, shared by local and
+## online setup. slots: [{slot, pick, label, color, flash}].
+func _draw_select_grid(slots: Array) -> void:
+	var chars: Array = balance.characters
+	var cell := Vector2(210, 210)
+	var gap := 28
+	var grid_origin := Vector2(960 - cell.x * 1.5 - gap, 230)
+	for i in chars.size():
+		var pos := grid_origin + Vector2((i % 3) * (cell.x + gap), (i / 3) * (cell.y + gap))
+		var r := Rect2(pos, cell)
+		draw_rect(r.grow(4), UI.INK)
+		draw_rect(r, Color("2a1250"))
+		draw_texture_rect_region(portraits[i], r, Rect2(100, 40, 440, 440))
+		UI.text(self, pos + Vector2(cell.x / 2, cell.y - 12), str(chars[i].name).to_upper(), 22,
+			Color.WHITE, UI.ui, 4)
+	# Outlines after every portrait so neighbouring tiles can't cover them;
+	# each slot on a tile gets its own ring and a tag in its own corner.
+	var on_tile := {}
+	for entry in slots:
+		var i: int = entry.pick
+		if i < 0:
+			continue
+		var k: int = on_tile.get(i, 0)
+		on_tile[i] = k + 1
+		var pos := grid_origin + Vector2((i % 3) * (cell.x + gap), (i / 3) * (cell.y + gap))
+		var r := Rect2(pos, cell)
+		if not entry.flash or (frame / 6) % 2 == 0:
+			draw_rect(r.grow(4 + k * 6), entry.color, false, 7)
+		var corner: Vector2 = [Vector2(14, 40), Vector2(cell.x - 14, 40), Vector2(14, 80), Vector2(cell.x - 14, 80)][k % 4]
+		UI.text(self, pos + corner, entry.label, 28, entry.color, UI.display, 4,
+			HORIZONTAL_ALIGNMENT_LEFT if k % 2 == 0 else HORIZONTAL_ALIGNMENT_RIGHT)
+
+
+## A fighter card for doubles: two per side, smaller. row 0 top, 1 bottom.
+func _draw_mini_card(left: bool, row: int, index: int, col: Color, tag: String, ready: bool) -> void:
+	var c: Dictionary = balance.characters[index]
+	var x := 40.0 if left else 1480.0
+	var top := 150.0 + row * 420.0
+	var bob := sin(frame * 0.06 + row + (0 if left else 2)) * 4.0
+	draw_set_transform(Vector2(x + 200, top + 175 + bob), 0.0, Vector2(1.0 if left else -1.0, 1.0) * 0.36)
+	draw_texture(select_art[index], Vector2(-400, -500))
+	draw_set_transform(Vector2.ZERO)
+	var panel := Rect2(Vector2(x, top + 230), Vector2(400, 150))
+	UI.slant_panel(self, panel, Color("120826"), col, 20, 4)
+	UI.text(self, panel.position + Vector2(24, 40), tag, 26, col, UI.display, 4, HORIZONTAL_ALIGNMENT_LEFT)
+	UI.text(self, panel.position + Vector2(220, 40), str(c.name).to_upper(), 30, Color.WHITE, UI.display, 4)
+	var bars := [["SPEED", (float(c.speed) - 0.7) / 0.8], ["POWER", (float(c.power) - 0.6) / 0.85]]
+	for i in bars.size():
+		var y := panel.position.y + 62 + i * 36
+		UI.text(self, Vector2(panel.position.x + 30, y + 20), bars[i][0], 20, Color.WHITE, UI.ui, 3,
+			HORIZONTAL_ALIGNMENT_LEFT)
+		UI.meter(self, Rect2(Vector2(panel.position.x + 150, y + 2), Vector2(220, 20)),
+			clampf(bars[i][1], 0.08, 1.0), UI.YELLOW if i == 0 else UI.ZONE_5, 8)
+	if ready:
+		UI.text(self, Vector2(x + 200, top + 215), "READY!", 40, UI.YELLOW, UI.display, 5)
+
+
+## An empty slot while players pick: a CPU unless someone joins.
+func _draw_open_slot(centre: Vector2, col: Color) -> void:
+	var panel := Rect2(centre - Vector2(190, 70), Vector2(380, 140))
+	UI.slant_panel(self, panel, Color(0.07, 0.03, 0.15, 0.85), col, 20, 4)
+	UI.text(self, centre + Vector2(0, -8), "CPU", 44, col, UI.display, 5)
+	var blink := (frame / 30) % 2 == 0
+	UI.text(self, centre + Vector2(0, 40), "PRESS START TO JOIN" if blink else "PICKED AFTER PLAYERS", 22,
+		Color.WHITE, UI.ui, 3)
+
+
+## Slot colours: team A pink shades, team B cyan shades.
+func _slot_color(slot: int) -> Color:
+	var base := UI.P1 if slot % 2 == 0 else UI.P2
+	return base if slot < 2 else base.lightened(0.45)
+
+
+func _slot_tag(slot: int) -> String:
+	return "CPU" if slot_controls[slot] < 0 else "P%d" % (slot_controls[slot] + 1)
+
+
+func _draw_match_select() -> void:
+	UI.outrun_background(self, SCREEN, frame / 60.0, 0.55)
+	var title := "SELECT YOUR PLAYER" if not doubles else "SELECT YOUR PLAYERS"
+	if setup_phase == "cpu":
+		var team_mate := cpu_turn % 2 == _slot_of(0) % 2
+		title = "SELECT CPU PARTNER" if team_mate else "SELECT CPU OPPONENT"
+	elif setup_phase == "difficulty":
+		title = "SELECT DIFFICULTY"
+	UI.slant_panel(self, Rect2(510, 26, 900, 90), UI.YELLOW, UI.INK, 30, 5)
+	UI.text(self, Vector2(960, 98), title, 60, UI.INK, UI.display, 2)
+	UI.text(self, Vector2(960, 160), "DOUBLES 2v2" if doubles else "SINGLES 1v1", 30, UI.CYAN, UI.ui, 3)
+	var slots := _setup_slots()
+	var grid := []
+	for slot in slots:
+		var choosing: bool = (setup_phase == "pick" and slot_controls[slot] >= 0 and not slot_locked[slot]) \
+			or (setup_phase == "cpu" and slot == cpu_turn)
+		var shown: bool = slot_controls[slot] >= 0 or setup_phase != "pick"
+		if shown:
+			grid.append({"slot": slot, "pick": slot_picks[slot], "label": _slot_tag(slot),
+				"color": _slot_color(slot), "flash": choosing})
+	_draw_select_grid(grid)
+	if doubles:
+		for slot in slots:
+			var cpu_waiting: bool = slot_controls[slot] < 0 and setup_phase == "pick"
+			if cpu_waiting:
+				_draw_open_slot(Vector2(240 if slot % 2 == 0 else 1680, 360 + (slot / 2) * 420), _slot_color(slot))
+				continue
+			_draw_mini_card(slot % 2 == 0, slot / 2, slot_picks[slot], _slot_color(slot), _slot_tag(slot),
+				slot_locked[slot])
+	else:
+		for slot in slots:
+			if slot_controls[slot] < 0 and setup_phase == "pick":
+				_draw_open_slot(Vector2(240 if slot == 0 else 1680, 560), _slot_color(slot))
+				continue
+			pick[slot] = slot_picks[slot]
+			_draw_fighter_card(slot, balance.characters[slot_picks[slot]], slot_picks[slot])
+			if slot_locked[slot]:
+				UI.text(self, Vector2(240 if slot == 0 else 1680, 790), "READY!", 56, UI.YELLOW, UI.display, 6)
+	if setup_phase == "difficulty":
+		UI.button(self, Rect2(Vector2(660, 720), Vector2(600, 90)), "<  CPU %s  >" % DIFFICULTIES[difficulty].to_upper(),
+			true, frame, 42)
+	var open_slots := _cpu_slots().size()
+	if setup_phase == "pick":
+		var join := "     P2-P4: PRESS START TO JOIN" if open_slots > 0 else ""
+		var swap := "     %s: SWITCH TEAM" % Controls.label(1, "utility") if doubles else ""
+		_hint("STICK: CHOOSE     %s LOCK IN     %s BACK%s%s" % [_a(), _b(), join, swap])
+	else:
+		_hint("%s CONFIRM     %s BACK" % [_a(), _b()])
 
 
