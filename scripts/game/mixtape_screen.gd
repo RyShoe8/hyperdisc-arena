@@ -66,7 +66,7 @@ func input() -> void:
 			var website := str(tape.get("website", ""))
 			if website.begins_with("https://"):
 				OS.shell_open(website)
-		if Controls.menu_pressed("start") != -1:
+		if Controls.menu_pad_pressed("start") != -1 or Controls.menu_key("extra"):
 			var spotify := str(tape.get("spotify", ""))
 			if spotify.begins_with("https://"):
 				OS.shell_open(spotify)
@@ -77,7 +77,7 @@ func input() -> void:
 			if url.begins_with("https://"):
 				OS.shell_open(url)
 		return
-	if Controls.menu_pressed("start") != -1 and not dubbing:
+	if (Controls.menu_pad_pressed("start") != -1 or Controls.menu_key("extra")) and not dubbing:
 		busy = true
 		await Mixtape.save_deck(draft)
 		busy = false
@@ -183,4 +183,4 @@ func _draw_jcard(tape: Dictionary) -> void:
 	var code := str(tape.get("discountCode", ""))
 	UI.text(m, Vector2(820, 690), "%s%% OFF  -  %s" % [tape.get("discountPercent", ""), code] if code != "" else "", 28, UI.PINK, null, 0, HORIZONTAL_ALIGNMENT_LEFT)
 	UI.text(m, Vector2(960, 825), "%s VISIT ARTIST STORE    %s CLOSE J-CARD" % [m._a(), m._b()], 26, UI.CYAN)
-	UI.text(m, Vector2(960, 870), "%s WEBSITE   %s SPOTIFY" % [Controls.label(0, "utility"), Controls.label(0, "start")], 22, UI.DIM)
+	UI.text(m, Vector2(960, 870), "%s WEBSITE   %s SPOTIFY" % [Controls.label(0, "utility"), Controls.label(0, "start") if Controls.using_pad[0] else "TAB"], 22, UI.DIM)

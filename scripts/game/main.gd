@@ -336,13 +336,20 @@ func _go(to: int) -> void:
 		Mixtape.local_music()
 
 
+## Back in menus: B (K), Escape or Backspace.
 func _back_pressed() -> bool:
-	return Controls.menu_pressed("b") != -1
+	return Controls.menu_pressed("b") != -1 or Controls.menu_key("back")
 
 
+## Select in menus: A (J), Enter, Space, or a controller's Start. Returns
+## the controller that pressed it, -2 for the keyboard, -1 for nothing.
 func _confirm_device() -> int:
 	var d := Controls.menu_pressed("a")
-	return d if d != -1 else Controls.menu_pressed("start")
+	if d != -1:
+		return d
+	if Controls.menu_key("confirm"):
+		return -2
+	return Controls.menu_pad_pressed("start")
 
 
 # --- Title and main menu ---------------------------------------------------
@@ -367,7 +374,7 @@ func _main_items() -> Array:
 
 
 func _main_input() -> void:
-	if Controls.menu_pressed("start") != -1:
+	if Controls.menu_pad_pressed("start") != -1:
 		_open_options(Screen.MAIN)
 		return
 	var items := _main_items()
@@ -1059,12 +1066,14 @@ func _hint(text: String) -> void:
 	UI.text(self, Vector2(960, 1050), text, 26, UI.DIM, UI.ui, 4)
 
 
+## Menu select / back labels: the controller's buttons, or Enter and Esc on
+## the keyboard.
 func _a() -> String:
-	return Controls.label(0, "a")
+	return Controls.label(0, "a") if Controls.using_pad[0] else "ENTER"
 
 
 func _b() -> String:
-	return Controls.label(0, "b")
+	return Controls.label(0, "b") if Controls.using_pad[0] else "ESC"
 
 
 func _draw_title() -> void:

@@ -33,6 +33,7 @@ func _init() -> void:
 			return
 	for test in [
 		"test_every_character_has_own_throw_sounds",
+		"test_menu_keys_enter_selects_escape_backs",
 		"test_shoulder_buttons_throw_curves",
 		"test_power_throws_follow_the_aim",
 		"test_old_saves_free_rb_for_curves",
@@ -1198,3 +1199,19 @@ func test_old_saves_free_rb_for_curves() -> void:
 	controls.free()
 
 
+
+
+func test_menu_keys_enter_selects_escape_backs() -> void:
+	var controls = ControlsScript.new()
+	controls._menu_keys_now = {KEY_ENTER: true}
+	check(controls.menu_key("confirm") and not controls.menu_key("back"), "Enter selects in menus")
+	controls._menu_keys_prev = {}
+	controls._menu_keys_now = {KEY_ESCAPE: true}
+	check(controls.menu_key("back") and not controls.menu_key("confirm"), "Escape goes back in menus")
+	controls._menu_keys_prev = {KEY_ESCAPE: true}
+	check(not controls.menu_key("back"), "holding Escape doesn't repeat")
+	controls._menu_keys_prev = {}
+	controls._menu_keys_now = {KEY_ENTER: true}
+	controls.swallow_menu_keys()
+	check(not controls.menu_key("confirm"), "Enter that finished a text field doesn't also select")
+	controls.free()

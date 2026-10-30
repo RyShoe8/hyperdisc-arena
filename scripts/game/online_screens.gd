@@ -98,6 +98,7 @@ func _clean(field: String, value: String) -> String:
 
 
 func _finish_typing(keep: bool) -> void:
+	Controls.swallow_menu_keys()
 	var field: String = typing.field
 	var value: String = typing.value.strip_edges()
 	if keep and value.is_empty() and field in ["address", "room"]:
@@ -236,6 +237,8 @@ func _after_connect_attempt() -> void:
 
 
 func join_input() -> void:
+	if not typing.is_empty():
+		return
 	if m._back_pressed():
 		typing = {}
 		open_lan()

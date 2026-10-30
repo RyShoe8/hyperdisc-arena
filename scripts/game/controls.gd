@@ -84,6 +84,15 @@ var _key_latch := {}  # physical keycode -> true
 var _pad_latch := {}  # device -> {button: true}
 ## Whether each controller's stick is currently past the deadzone.
 var _stick_on := {}
+## Fixed menu keys, whatever the bindings: Enter / Space select, Escape /
+## Backspace go back, Tab is the menus' extra action.
+const MENU_KEYS := {"confirm": [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE], "back": [KEY_ESCAPE, KEY_BACKSPACE],
+	"extra": [KEY_TAB]}
+var _menu_keys_now := {}
+var _menu_keys_prev := {}
+## Set when a text field used the keys this tick, so they don't also act
+## on the menu underneath.
+var _swallow_menu_keys := false
 ## Menu auto-repeat: holding a direction repeats it after REPEAT_DELAY
 ## ticks, then every REPEAT_RATE ticks.
 const REPEAT_DELAY := 22
@@ -193,6 +202,15 @@ func _physics_process(_delta: float) -> void:
 		var keys := Vector2i(int(_key(mk.right)) - int(_key(mk.left)),
 			int(_key(mk.down)) - int(_key(mk.up)))
 		_menu_key_held[i] = _hold(_menu_key_held[i], keys)
+	_menu_keys_prev = _menu_keys_now
+	_menu_keys_now = {}
+	for kind in MENU_KEYS:
+		for code in MENU_KEYS[kind]:
+			if _key(code):
+				_menu_keys_now[code] = true
+	if _swallow_menu_keys:
+		_swallow_menu_keys = false
+		_menu_keys_prev = _menu_keys_now.duplicate()
 	_key_latch.clear()
 	_pad_latch.clear()
 
@@ -374,6 +392,36 @@ func menu_pressed(button: String) -> int:
 		if _keys_pressed(i, button):
 			return -2
 	return -1
+
+
+## True on the tick a fixed menu key ("confirm", "back" or "extra") goes down.
+func menu_key(kind: String) -> bool:
+	if capturing():
+		return false
+	for code in MENU_KEYS[kind]:
+		if _menu_keys_now.has(code) and not _menu_keys_prev.has(code):
+			return true
+	return false
+
+
+## Like menu_pressed, but controllers only (their Start selects in menus;
+## the keyboard's Start keys are Escape and Enter, which have menu roles).
+func menu_pad_pressed(button: String) -> int:
+	if capturing():
+		return -1
+	for device in _pad_now:
+		if _pad_now[device].get(button, false) and not _pad_prev.get(device, {}).get(button, false):
+			return device
+	return -1
+
+
+## A text field just used Enter or Escape: keep them off the menu this tick.
+func swallow_menu_keys() -> void:
+	_swallow_menu_keys = true
+	_menu_keys_prev = _menu_keys_now.duplicate()
+	for kind in MENU_KEYS:
+		for code in MENU_KEYS[kind]:
+			_menu_keys_prev[code] = true
 
 
 ## Any key or button at all (title screen).
