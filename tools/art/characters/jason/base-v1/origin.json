@@ -1,0 +1,5 @@
+{
+  "source": "tools/art/characters/story-masters.png",
+  "packer": "tools/art/pack_story_masters.gd",
+  "row": 2
+}

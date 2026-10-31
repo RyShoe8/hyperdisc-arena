@@ -1,0 +1,15 @@
+{
+  "character": "alex",
+  "animation": "actions-v1",
+  "base_version": "base-v1",
+  "base_sha256": "2aea6d2a3c19692c8fea2c45157a075af01116f3a7f24e53fc502aac64a7ad1e",
+  "reference_sha256": "d67a11bd240f4454a36887e2274d3c7a1dc67c01ecb08f7eb47ab09468c2e719",
+  "expected_frames": 16,
+  "columns": 4,
+  "rows": 4,
+  "status": "accepted",
+  "candidate": "candidate.png",
+  "candidate_sha256": "cd5ca377631f69023269908203fe4d1c3ff3cf2003b2334dbdc6ff9f5333c5c8",
+  "review_notes": "Coral flower shirt, teal shorts, dark waves and sandals match reference. Compared all four rows to the canonical base and checked 16 isolated poses.",
+  "accepted_sha256": "cd5ca377631f69023269908203fe4d1c3ff3cf2003b2334dbdc6ff9f5333c5c8"
+}

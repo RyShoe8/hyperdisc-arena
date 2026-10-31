@@ -123,7 +123,10 @@ func _run() -> void:
 	# Isolated save path keeps the user's actual Story run untouched.
 	game.story_save_path = "res://.godot/test_story_progress.cfg"
 	game.story_fighter = 0
-	game.story_order.assign([1, 2, 3, 4, 5])
+	game.story_order = game._story_ladder()
+	check(game.story_order == [6,7,8,4,3,5], "Story follows the challenger card")
+	game.story_wins = 0
+	check(game.available(0) and game.available(1) and game.available(3) and not game.available(2) and not game.available(9), "fresh roster and secret locked")
 	game.story_round = 1
 	game._save_story(2)
 	game.story_round = 0
@@ -131,7 +134,16 @@ func _run() -> void:
 	game.story_round = 1
 	game._save_story()
 	check(game._load_story() and game.story_round == 1, "Story preserves opponent for retry after loss")
-	game._save_story(5)
+	game.league_save_path = "res://.godot/test_league_progress.cfg"
+	for wins in range(1,7):
+		game._award_story(wins)
+		check(game.available(game.story_order[wins-1]), "defeated rival is playable")
+		check(game.available(9) == (wins == 6), "Tango unlocks at completion")
+	game._award_story(1)
+	var league := ConfigFile.new()
+	check(league.load(game.league_save_path) == OK and league.get_value("league","wins") == 6, "replaying keeps league access")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.league_save_path))
+	game._save_story(6)
 	check(not game._load_story(), "finished Story does not resume beyond the roster")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.story_save_path))
 	game.story = false

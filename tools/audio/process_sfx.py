@@ -65,6 +65,10 @@ RECIPES = {
 # lower, quick ones higher.
 CHARACTER_SOUNDS = {
     # id: (pitch, throw_whoosh takes, power_whoosh takes, special_launch takes)
+    "alex": (1.04, [1, 4, 2], [2, 1], [1]),
+    "jimmy": (1.19, [4, 2, 3], [3, 2], [1]),
+    "jason": (0.87, [5, 1, 4], [1, 3], [1]),
+    "tango": (1.29, [3, 5, 2], [2, 3], [1]),
     "mick": (0.92, [1, 2, 5], [1, 2], [1]),
     "keno": (0.82, [1, 4, 5], [1, 3], [1]),
     "vanessa": (0.96, [2, 4, 5], [2, 3], [1]),

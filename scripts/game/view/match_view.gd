@@ -37,6 +37,7 @@ var names: Array[String] = ["P1", "CPU"]
 var court_bg: Texture2D
 var pixel_court := false
 var pixel_spectators: PixelCrowd
+var venue_life := preload("res://scripts/game/view/venue_life.gd").new()
 var crowd: Array[Texture2D] = []
 
 var frame := 0
@@ -89,7 +90,8 @@ func _init(match_sim: MatchSim, character_ids: Array, player_names: Array[String
 	court_bg = load(pixel_path if pixel_court else "res://assets/art/courts/%s.webp" % cid)
 	if pixel_court:
 		pixel_spectators = PixelCrowd.new(cid)
-	crowd = [load("res://assets/art/courts/%s_crowd_a.webp" % cid),
+	if not pixel_court:
+		crowd = [load("res://assets/art/courts/%s_crowd_a.webp" % cid),
 		load("res://assets/art/courts/%s_crowd_b.webp" % cid)]
 	for p in sim.players:
 		last_pos[p.slot] = p.pos
@@ -104,6 +106,7 @@ func tick() -> void:
 	if sim.phase == MatchSim.Phase.MATCH_OVER:
 		celebration_ticks += 1
 	frame += 1
+	venue_life.tick()
 	if pixel_spectators != null:
 		pixel_spectators.tick()
 		pixel_spectators.rally_x = clampf(float(sim.disc.pos.x)/float(sim.court_width()),0.0,1.0)
@@ -196,6 +199,7 @@ func handle(e: Dictionary) -> void:
 	var actor := int(e.get("player", e.get("side", 0)))
 	if pixel_spectators != null:
 		pixel_spectators.handle(e)
+	venue_life.handle(sim.court.id, e, sim.disc.pos.x / sim.court_width())
 	var s := Settings.shake_scale()
 	match e.type:
 		"dash":
@@ -317,6 +321,7 @@ func draw(ci: CanvasItem) -> void:
 	if pixel_spectators == null:
 		ci.draw_texture_rect(court_bg, Rect2(Vector2.ZERO, proj.screen), false)
 	_draw_crowd(ci)
+	venue_life.draw(ci, sim.court.id, proj, frame)
 	_draw_goal_lights(ci)
 	_draw_markers(ci)
 	_draw_shadows(ci)
@@ -679,8 +684,8 @@ func _draw_barrier(ci: CanvasItem, b: Vector3) -> void:
 	var rx := b.z * proj.scale
 	var ry := rx * (proj.floor_y / proj.scale) * 0.55
 	var cid: String = sim.court.id
-	var body := Color("c9c2d6") if cid == "concrete" else Color("d0683a")
-	var stripe := UI.YELLOW if cid == "concrete" else Color("2e9e4f")
+	var body := Color("976038") if cid == "concrete" else Color("748198")
+	var stripe := Color("e3b168") if cid == "concrete" else Color("394452")
 	ci.draw_rect(Rect2(Vector2(base.x - rx, top.y), Vector2(rx * 2, base.y - top.y)), body)
 	_ellipse_abs(ci, base, rx, ry, body.darkened(0.25))
 	for k in 3:
@@ -689,7 +694,8 @@ func _draw_barrier(ci: CanvasItem, b: Vector3) -> void:
 	ci.draw_rect(Rect2(Vector2(base.x - rx, top.y), Vector2(rx * 2, base.y - top.y)), UI.INK, false, 3.0)
 	_ellipse_abs(ci, top, rx, ry, body.lightened(0.15))
 	if cid == "clay":
-		_ellipse_abs(ci, top - Vector2(0, 10), rx * 0.9, ry * 1.4, Color("37a85a"))
+		_ellipse_abs(ci, top, rx * 0.63, ry * 0.6, Color("465469"))
+		ci.draw_rect(Rect2(top + Vector2(-5,-2),Vector2(10,4)),Color("bdccce"))
 
 
 func _ellipse_abs(ci: CanvasItem, centre: Vector2, rx: float, ry: float, color: Color) -> void:

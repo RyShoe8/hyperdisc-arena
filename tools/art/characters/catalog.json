@@ -109,6 +109,71 @@
         "burgundy wristbands",
         "black/burgundy shoes"
       ]
+    },
+    {
+      "id": "alex",
+      "version": "base-v1",
+      "base": "tools/art/characters/alex/base-v1/base.png",
+      "reference": "tools/art/characters/alex/base-v1/reference.png",
+      "hashes": {
+        "base.png": "2aea6d2a3c19692c8fea2c45157a075af01116f3a7f24e53fc502aac64a7ad1e",
+        "reference.png": "d67a11bd240f4454a36887e2274d3c7a1dc67c01ecb08f7eb47ab09468c2e719"
+      },
+      "identity_locks": [
+        "black wavy hair",
+        "coral floral shirt",
+        "teal shorts",
+        "dark sandals"
+      ]
+    },
+    {
+      "id": "jimmy",
+      "version": "base-v1",
+      "base": "tools/art/characters/jimmy/base-v1/base.png",
+      "reference": "tools/art/characters/jimmy/base-v1/reference.png",
+      "hashes": {
+        "base.png": "497ef1311eee92c5286637eaa2e9e6ea1be7c4d1067482c3789b71aa83c80e95",
+        "reference.png": "e9dcabf44961bad87d06c8db73fc149c529485aee6e35a1fbd23b24a602b1565"
+      },
+      "identity_locks": [
+        "African American man with dark brown skin and high fade; preserve his complexion in every view",
+        "yellow visor and headphones",
+        "purple jacket",
+        "turquoise shoes"
+      ]
+    },
+    {
+      "id": "jason",
+      "version": "base-v1",
+      "base": "tools/art/characters/jason/base-v1/base.png",
+      "reference": "tools/art/characters/jason/base-v1/reference.png",
+      "hashes": {
+        "base.png": "09fe335d4e34f9c77f6cae19d807a36fde07fe7e7163c4f51ba66e420411b310",
+        "reference.png": "26ae021c47ac231e1957afdfc3ea951c38b75d4cd85f51e680b5cf44ee357f6f"
+      },
+      "identity_locks": [
+        "muscular frame with moustache",
+        "sleeveless denim",
+        "striped jeans",
+        "orange work boots",
+        "light olive complexion, dark hair and heavy sideburns; distinct from Jimmy Navio"
+      ]
+    },
+    {
+      "id": "tango",
+      "version": "base-v1",
+      "base": "tools/art/characters/tango/base-v1/base.png",
+      "reference": "tools/art/characters/tango/base-v1/reference.png",
+      "hashes": {
+        "base.png": "b104e18ac3ac491eb2a8c89a0188469f7157769d12cefc3b32e857eaca0be1b2",
+        "reference.png": "6980474e413701d6fe96f5dd3cc55e26c9ca39a92ca9b5474c44e9eddc3e4ecd"
+      },
+      "identity_locks": [
+        "golden shepherd mix",
+        "dark saddle",
+        "floppy ears",
+        "teal collar and tag"
+      ]
     }
   ]
 }

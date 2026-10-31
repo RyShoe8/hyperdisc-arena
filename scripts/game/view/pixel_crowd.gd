@@ -20,8 +20,11 @@ var event_serial := 0
 
 func _init(court: String = "stadium") -> void:
 	frames.watch = load("res://assets/art/courts/%s_pixel.png" % court)
-	for pose in ["clap","cheer","surprise"]:
-		frames[pose] = load("res://assets/art/crowds/%s_%s.png" % [court,pose])
+	# Two registered, hand-authored crowd states. The shader times partial
+	# applause, recoil and full celebration independently by seating section.
+	frames.cheer = load("res://assets/art/crowds/%s_cheer.png" % court)
+	frames.clap = frames.cheer
+	frames.surprise = frames.watch
 	_build_sections(court)
 	var groups_path := "res://assets/art/crowds/%s_groups.json" % court
 	if FileAccess.file_exists(groups_path):

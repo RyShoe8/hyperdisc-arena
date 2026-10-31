@@ -229,11 +229,13 @@ func host_room() -> void:
 	_after_connect_attempt()
 
 
-func join_room(code: String) -> void:
+func join_room(code: String, ranked := false) -> void:
 	Online.close()
 	busy = true
 	m._go(m.Screen.ONLINE_WAIT)
 	await Online.join_room(code)
+	if Online.current != null:
+		Online.current.ranked = ranked and m.story_wins >= 6
 	busy = false
 	if m.screen != m.Screen.ONLINE_WAIT:
 		Online.close()
@@ -257,6 +259,9 @@ func _after_connect_attempt() -> void:
 ## Quick match: join the waiting player nearest our rating, or open a
 ## private room and wait there (at the match setup) for the next one.
 func quick_match() -> void:
+	if m.story_wins < 6:
+		m.toast_msg("FINISH STORY FOR RANKED PLAY - JOIN OR CREATE AN UNRANKED ROOM")
+		return
 	Online.close()
 	busy = true
 	searching = true
@@ -270,7 +275,7 @@ func quick_match() -> void:
 	if str(res.get("joinCode", "")) != "":
 		busy = false
 		searching = false
-		join_room(str(res.joinCode))
+		join_room(str(res.joinCode), true)
 		return
 	if not res.get("host", false):
 		busy = false
@@ -289,6 +294,7 @@ func quick_match() -> void:
 		else:
 			Online.close()
 		return
+	Online.current.ranked = true
 	await Online.playbound.matchmaking("room", {"joinCode": Online.room_code})
 	quick = true
 	quick_poll_ticks = 0
@@ -371,7 +377,11 @@ func draw_browser() -> void:
 	UI.text(m, Vector2(1450, 215), "PLAYERS ONLINE (%d)" % pb.lobby_players.size(), 32, UI.CYAN, UI.ui, 3)
 	for i in buttons:
 		var label: String = BROWSER_BUTTONS[i]
-		if label == "CREATE ROOM" and busy and not searching:
+		if label == "QUICK MATCH":
+			label = "RANKED QUICK MATCH" if m.story_wins >= 6 else "RANKED - FINISH STORY"
+		elif label == "CREATE ROOM":
+			label = "CREATE UNRANKED ROOM"
+		if BROWSER_BUTTONS[i] == "CREATE ROOM" and busy and not searching:
 			label = "CREATING ROOM..."
 		UI.button(m, Rect2(150, 240 + i * 70, 860, 60), label, browser_index == i, m.frame)
 	UI.text(m, Vector2(580, 555), "PUBLIC ROOMS", 30, UI.CYAN, UI.ui, 3)
@@ -387,8 +397,8 @@ func draw_browser() -> void:
 	for i in range(player_page * 10, mini(player_page * 10 + 10, pb.lobby_players.size())):
 		var player: Dictionary = pb.lobby_players[i]
 		UI.text(m, Vector2(1450, 290 + (i % 10) * 52), str(player.name).left(24).to_upper() + "  -  " + str(player.status).to_upper(), 25, Color.WHITE, UI.ui, 2)
-	var about := {"QUICK MATCH": "PLAY SOMEONE RANDOM NEAR YOUR RATING - RANKED",
-		"CREATE ROOM": "OPEN A PUBLIC ROOM AND SET UP YOUR MATCH WHILE YOU WAIT",
+	var about := {"QUICK MATCH": "PLAY SOMEONE RANDOM NEAR YOUR RATING - RANKED" if m.story_wins >= 6 else "FINISH STORY TO UNLOCK RANKED QUICK MATCH",
+		"CREATE ROOM": "OPEN AN UNRANKED ROOM - SCORES ARE NOT RECORDED",
 		"LEADERBOARD": "TOP PLAYERS BY RATING FROM ONLINE MATCHES"}
 	var note: String = about.get(BROWSER_BUTTONS[browser_index] if browser_index < buttons else "", "")
 	UI.text(m, Vector2(960, 925), pb.lobby_error if pb.lobby_error != "" else (note if note != "" else "YOUR PLAYBOUND NAME IS VISIBLE TO PLAYERS IN THIS GAME"), 24, UI.DIM, UI.ui, 2)
@@ -612,7 +622,7 @@ func lobby_input() -> void:
 				if n != Vector2i.ZERO:
 					o.set_pick(m._grid_move(o.local_pick, n), false)
 					Sfx.play("menu_move")
-				if Controls.pressed(0, "a") or Controls.menu_key("confirm"):
+				if (Controls.pressed(0, "a") or Controls.menu_key("confirm")) and m.available(o.local_pick):
 					p1_locked = true
 					Sfx.play("menu_confirm")
 				elif Controls.pressed(0, "b") or Controls.menu_key("back"):
@@ -631,7 +641,7 @@ func lobby_input() -> void:
 					if n != Vector2i.ZERO:
 						o.configure_team(o.doubles, m._grid_move(o.local_partner_pick, n), true)
 						Sfx.play("menu_move", 1.1)
-					if Controls.pressed(1, "a"):
+					if Controls.pressed(1, "a") and m.available(o.local_partner_pick):
 						partner_locked = true
 						Sfx.play("menu_confirm")
 				elif Controls.pressed(1, "b"):
@@ -694,6 +704,9 @@ func lobby_input() -> void:
 ## Our picks are made: lock them in. The host goes on to difficulty (when a
 ## CPU plays) and the court; the guest waits for the host to start.
 func _lobby_done(o: OnlineMatch) -> void:
+	if not m.available(o.local_pick) or (o.doubles and not m.available(o.local_partner_pick)):
+		m.toast_msg("UNLOCK THIS PLAYER IN STORY MODE")
+		return
 	o.set_pick(o.local_pick, true)
 	if not o.is_host:
 		lobby_phase = "wait"
@@ -1144,7 +1157,9 @@ func draw_results_menu() -> void:
 	var ci = m
 	if m.screen_ticks <= 40:
 		return
-	if Mixtape.rating_ready:
+	if om() != null and not (om().ranked and om().peer_ranked):
+		UI.text(ci, Vector2(960, 630), "UNRANKED - SCORE NOT RECORDED", 28, UI.DIM, UI.ui, 3)
+	elif Mixtape.rating_ready:
 		var change := Mixtape.rating_change
 		UI.text(ci, Vector2(960, 630), "RATING  %s%d" % ["+" if change >= 0 else "", change], 40,
 			UI.YELLOW if change >= 0 else UI.P1, UI.display, 5)

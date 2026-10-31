@@ -25,12 +25,12 @@ const PAUSE_OPTIONS := ["RESUME", "MOVE LIST", "OPTIONS", "QUIT TO MENU"]
 const RESULT_OPTIONS := ["REMATCH", "CHARACTER SELECT", "MAIN MENU"]
 const OPTION_TABS := ["GRAPHICS", "AUDIO", "CONTROLS", "MOVES"]
 const COURT_NOTES := {
-	"beach": "SMALL COURT  -  STANDARD ZONES",
-	"lawn": "LARGE COURT  -  STANDARD ZONES",
-	"tiled": "SMALL COURT  -  ZONES REVERSED: 5 AT THE EDGES",
-	"concrete": "LARGE COURT  -  ZONES REVERSED, BARRIERS NEAR THE WALLS",
-	"clay": "LARGE COURT  -  BARRIERS IN MID-COURT",
-	"stadium": "LARGE COURT  -  THE 5-ZONE GROWS WITH EVERY STRAIGHT POINT",
+	"beach": "TIMBER COURT  -  MAKE A DIVE SAVE TO WAKE THE PIER",
+	"lawn": "ROOFTOP PARTY  -  CURVE SHOTS DRIVE THE DJ METERS",
+	"tiled": "5 AT THE EDGES  -  SLAPS AND BLOCKS LIGHT THE MARQUEE",
+	"concrete": "5 AT THE EDGES  -  BANK OFF THE LIT WALL STRIP",
+	"clay": "LOADING YARD  -  OPEN COURT, STANDARD SCORING ZONES",
+	"stadium": "CHAMPIONSHIP COURT  -  SCORING STREAKS GROW THE 5-ZONE",
 }
 
 enum Screen { TITLE, MAIN, SELECT, COURT, VS, MATCH, PAUSED, OPTIONS, RESULTS,
@@ -48,6 +48,35 @@ var versus := false
 var doubles := false
 var story := false
 var story_fighter := 0
+const STORY_IDS := ["alex", "jimmy", "jason", "vanessa", "steve", "keno"]
+const STORY_COURTS := [3, 1, 4, 0, 2, 5]
+const STORY_CHAPTERS := ["Happy Hour of Reckoning", "Raise the Roof", "NightTrain Has No Brakes", "Heavy Lifting", "Subject to Approval", "Final Approach"]
+const STORY_REWARDS := ["ALEX ALOHA", "JIMMY NAVIO", "JASON NIGHTTRAIN", "VANESSA TRUNKS", "PETE PELICAN", "KENO DICE + TANGO"]
+const STORY_VENUES := ["The Leaky Tiki", "Boardwalk Rooftop", "The Last Stop", "Muscle Pier", "HyperDome Arcade Lounge", "The HyperDome"]
+const STORY_TIPS := ["Catch, aim and use the walls.", "Bend a curve past Jimmy.", "Return quickly before Jason can set up.", "Mix lobs with a full-meter special.", "Defend with slaps, pop-ups and drop shots.", "Use everything you learned."]
+const UNLOCK_WINS := {"mick":0, "steve":0, "tiffany":0, "alex":1, "jimmy":2, "jason":3, "vanessa":4, "pete":5, "keno":6, "tango":6}
+var league_save_path := "user://league.cfg"
+var story_wins := 0
+
+func available(index: int) -> bool:
+	return index >= 0 and index < balance.characters.size() and story_wins >= int(UNLOCK_WINS.get(balance.characters[index].id, 99))
+
+func _story_ladder() -> Array[int]:
+	var result: Array[int] = []
+	for id in STORY_IDS:
+		for i in balance.characters.size():
+			if balance.characters[i].id == id:
+				result.append(i)
+	return result
+
+func _award_story(wins: int) -> void:
+	if wins <= story_wins:
+		return
+	story_wins = wins
+	var cfg := ConfigFile.new()
+	cfg.set_value("league", "wins", wins)
+	cfg.save(league_save_path)
+
 var story_round := 0
 var story_order: Array[int] = []
 var story_menu_index := 0
@@ -113,6 +142,9 @@ var select_art: Array[Texture2D] = []
 
 func _ready() -> void:
 	balance = JSON.parse_string(FileAccess.get_file_as_string(BALANCE_PATH))
+	var cfg := ConfigFile.new()
+	if cfg.load(league_save_path) == OK:
+		story_wins = clampi(int(cfg.get_value("league", "wins", 0)), 0, 6)
 	RenderingServer.set_default_clear_color(UI.NIGHT)
 	UI.load_fonts()
 	Controls.changed.connect(_on_controls_changed)
@@ -251,6 +283,7 @@ func _physics_process(_delta: float) -> void:
 	if crowd != _crowd_on:
 		_crowd_on = crowd
 		Sfx.set_crowd(crowd)
+	Sfx.set_location(balance.courts[court].id if crowd else "")
 	toast_ticks = maxi(0, toast_ticks - 1)
 	if net.invite_modal_active():
 		net.invite_input()
@@ -442,7 +475,7 @@ func _open_select() -> void:
 
 func _grid_move(i: int, n: Vector2i) -> int:
 	var count: int = balance.characters.size()
-	var cols := 3
+	var cols := 5
 	var x := i % cols
 	var y := i / cols
 	x = posmod(x + n.x, cols)
@@ -451,68 +484,7 @@ func _grid_move(i: int, n: Vector2i) -> int:
 
 
 func _select_input() -> void:
-	if not story:
-		_match_select_input()
-		return
-	if versus:
-		for p in [0, 1]:
-			var n := Controls.nudged(p)
-			if p == 0 and n == Vector2i.ZERO and not Controls.has_pad(1):
-				n = Vector2i.ZERO
-			if not picked[p] and n != Vector2i.ZERO:
-				pick[p] = _grid_move(pick[p], n)
-				Sfx.play("menu_move", 1.0 + p * 0.1)
-			if Controls.pressed(p, "a") and not picked[p]:
-				picked[p] = true
-				Sfx.play("menu_confirm")
-			elif Controls.pressed(p, "b"):
-				if picked[p]:
-					picked[p] = false
-					Sfx.play("menu_back")
-				elif p == 0:
-					Sfx.play("menu_back")
-					_go(Screen.MAIN)
-					return
-		if picked[0] and picked[1] and screen_ticks > 10:
-			_go(Screen.COURT)
-		return
-
-	var n := Controls.menu_nudged()
-	match select_step:
-		0, 1:
-			var who := select_step
-			if n != Vector2i.ZERO:
-				pick[who] = _grid_move(pick[who], n)
-				Sfx.play("menu_move")
-			if _confirm_device() != -1:
-				Sfx.play("menu_confirm")
-				if story:
-					story_fighter = pick[0]
-					story_round = 0
-					story_order.clear()
-					for i in balance.characters.size():
-						if i != story_fighter:
-							story_order.append(i)
-					_save_story()
-					_prepare_story()
-					return
-				select_step += 1
-			elif _back_pressed():
-				Sfx.play("menu_back")
-				if select_step == 0:
-					_go(Screen.MAIN)
-				else:
-					select_step -= 1
-		2:
-			if n.x != 0:
-				difficulty = posmod(difficulty + n.x, DIFFICULTIES.size())
-				Sfx.play("menu_move")
-			if _confirm_device() != -1:
-				Sfx.play("menu_confirm")
-				_go(Screen.COURT)
-			elif _back_pressed():
-				Sfx.play("menu_back")
-				select_step = 1
+	_match_select_input()
 
 
 # --- Court select and VS splash --------------------------------------------
@@ -589,6 +561,7 @@ func _match_tick() -> void:
 		if sim.phase_ticks > MatchView.CELEBRATION_TICKS or (sim.phase_ticks > MatchView.CELEBRATION_SKIP_TICKS and _confirm_device() != -1):
 			result_index = 0
 			if story and sim.winner == 0:
+				_award_story(story_round + 1)
 				_save_story(story_round + 1)
 			Sfx.play("menu_confirm")
 			_go(Screen.RESULTS)
@@ -1136,61 +1109,7 @@ func _draw_main() -> void:
 
 
 func _draw_select() -> void:
-	if not story:
-		_draw_match_select()
-		return
-	UI.outrun_background(self, SCREEN, frame / 60.0, 0.55)
-	var title := "SELECT YOUR PLAYER"
-	if not versus:
-		title = ["SELECT YOUR PLAYER", "SELECT YOUR OPPONENT", "SELECT DIFFICULTY"][select_step]
-	UI.slant_panel(self, Rect2(560, 26, 800, 90), UI.YELLOW, UI.INK, 30, 5)
-	UI.text(self, Vector2(960, 98), title, 64, UI.INK, UI.display, 2)
-
-	var chars: Array = balance.characters
-	var cell := Vector2(210, 210)
-	var gap := 28
-	var grid_origin := Vector2(960 - cell.x * 1.5 - gap, 230)
-	for i in chars.size():
-		var pos := grid_origin + Vector2((i % 3) * (cell.x + gap), (i / 3) * (cell.y + gap))
-		var r := Rect2(pos, cell)
-		draw_rect(r.grow(4), UI.INK)
-		draw_rect(r, Color("2a1250"))
-		draw_texture_rect_region(portraits[i], r, Rect2(100, 40, 440, 440))
-		UI.text(self, pos + Vector2(cell.x / 2, cell.y - 12), str(chars[i].name).to_upper(), 22,
-			Color.WHITE, UI.ui, 4)
-	# Paint outlines after every portrait so neighboring tiles cannot cover them.
-	for i in chars.size():
-		var pos := grid_origin + Vector2((i % 3) * (cell.x + gap), (i / 3) * (cell.y + gap))
-		var r := Rect2(pos, cell)
-		for who in [0, 1]:
-			if pick[who] != i:
-				continue
-			if not versus and who == 1 and select_step == 0:
-				continue
-			var c := UI.P1 if who == 0 else UI.P2
-			var flash: bool = (frame / 6) % 2 == 0 or picked[who] or (not versus and select_step > who)
-			if flash:
-				draw_rect(r.grow(4 + who * 6), c, false, 7)
-			var tag := "P1" if who == 0 else ("P2" if versus else "CPU")
-			UI.text(self, pos + Vector2(14 if who == 0 else cell.x - 14, 40), tag, 32, c, UI.display, 4,
-				HORIZONTAL_ALIGNMENT_LEFT if who == 0 else HORIZONTAL_ALIGNMENT_RIGHT)
-
-	for who in [0, 1]:
-		if not versus and who == 1 and select_step == 0:
-			continue
-		_draw_fighter_card(who, chars[pick[who]])
-
-	if not versus and select_step == 2:
-		var r := Rect2(Vector2(660, 720), Vector2(600, 90))
-		UI.button(self, r, "<  CPU %s  >" % DIFFICULTIES[difficulty].to_upper(), true, frame, 42)
-	if versus:
-		for who in [0, 1]:
-			if picked[who]:
-				UI.text(self, Vector2(400 if who == 0 else 1520, 980), "READY!", 60, UI.YELLOW,
-					UI.display, 6)
-		_hint("EACH PLAYER: STICK TO CHOOSE, %s TO LOCK IN, %s TO CHANGE" % [_a(), _b()])
-	else:
-		_hint("%s CONFIRM     %s BACK" % [_a(), _b()])
+	_draw_match_select()
 
 
 func _draw_fighter_card(who: int, c: Dictionary, index := -1) -> void:
@@ -1200,7 +1119,7 @@ func _draw_fighter_card(who: int, c: Dictionary, index := -1) -> void:
 	var art: Texture2D = select_art[pick[who] if index < 0 else index]
 	var bob := sin(frame * 0.06 + who) * 6.0
 	draw_set_transform(Vector2(x + 200, 600 + bob), 0.0, Vector2(1.0 if left else -1.0, 1.0) * 0.76)
-	draw_texture(art, Vector2(-400, -500))
+	draw_texture(art, Vector2(-400, -500), Color.WHITE if available(pick[who] if index < 0 else index) else Color.BLACK)
 	draw_set_transform(Vector2.ZERO)
 	var panel := Rect2(Vector2(x, 820), Vector2(400, 200))
 	UI.slant_panel(self, panel, Color("120826"), col, 24, 4)
@@ -1225,7 +1144,7 @@ func _draw_court_select(hint := "") -> void:
 	draw_texture_rect(court_thumbs[court], big, false)
 	draw_rect(big.grow(4), UI.CYAN, false, 5)
 	var c: Dictionary = balance.courts[court]
-	UI.text(self, Vector2(960, 800), str(c.name), 96, UI.PINK, UI.display, 8, HORIZONTAL_ALIGNMENT_CENTER,
+	UI.text(self, Vector2(960, 800), str(c.name), UI.fit_size(str(c.name), 96, 1730, UI.display), UI.PINK, UI.display, 8, HORIZONTAL_ALIGNMENT_CENTER,
 		-1.0, true)
 	UI.text(self, Vector2(960, 856), COURT_NOTES.get(c.id, ""), 28, Color.WHITE, UI.ui, 4)
 	var arrow := sin(frame * 0.2) * 8.0
@@ -1260,10 +1179,11 @@ func _draw_vs() -> void:
 		UI.text(self, Vector2(960, 640), "VS", int(300 * pop), Color("7b2cbf"), UI.display, 16,
 			HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)
 	var court_name: String = balance.courts[court].name
-	UI.text(self, Vector2(960, 80), court_name + " COURT", 48, Color.WHITE, UI.display, 6)
+	UI.text(self, Vector2(960, 80), STORY_VENUES[story_round] if story else court_name, 48, Color.WHITE, UI.display, 6)
 
 	if story:
-		UI.text(self, Vector2(960, 160), "STORY  %d / %d  |  DIFFICULTY %d%%" % [story_round + 1, story_order.size(), roundi(pow(1.1, story_round) * 100)], 36, UI.YELLOW, UI.ui, 3)
+		UI.text(self, Vector2(960, 160), "CHAPTER %d  |  %s" % [story_round + 2, STORY_CHAPTERS[story_round].to_upper()], 36, UI.YELLOW, UI.ui, 3)
+		UI.text(self, Vector2(960, 220), STORY_TIPS[story_round], 32, Color.WHITE, UI.ui, 4)
 		var ladder: Array[String] = []
 		for i in story_order.size():
 			ladder.append(("[WIN] " if i < story_round else "") + str(balance.characters[story_order[i]].name))
@@ -1449,6 +1369,10 @@ func _draw_results() -> void:
 	if story:
 		var title := "STORY COMPLETE!" if sim.winner == 0 and story_round + 1 == story_order.size() else "STORY  %d / %d" % [story_round + 1, story_order.size()]
 		UI.text(self, Vector2(960, 80), title, 50, UI.YELLOW, UI.display, 4)
+		if sim.winner == 0:
+			UI.text(self, Vector2(960, 155), "PLAYABLE: " + STORY_REWARDS[story_round], 32, UI.CYAN, UI.ui, 4)
+			if story_round == 5:
+				UI.text(self, Vector2(960, 210), "LEAGUE INVITATION: RANKED QUICK MATCH IS OPEN", 30, UI.YELLOW, UI.ui, 4)
 	if doubles:
 		for side in [0, 1]:
 			var team := "%s + %s" % [sim.players[side].character.name, sim.players[side + 2].character.name]
@@ -1493,7 +1417,7 @@ func _load_story() -> bool:
 	var fighter := int(save.get_value("story", "fighter", -1))
 	var round_index := int(save.get_value("story", "round", -1))
 	var order = save.get_value("story", "order", [])
-	if fighter < 0 or fighter >= balance.characters.size() or not order is Array or order.size() != balance.characters.size() - 1:
+	if fighter < 0 or fighter >= balance.characters.size() or not order is Array or fighter != 0 or order != _story_ladder():
 		return false
 	var seen := [fighter]
 	for opponent in order:
@@ -1513,7 +1437,7 @@ func _prepare_story() -> void:
 	doubles = false
 	versus = false
 	pick = [story_fighter, story_order[story_round]]
-	court = story_round % balance.courts.size()
+	court = STORY_COURTS[story_round]
 	_go(Screen.VS)
 
 
@@ -1526,6 +1450,15 @@ func _story_difficulty() -> Dictionary:
 	params.dash_distance = maxf(95.0, 220.0 / factor)
 	for key in ["jump_chance", "slap_chance", "block_chance", "drop_chance", "special_chance", "ex_chance", "power_toss_chance", "curve_chance"]:
 		params[key] = minf(float(balance.cpu.hard[key]), (float(params[key]) + 0.05) * factor - 0.05)
+	match story_round:
+		1: params.curve_chance = maxf(params.curve_chance, 0.55)
+		2: params.hold_max = maxi(params.hold_min, int(params.hold_max) / 2)
+		3:
+			params.lob_chance = maxf(params.lob_chance, 0.38)
+			params.special_chance = maxf(params.special_chance, 0.7)
+		4:
+			params.slap_chance = maxf(params.slap_chance, 0.35)
+			params.drop_chance = maxf(params.drop_chance, 0.25)
 	return params
 
 
@@ -1542,18 +1475,19 @@ func _story_menu_input() -> void:
 		elif story_menu_index == 2:
 			_open_local_setup(false, [0, -1, -1, -1], Screen.STORY_MENU)
 		else:
-			story = true
-			doubles = false
-			versus = false
-			_open_select()
+			story_fighter = 0
+			story_round = 0
+			story_order = _story_ladder()
+			_save_story()
+			_prepare_story()
 
 
 func _draw_story_menu() -> void:
 	UI.outrun_background(self, SCREEN, frame / 60.0, 0.25)
 	UI.text(self, Vector2(960, 200), "STORY", 100, UI.YELLOW, UI.display, 5)
 	var save := ConfigFile.new()
-	var resumable: bool = save.load(story_save_path) == OK and int(save.get_value("story", "round", -1)) < balance.characters.size() - 1
-	UI.text(self, Vector2(960, 320), "FACE THE ROSTER. EACH OPPONENT IS 10% HARDER.", 30, Color.WHITE, UI.ui, 3)
+	var resumable: bool = save.load(story_save_path) == OK and save.get_value("story", "order", []) == _story_ladder() and int(save.get_value("story", "round", -1)) < STORY_IDS.size()
+	UI.text(self, Vector2(960, 320), "WIN SIX MATCHES AS MICK TO ENTER THE HYPERDISC ARENA LEAGUE.", 30, Color.WHITE, UI.ui, 3)
 	var items := ["CONTINUE" if resumable else "NO SAVED RUN", "NEW STORY", "QUICK MATCH vs CPU"]
 	for i in items.size():
 		UI.button(self, Rect2(560, 420 + i * 100, 800, 75), items[i], story_menu_index == i, frame, 36)
@@ -1665,7 +1599,9 @@ func _match_select_input() -> void:
 				if n != Vector2i.ZERO:
 					slot_picks[slot] = _grid_move(slot_picks[slot], n)
 					Sfx.play("menu_move", 1.0 + slot * 0.05)
-				if confirm:
+				if confirm and not available(slot_picks[slot]):
+					toast_msg("UNLOCK THIS PLAYER IN STORY MODE")
+				elif confirm:
 					slot_locked[slot] = true
 					Sfx.play("menu_confirm")
 				elif back:
@@ -1698,7 +1634,9 @@ func _match_select_input() -> void:
 				Sfx.play("menu_move")
 			var cpus := _cpu_slots()
 			var at := cpus.find(cpu_turn)
-			if _confirm_device() != -1:
+			if _confirm_device() != -1 and not available(slot_picks[cpu_turn]):
+				toast_msg("UNLOCK THIS PLAYER IN STORY MODE")
+			elif _confirm_device() != -1:
 				Sfx.play("menu_confirm")
 				if at + 1 < cpus.size():
 					cpu_turn = cpus[at + 1]
@@ -1735,16 +1673,20 @@ func _to_court() -> void:
 ## online setup. slots: [{slot, pick, label, color, flash}].
 func _draw_select_grid(slots: Array) -> void:
 	var chars: Array = balance.characters
-	var cell := Vector2(210, 210)
+	var cell := Vector2(140, 140)
 	var gap := 28
-	var grid_origin := Vector2(960 - cell.x * 1.5 - gap, 230)
+	UI.text(self, Vector2(960, 585), "UNLOCK SILHOUETTES IN STORY MODE", 22, UI.DIM, UI.ui, 3)
+	var grid_origin := Vector2(960 - cell.x * 2.5 - 2 * gap, 230)
 	for i in chars.size():
-		var pos := grid_origin + Vector2((i % 3) * (cell.x + gap), (i / 3) * (cell.y + gap))
+		var pos := grid_origin + Vector2((i % 5) * (cell.x + gap), (i / 5) * (cell.y + gap))
 		var r := Rect2(pos, cell)
 		draw_rect(r.grow(4), UI.INK)
 		draw_rect(r, Color("2a1250"))
-		draw_texture_rect_region(portraits[i], r, Rect2(100, 40, 440, 440))
-		UI.text(self, pos + Vector2(cell.x / 2, cell.y - 12), str(chars[i].name).to_upper(), 22,
+		if available(i):
+			draw_texture_rect_region(portraits[i], r, Rect2(100, 40, 440, 440))
+		else:
+			draw_texture_rect_region(select_art[i], r, Rect2(0, 100, 800, 800), Color.BLACK)
+		UI.text(self, pos + Vector2(cell.x / 2, cell.y - 12), str(chars[i].name).to_upper() if available(i) else "STORY LOCK", 17,
 			Color.WHITE, UI.ui, 4)
 	# Outlines after every portrait so neighbouring tiles can't cover them;
 	# each slot on a tile gets its own ring and a tag in its own corner.
@@ -1755,7 +1697,7 @@ func _draw_select_grid(slots: Array) -> void:
 			continue
 		var k: int = on_tile.get(i, 0)
 		on_tile[i] = k + 1
-		var pos := grid_origin + Vector2((i % 3) * (cell.x + gap), (i / 3) * (cell.y + gap))
+		var pos := grid_origin + Vector2((i % 5) * (cell.x + gap), (i / 5) * (cell.y + gap))
 		var r := Rect2(pos, cell)
 		if not entry.flash or (frame / 6) % 2 == 0:
 			draw_rect(r.grow(4 + k * 6), entry.color, false, 7)
@@ -1771,7 +1713,7 @@ func _draw_mini_card(left: bool, row: int, index: int, col: Color, tag: String, 
 	var top := 150.0 + row * 420.0
 	var bob := sin(frame * 0.06 + row + (0 if left else 2)) * 4.0
 	draw_set_transform(Vector2(x + 200, top + 175 + bob), 0.0, Vector2(1.0 if left else -1.0, 1.0) * 0.36)
-	draw_texture(select_art[index], Vector2(-400, -500))
+	draw_texture(select_art[index], Vector2(-400, -500), Color.WHITE if available(index) else Color.BLACK)
 	draw_set_transform(Vector2.ZERO)
 	var panel := Rect2(Vector2(x, top + 230), Vector2(400, 150))
 	UI.slant_panel(self, panel, Color("120826"), col, 20, 4)

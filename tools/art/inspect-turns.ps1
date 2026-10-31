@@ -24,7 +24,7 @@ public class ComponentFrames {
 }
 '@
 
-foreach($characterId in @('mick','pete','tiffany','keno','steve','vanessa')) {
+foreach($characterId in $(if ($Character) { @($Character) } else { @('mick','pete','tiffany','keno','steve','vanessa') })) {
  if($Character -and $Character -ne $characterId){continue}
  $selectedJob=$JobName
  if(-not $selectedJob){$selectedJob=(Get-Content (Join-Path $PSScriptRoot 'characters/directional-release.json') -Raw | ConvertFrom-Json).$characterId}

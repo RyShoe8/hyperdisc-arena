@@ -67,8 +67,12 @@ void fragment() {
 				float idle_cycle = mod(t+gesture_seed*29.0,10.0+gesture_seed*13.0);
 				if (idle_cycle<0.5+excitement && gesture_seed>0.45) pose = beat<0.5 ? 1 : 0;
 			}
+			// A clap lifts the shoulders; a startled spectator ducks toward the seat.
+			// Keep motion inside the seating mask so rails and court lines stay fixed.
+			float jump = pose==2 ? (2.5+sin(t*5.0+seed*17.0)*2.5) : (pose==3 ? -4.0 : 0.0);
+			sample_uv.y += jump*anchored/1080.0;
 			vec4 moved = color;
-			if (pose==1) moved = texture(applause,sample_uv);
+			if (pose==1 && beat<0.32) moved = texture(applause,sample_uv);
 			if (pose==2) moved = texture(celebration,sample_uv);
 			if (pose==3) moved = texture(surprise,sample_uv);
 			color = moved;
@@ -80,8 +84,8 @@ void fragment() {
 	if (perimeter) {
 		float green = step(color.r*1.2,color.g)*step(color.b*1.1,color.g);
 		float blue_water = step(color.r*1.45,color.b)*step(0.4,color.g);
-		bool pool = court_style==2 && (p.x<195.0 || p.x>1725.0 || p.y<48.0);
-		bool sea = court_style==0 && p.y<100.0 && (p.x<300.0 || p.x>1620.0);
+		bool pool = court_style==1 && (p.x<195.0 || p.x>1725.0 || p.y<48.0);
+		bool sea = (court_style==0 || court_style==3) && p.y<100.0 && (p.x<300.0 || p.x>1620.0);
 		if (pool || sea) {
 			vec2 water_uv = uv+vec2(sin(t*1.2+p.y*0.09),cos(t+p.x*0.07))*0.0005;
 			color = mix(color,texture(TEXTURE,water_uv),blue_water*0.65);
@@ -96,9 +100,9 @@ void fragment() {
 		vec2 flag_uv = uv+vec2(sin(t*1.4+p.x*0.06)*0.7,0.0)/vec2(1920.0,1080.0);
 		color = mix(color,texture(TEXTURE,flag_uv),fabric*0.6);
 	}
-	if (perimeter && (court_style==3 || court_style==5)) {
+	if (perimeter && (court_style==1 || court_style==2 || court_style==5)) {
 		float neon = step(0.65,max(color.r,color.b))*step(color.g+0.15,max(color.r,color.b));
-		color.rgb *= 1.0+neon*0.035*sin(t*1.5+p.x*0.008);
+		color.rgb *= 1.0+neon*(0.06+0.22*excitement)*sin(t*(2.0+excitement*3.0)+p.x*0.008);
 	}
 	COLOR = color;
 }

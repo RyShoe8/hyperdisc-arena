@@ -1,0 +1,15 @@
+{
+  "character": "jimmy",
+  "animation": "movement-v1",
+  "base_version": "base-v1",
+  "base_sha256": "497ef1311eee92c5286637eaa2e9e6ea1be7c4d1067482c3789b71aa83c80e95",
+  "reference_sha256": "e9dcabf44961bad87d06c8db73fc149c529485aee6e35a1fbd23b24a602b1565",
+  "expected_frames": 16,
+  "columns": 4,
+  "rows": 4,
+  "status": "accepted",
+  "candidate": "candidate.png",
+  "candidate_sha256": "d3fc16372c17eeadc81f11019067717c02fa42aa35075bb0821933d7ac0fc86e",
+  "review_notes": "Dark brown complexion, visor, headphones, purple jacket and teal shoes match reference. Compared all four rows to the canonical base and checked 16 isolated poses.",
+  "accepted_sha256": "d3fc16372c17eeadc81f11019067717c02fa42aa35075bb0821933d7ac0fc86e"
+}

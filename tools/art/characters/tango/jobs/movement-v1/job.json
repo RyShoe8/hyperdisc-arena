@@ -1,0 +1,15 @@
+{
+  "character": "tango",
+  "animation": "movement-v1",
+  "base_version": "base-v1",
+  "base_sha256": "b104e18ac3ac491eb2a8c89a0188469f7157769d12cefc3b32e857eaca0be1b2",
+  "reference_sha256": "6980474e413701d6fe96f5dd3cc55e26c9ca39a92ca9b5474c44e9eddc3e4ecd",
+  "expected_frames": 16,
+  "columns": 4,
+  "rows": 4,
+  "status": "accepted",
+  "candidate": "candidate.png",
+  "candidate_sha256": "64466eef814275a4ed59036fb69466e5813d515e41b77f4ed1e8a21ef13ea2b1",
+  "review_notes": "Golden coat with dark saddle, ears, teal collar and quadruped proportions match reference. Compared all four rows to the canonical base and checked 16 isolated poses.",
+  "accepted_sha256": "64466eef814275a4ed59036fb69466e5813d515e41b77f4ed1e8a21ef13ea2b1"
+}

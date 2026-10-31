@@ -538,7 +538,8 @@ func test_power_toss() -> void:
 
 func test_barrier_deflects_disc() -> void:
 	var sim := new_sim(4)
-	check(sim.barriers.size() == 2, "Clay has two barriers")
+	check(sim.barriers.is_empty(), "Last Stop has no bumpers")
+	sim.barriers.append(Vector3(440,330,34))
 	var b := sim.barriers[0]
 	sim.players[MatchSim.LEFT].pos = Vector2(60, 40)
 	fly(sim, Vector2(b.x + 120, b.y), Vector2(-12, 0), MatchSim.RIGHT)
@@ -548,6 +549,7 @@ func test_barrier_deflects_disc() -> void:
 
 func test_thrower_can_catch_barrier_rebound() -> void:
 	var sim := new_sim(4)
+	sim.barriers.append(Vector3(440,330,34))
 	var b := sim.barriers[0]
 	var p := sim.players[MatchSim.LEFT]
 	p.pos = Vector2(b.x - 160, b.y)

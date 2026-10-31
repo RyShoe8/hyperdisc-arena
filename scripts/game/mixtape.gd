@@ -184,7 +184,7 @@ func begin_match(o) -> void:
 	# without a valid deck there is just nothing to dub.
 	rating_change = 0
 	rating_ready = false
-	if not Online.signed_in() or active_match == "" or not "session_id" in o.transport:
+	if not (o.ranked and o.peer_ranked) or not Online.signed_in() or active_match == "" or not "session_id" in o.transport:
 		active_match = ""
 		return
 	var res: Dictionary = await Online.api.call_api(HTTPClient.METHOD_POST, "/api/mixtape/match", {

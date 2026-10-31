@@ -12,7 +12,10 @@ const RollbackSession := preload("res://scripts/net/rollback_session.gd")
 enum State { CONNECTING, LOBBY, PLAYING, ENDED, FAILED }
 
 ## Bump when the wire format or the rules change incompatibly.
-const PROTOCOL := 9  # 9: seven separate actions (dive, power move, curve left / right); 8: grounded play; jumping removed
+var ranked := false
+var peer_ranked := false
+
+const PROTOCOL := 10  # 9: seven separate actions (dive, power move, curve left / right); 8: grounded play; jumping removed
 const PKT_LOBBY := 1
 const RESEND_TICKS := 20
 const TIMEOUT_TICKS := 600
@@ -202,6 +205,7 @@ func _on_message(msg) -> void:
 		"pick":
 			if state != State.LOBBY or _start_sent:
 				return
+			peer_ranked = bool(msg.get("ranked", false))
 			remote_partner_pick = clampi(int(msg.get("partner", 0)), 0, balance.characters.size() - 1)
 			remote_partner_human = bool(msg.get("partner_human", false))
 			remote_pick = clampi(int(msg.get("character", 0)), 0, balance.characters.size() - 1)
@@ -264,7 +268,7 @@ static func delay_for_ping(rtt_ms: int) -> int:
 
 
 func _send_pick() -> void:
-	_send({"t": "pick", "character": local_pick, "locked": local_locked, "court": court, "doubles": doubles, "partner": local_partner_pick, "partner_human": local_partner_human,
+	_send({"t": "pick", "ranked": ranked, "character": local_pick, "locked": local_locked, "court": court, "doubles": doubles, "partner": local_partner_pick, "partner_human": local_partner_human,
 		"difficulty": difficulty})
 
 

@@ -1,6 +1,6 @@
 param(
  [ValidateSet('List','NewJob','Submit','Validate','Accept')][string]$Action='List',
- [ValidateSet('mick','tiffany','pete','steve','vanessa','keno')][string]$Character,
+ [ValidateSet('mick','tiffany','pete','steve','vanessa','keno','alex','jimmy','jason','tango')][string]$Character,
  [ValidatePattern('^[a-z0-9-]+$')][string]$Animation='run-directions-v1',
  [int]$Frames=16,
  [int]$Columns=4,
@@ -68,7 +68,8 @@ Add-Type -AssemblyName System.Drawing
 $bitmap=[System.Drawing.Bitmap]::new($candidate)
 try {
  if($bitmap.Width -lt 128 -or $bitmap.Height -lt 128){throw 'Candidate is too small.'}
- if($bitmap.GetPixel(0,0).A -ne 0){throw 'Candidate must have a transparent background.'}
+ # Match the component extractor: alpha <= 16 is outside the sprite.
+ if($bitmap.GetPixel(0,0).A -gt 16){throw 'Candidate must have a transparent background.'}
 } finally {$bitmap.Dispose()}
 if($Action -eq 'Accept') {
  if([string]::IsNullOrWhiteSpace($ReviewNotes)){throw 'Document the visual comparison of identity, proportions, outfit, accessories, pixel style and all frames in -ReviewNotes.'}

@@ -1,0 +1,15 @@
+{
+  "character": "jason",
+  "animation": "actions-v1",
+  "base_version": "base-v1",
+  "base_sha256": "09fe335d4e34f9c77f6cae19d807a36fde07fe7e7163c4f51ba66e420411b310",
+  "reference_sha256": "26ae021c47ac231e1957afdfc3ea951c38b75d4cd85f51e680b5cf44ee357f6f",
+  "expected_frames": 16,
+  "columns": 4,
+  "rows": 4,
+  "status": "accepted",
+  "candidate": "candidate.png",
+  "candidate_sha256": "3d3063753f1c53751accd704a8fc56e16cf56963bbd806c0b5ce2751fb601c5a",
+  "review_notes": "Mustache, sideburns, stocky frame, denim vest and work boots match reference. Compared all four rows to the canonical base and checked 16 isolated poses.",
+  "accepted_sha256": "3d3063753f1c53751accd704a8fc56e16cf56963bbd806c0b5ce2751fb601c5a"
+}

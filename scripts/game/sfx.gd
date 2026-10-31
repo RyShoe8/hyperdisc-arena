@@ -153,6 +153,24 @@ func play(sound: String, pitch := 1.0, volume_db := 0.0, pan := 0.0, character :
 
 
 ## The crowd murmur under a match; fades rather than cutting.
+var _location: AudioStreamPlayer
+var _last_location := ""
+func set_location(id: String) -> void:
+	if id == _last_location: return
+	_last_location = id
+	if _location == null:
+		_location = AudioStreamPlayer.new()
+		_location.bus = "Effects"
+		add_child(_location)
+	_location.stop()
+	if id == "": return
+	var stream: AudioStreamWAV = load("res://assets/sfx/venues/%s.wav" % id).duplicate()
+	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	stream.loop_end = roundi(stream.get_length()*stream.mix_rate)
+	_location.stream = stream
+	_location.volume_db = -9 + linear_to_db(maxf(Settings.sfx_volume, 0.0001))
+	_location.play()
+
 func set_crowd(on: bool) -> void:
 	if _bed.stream == null:
 		return
