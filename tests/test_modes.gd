@@ -120,11 +120,29 @@ func _run() -> void:
 	game.story_round = 4
 	var later: Dictionary = game._story_difficulty()
 	check(later.reaction_ticks < easy.reaction_ticks and later.aim_error < easy.aim_error and later.ex_chance > easy.ex_chance, "story difficulty improves reactions, accuracy and decisions")
+	var previous: Dictionary = easy
+	for chapter in range(1,6):
+		game.story_round = chapter
+		var current: Dictionary = game._story_difficulty()
+		check(current.reaction_ticks <= previous.reaction_ticks and current.reaction_ticks >= previous.reaction_ticks-2, "story reaction ramp has no sudden spike")
+		for skill in ["curve_chance","special_chance","slap_chance","drop_chance"]:
+			check(current[skill] >= previous[skill] and current[skill]-previous[skill] < 0.06, "story move frequency increases gradually: "+skill)
+		previous = current
+	var before_intro: int = game.sim.state_checksum()
+	game.view.entrance_ticks = 0
+	for tick in 180:
+		game.view.entrance_ticks = tick
+		game.view.tick()
+	check(before_intro == game.sim.state_checksum(), "entrance animation cannot advance gameplay")
+	game.view.entrance_ticks = -1
 	# Isolated save path keeps the user's actual Story run untouched.
 	game.story_save_path = "res://.godot/test_story_progress.cfg"
 	game.story_fighter = 0
 	game.story_order = game._story_ladder()
 	check(game.story_order == [6,7,8,4,3,5], "Story follows the challenger card")
+	game.story_round = 0
+	game._prepare_story()
+	check(game.screen == game.Screen.STORY_LADDER, "story shows dedicated ladder before versus")
 	game.story_wins = 0
 	check(game.available(0) and game.available(1) and game.available(3) and not game.available(2) and not game.available(9), "fresh roster and secret locked")
 	game.story_round = 1

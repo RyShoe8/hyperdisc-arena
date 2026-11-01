@@ -39,9 +39,8 @@ void fragment() {
 			float edge = smoothstep(0.0,0.14,part.x)*(1.0-smoothstep(0.86,1.0,part.x));
 			float anchored = (1.0-smoothstep(0.6,1.0,part.y))*edge;
 			// Subpixel head/shoulder shifts stay anchored to the authored seat.
-			vec2 motion = vec2(sin(t*(0.8+seed)+seed*31.0)*0.6+(rally_x-0.5)*0.7,
-				 sin(t*(1.1+seed)+seed*17.0)*0.45)*anchored;
-			vec2 sample_uv = uv+motion/vec2(1920.0,1080.0);
+			// Keep authored bodies rigid; never shear people on an arbitrary cell grid.
+			vec2 sample_uv = uv;
 			color = texture(TEXTURE,sample_uv);
 			// Independent small groups use precomputed low-change seams
 			// between the authored poses, rather than arbitrary grid cuts.
@@ -70,7 +69,7 @@ void fragment() {
 			// A clap lifts the shoulders; a startled spectator ducks toward the seat.
 			// Keep motion inside the seating mask so rails and court lines stay fixed.
 			float jump = pose==2 ? (2.5+sin(t*5.0+seed*17.0)*2.5) : (pose==3 ? -4.0 : 0.0);
-			sample_uv.y += jump*anchored/1080.0;
+			// Pose swaps supply articulated movement without stretching faces or limbs.
 			vec4 moved = color;
 			if (pose==1 && beat<0.32) moved = texture(applause,sample_uv);
 			if (pose==2) moved = texture(celebration,sample_uv);

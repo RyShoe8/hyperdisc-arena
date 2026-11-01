@@ -495,7 +495,7 @@ func _room_screen() -> int:
 func invite_modal_active() -> bool:
 	if Online.pending_invite.is_empty() or bot:
 		return false
-	return m.screen not in [m.Screen.MATCH, m.Screen.VS, m.Screen.PAUSED, m.Screen.ONLINE_LOBBY] \
+	return m.screen not in [m.Screen.MATCH, m.Screen.VS, m.Screen.ENTRANCE, m.Screen.PAUSED, m.Screen.ONLINE_LOBBY] \
 		and not (m.screen == m.Screen.RESULTS and m.online)
 
 
@@ -783,7 +783,19 @@ func _index_of(character: Dictionary) -> int:
 func vs_tick() -> void:
 	vs_ticks += 1
 	_step(true)
-	if vs_ticks > 100:
+	if om() != null and om().session.frame >= 100:
+		m.view.entrance_ticks = 0
+		m._go(m.Screen.ENTRANCE)
+
+
+func entrance_tick() -> void:
+	if om() == null:
+		m._go(m.Screen.ONLINE)
+		return
+	_step(true)
+	m.view.entrance_ticks = maxi(0,om().session.frame-100)
+	if om().session.frame >= 280:
+		m.view.entrance_ticks = -1
 		m._go(m.Screen.MATCH)
 
 

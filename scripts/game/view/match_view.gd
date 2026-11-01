@@ -40,6 +40,7 @@ var pixel_spectators: PixelCrowd
 var venue_life := preload("res://scripts/game/view/venue_life.gd").new()
 var crowd: Array[Texture2D] = []
 
+var entrance_ticks := -1
 var frame := 0
 var shake := 0.0
 var effects: Array[Dictionary] = []
@@ -51,6 +52,7 @@ var disc_region := Rect2()
 var last_pos: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]
 var moving: Array[bool] = [false, false, false, false]
 var run_phase: Array[int] = [0, 0, 0, 0]
+var idle_age: Array[int] = [0, 0, 0, 0]
 ## Smoothed travel heading selects authored front/rear run cycles.
 var run_heading: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]
 var run_direction: Array[String] = ["run", "run", "run", "run"]
@@ -80,7 +82,7 @@ var celebration_ticks := 0
 
 func _init(match_sim: MatchSim, character_ids: Array, player_names: Array[String]) -> void:
 	sim = match_sim
-	proj = CourtProjection.new(sim.court_width(), sim.court_height())
+	proj = CourtProjection.new(sim.court_width(), sim.court_height(), sim.court.id)
 	for id in character_ids:
 		arts.append(CharacterArt.new(id))
 	names = player_names
@@ -156,6 +158,7 @@ func tick() -> void:
 				"lean": pose.lean, "age": 0,
 				"facing_right": p.dash_dir.x > 0.0 if anim[0] == "dash" and absf(p.dash_dir.x) > 0.2 else p.side == MatchSim.LEFT})
 		moving[p.slot] = p.pos.distance_to(last_pos[p.slot]) > 0.5
+		idle_age[p.slot] = 0 if moving[p.slot] or p.action_ticks < 24 or p.holding or p.charge > 0 else idle_age[p.slot]+1
 		if moving[p.slot]:
 			run_heading[p.slot] = run_heading[p.slot].lerp(vel[p.slot].normalized(), 0.32)
 			var heading := run_heading[p.slot]
@@ -322,6 +325,7 @@ func draw(ci: CanvasItem) -> void:
 		ci.draw_texture_rect(court_bg, Rect2(Vector2.ZERO, proj.screen), false)
 	_draw_crowd(ci)
 	venue_life.draw(ci, sim.court.id, proj, frame)
+	_draw_court_boundaries(ci)
 	_draw_goal_lights(ci)
 	_draw_markers(ci)
 	_draw_shadows(ci)
@@ -331,7 +335,8 @@ func draw(ci: CanvasItem) -> void:
 	_draw_effects(ci, off)
 	ci.draw_set_transform(Vector2.ZERO)
 	_draw_hud(ci)
-	_draw_overlays(ci)
+	if entrance_ticks < 0:
+		_draw_overlays(ci)
 
 
 func _draw_crowd(ci: CanvasItem) -> void:
@@ -393,6 +398,8 @@ func _draw_markers(ci: CanvasItem) -> void:
 func _draw_shadows(ci: CanvasItem) -> void:
 	for p in sim.players:
 		var g := proj.floor_point(p.pos)
+		if entrance_ticks >= 0:
+			g.x = lerpf(-180.0 if p.side == 0 else 2100.0,g.x,clampf(entrance_ticks/65.0,0,1))
 		var s := 1.0 - clampf(p.z / 200.0, 0.0, 0.5)
 		_ellipse(ci, g, 34 * s, 12 * s, Color(0.1, 0.0, 0.2, 0.35))
 	var d := sim.disc
@@ -459,6 +466,8 @@ func _draw_referee(ci: CanvasItem) -> void:
 
 
 func _anim_for(p: MatchSim.PlayerState) -> Array:
+	if entrance_ticks >= 0:
+		return ["run", entrance_ticks] if entrance_ticks < 65 else ["win", entrance_ticks-65]
 	if sim.phase == MatchSim.Phase.MATCH_OVER:
 		return ["win" if sim.winner == p.side else "lose", celebration_ticks]
 	if p.dash_ticks > 0:
@@ -487,7 +496,7 @@ func _anim_for(p: MatchSim.PlayerState) -> Array:
 	if moving[p.slot]:
 		var direction: String = run_direction[p.slot]
 		return [direction if arts[p.slot].animations.has(direction) else "run", run_phase[p.slot]]
-	return ["idle", frame]
+	return ["idle", idle_age[p.slot]]
 
 
 ## Dashes and power throws leave afterimages.
@@ -512,7 +521,7 @@ func _pose(p: MatchSim.PlayerState, anim: Array) -> Dictionary:
 	var run_speed := maxf(float(sim.cfg.player.run_speed), 0.001)
 	match anim_name:
 		"idle", "hold":
-			var b := 0.018 * sin(frame * 0.09 + p.side * 1.7)
+			var b := 0.0 if arts[p.slot].pixel_art else 0.004 * sin(frame * 0.045 + p.side * 1.7)
 			stretch = Vector2(1.0 - b * 0.6, 1.0 + b)
 		"run", "run_up", "run_down":
 			var speed := clampf(vel[p.slot].length() / run_speed, 0.0, 1.0)
@@ -576,6 +585,9 @@ func _draw_player(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
 	var f: int = art.frame_for(anim[0], anim[1])
 	var pose := _pose(p, anim)
 	var ground: Vector2 = proj.air_point(p.pos, p.z) + pose.offset
+	if entrance_ticks >= 0:
+		var run_in := clampf(entrance_ticks / 65.0, 0, 1)
+		ground.x = lerpf(-180.0 if p.side == 0 else 2100.0, ground.x, run_in)
 	var facing_right := p.side == MatchSim.LEFT
 	if anim[0] in ["run_up", "run_down"]:
 		facing_right = run_facing_right[p.slot]
@@ -903,3 +915,35 @@ func _draw_cutin(ci: CanvasItem) -> void:
 		var size := UI.fit_size(label, 64, 820.0, UI.display)
 		UI.text(ci, Vector2(1000 if left else 920, y + 70), label, size, Color(c, out), UI.display, 7,
 			HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)
+
+
+func _draw_court_boundaries(ci: CanvasItem) -> void:
+	var w := sim.court_width()
+	var h := sim.court_height()
+	# The end panels cover the old inset goal props and score along the entire wall.
+	for side in [0,1]:
+		var x := 0.0 if side == 0 else w
+		var out := -1.0 if side == 0 else 1.0
+		var a := proj.floor_point(Vector2(x,0))
+		var b := proj.floor_point(Vector2(x,h))
+		var back := Vector2(out*125,-18)
+		ci.draw_colored_polygon(PackedVector2Array([a,b,b+back,a+back]),Color("19233a"))
+		ci.draw_polyline(PackedVector2Array([a+back,b+back,b,a,a+back]),Color("7794a7"),4)
+	# Bank walls follow the exact bounce lines at the far and near sidelines.
+	for y in [0.0,h]:
+		var a := proj.floor_point(Vector2(0,y))
+		var b := proj.floor_point(Vector2(w,y))
+		ci.draw_colored_polygon(PackedVector2Array([a,b,b-Vector2(0,20),a-Vector2(0,20)]),Color("25354d"))
+		ci.draw_line(a-Vector2(0,20),b-Vector2(0,20),Color("79cdd5"),4)
+		for x in range(0,int(w),48):
+			var at := proj.floor_point(Vector2(x,y))
+			ci.draw_rect(Rect2(at-Vector2(0,14),Vector2(24,7)),Color("456580"))
+	var a := proj.floor_point(Vector2(w/2,0))
+	var b := proj.floor_point(Vector2(w/2,h))
+	ci.draw_line(a,b,Color("151c35"),4)
+	ci.draw_line(a-Vector2(0,12),b-Vector2(0,12),Color("a7dae3"),3)
+	for y in range(0,int(h),18):
+		var at := proj.floor_point(Vector2(w/2,y))
+		ci.draw_line(at,at-Vector2(0,12),Color(0.75,0.95,1,0.65),2)
+	for at in [a,b]:
+		ci.draw_rect(Rect2(at-Vector2(4,26),Vector2(8,26)),Color("f7d865"))

@@ -12,9 +12,10 @@ var origin := Vector2.ZERO
 var court_size := Vector2.ZERO
 var wall_height := 70.0
 var panel_depth := 64.0
+var art_bounds: Array = []
 
 
-func _init(court_width: float, court_height: float) -> void:
+func _init(court_width: float, court_height: float, court_id: String = "") -> void:
 	var p: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/projection.json"))
 	screen = Vector2(float(p.screen_width), float(p.screen_height))
 	scale = float(p.scale)
@@ -27,10 +28,22 @@ func _init(court_width: float, court_height: float) -> void:
 	court_size = Vector2(court_width, court_height)
 	origin = Vector2(screen.x / 2.0 - court_width * scale / 2.0,
 		float(p.floor_centre_screen_y) - court_height * floor_y / 2.0)
+	if court_id != "":
+		var layouts: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/court_layouts.json"))
+		if layouts.has(court_id):
+			art_bounds = layouts[court_id].bounds
+			origin = Vector2(art_bounds[0],art_bounds[1])*3.75
+			floor_y = (float(art_bounds[4])-float(art_bounds[1]))*3.75/court_height
+
 
 
 ## A point on the floor (z = 0).
 func floor_point(pos: Vector2) -> Vector2:
+	if not art_bounds.is_empty():
+		var t := pos.y/court_size.y
+		var left := lerpf(float(art_bounds[0]),float(art_bounds[3]),t)*3.75
+		var right := lerpf(float(art_bounds[2]),float(art_bounds[5]),t)*3.75
+		return Vector2(lerpf(left,right,pos.x/court_size.x),origin.y+pos.y*floor_y)
 	return origin + Vector2(pos.x * scale, pos.y * floor_y)
 
 

@@ -48,6 +48,14 @@ func _init(court: String = "stadium") -> void:
 		if court == "stadium": cell = Vector2(35,38)
 		if area.size.x < 300: cell = Vector2(60,90)
 		grids.append(Vector2(maxi(1,roundi(area.size.x/cell.x)),maxi(1,roundi(area.size.y/cell.y))))
+	# Crowd bands may straddle a railing. Never swap pixels on the playing surface.
+	var layouts: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/court_layouts.json"))
+	var bounds: Array = layouts[court].bounds
+	for y in range(ceili(float(bounds[1])*3.75),floori(float(bounds[4])*3.75)+1):
+		var t := inverse_lerp(float(bounds[1])*3.75,float(bounds[4])*3.75,float(y))
+		var left := floori(lerpf(float(bounds[0]),float(bounds[3]),t)*3.75)
+		var right := ceili(lerpf(float(bounds[2]),float(bounds[5]),t)*3.75)
+		seat_map.fill_rect(Rect2i(left,y,right-left+1,1),Color.BLACK)
 	while boxes.size() < 64:
 		boxes.append(Vector4.ZERO)
 		grids.append(Vector2.ONE)

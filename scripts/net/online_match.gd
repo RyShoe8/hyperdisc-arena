@@ -15,7 +15,7 @@ enum State { CONNECTING, LOBBY, PLAYING, ENDED, FAILED }
 var ranked := false
 var peer_ranked := false
 
-const PROTOCOL := 10  # 9: seven separate actions (dive, power move, curve left / right); 8: grounded play; jumping removed
+const PROTOCOL := 11  # 9: seven separate actions (dive, power move, curve left / right); 8: grounded play; jumping removed
 const PKT_LOBBY := 1
 const RESEND_TICKS := 20
 const TIMEOUT_TICKS := 600
@@ -283,6 +283,8 @@ func _begin(p1: int, p2: int) -> void:
 		var a := local_partner_pick if is_host else remote_partner_pick
 		var b := remote_partner_pick if is_host else local_partner_pick
 		sim = MatchSim.new(balance, balance.characters[p1], balance.characters[p2], court, [balance.characters[a], balance.characters[b]])
+	# Both peers reserve the same initial READY frames for court entrances.
+	sim.phase_ticks = -180
 	session = RollbackSession.new(sim, transport, local_side, input_delay)
 	state = State.PLAYING
 

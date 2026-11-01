@@ -43,6 +43,12 @@ func _init(character_id: String) -> void:
 ## Frame index for an animation `ticks` physics ticks after it started.
 func frame_for(anim: String, ticks: int) -> int:
 	var a: Dictionary = animations.get(anim, animations["idle"])
+	if anim == "idle" and int(a.count) > 1:
+		var count := int(a.count)
+		var holds: Array = a.get("ticks", [])
+		var step := int(ticks / (int(holds[0]) if not holds.is_empty() else maxi(1,roundi(60.0/float(a.fps)))))
+		var cycle := posmod(step,2*(count-1))
+		return int(a.start) + (cycle if cycle < count else 2*(count-1)-cycle)
 	if a.has("ticks"):
 		return int(a.start) + _held_frame(a.ticks, ticks, a.loop)
 	var count := int(a.count)

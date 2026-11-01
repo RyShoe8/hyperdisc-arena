@@ -7,6 +7,13 @@ func _run() -> void:
 		assert(FileAccess.get_sha256("res://"+character.base)==character.hashes["base.png"])
 		assert(FileAccess.get_sha256("res://"+character.reference)==character.hashes["reference.png"])
 	var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/balance.json"))
+	for character in rules.characters:
+		var art = load("res://scripts/game/view/character_art.gd").new(character.id)
+		var previous: int = art.frame_for("idle",0)
+		for tick in 360:
+			var current: int = art.frame_for("idle",tick)
+			assert(absi(current-previous)<=1, "idle must not jump from final pose to first")
+			previous = current
 	var sim=load("res://scripts/sim/match_sim.gd").new(rules,rules.characters[0],rules.characters[1],0)
 	var names: Array[String]=["LEFT","RIGHT"]
 	var view=load("res://scripts/game/view/match_view.gd").new(sim,["mick","tiffany"],names)

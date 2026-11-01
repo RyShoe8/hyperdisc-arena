@@ -12,10 +12,12 @@ and never alter the deterministic simulation or rollback state.
 Canonical source pairs live in `tools/art/venues`: each venue has a watch and
 cheer image. `calibration.json` records court corners and audience regions on a
 512-by-288 reference. Run Godot with `--headless --path . --script
-tools/art/pack_story_venues.gd` to rectify these into 1920-by-1080 images in
+tools/art/pack_story_venues.gd` to scale these uniformly into 1920-by-1080 images in
 `build/venues`. Review the outputs before copying `*_pixel.png` into
 `assets/art/courts` and `*_cheer.png` / `*_groups.json` into `assets/art/crowds`.
-Import the project before previewing or exporting.
+The packer also writes `data/court_layouts.json`. Runtime projection maps court
+coordinates onto the original illustrated floor; spectators are never warped
+to fit the simulation. Import the project before previewing or exporting.
 
 `tools/preview_story_venues.gd` captures all six courts in watch and celebration
 states. Inspect goal alignment, audience mask seams and referee visibility.
@@ -23,7 +25,7 @@ states. Inspect goal alignment, audience mask seams and referee visibility.
 ## Reactions
 
 The crowd uses independently timed audience sections, alternate illustrated
-poses and shader movement. These are group animations, not individual skeletal
+poses without per-cell body deformation. These are group animations, not individual skeletal
 spectators. Catches, specials, points and match results drive their reactions.
 The existing referee continues to follow match state and serve the disc.
 

@@ -946,8 +946,15 @@ func test_pixel_crowd_event_reactions() -> void:
 		check(crowd.sections.size() >= 4, "%s animates top, sides and near audience" % court)
 		for pose in ["watch","clap","cheer","surprise"]:
 			check(crowd.frames[pose] != null, "%s %s crowd frame loads" % [court,pose])
-		for area in crowd.sections:
-			check(not area.intersects(Rect2(300,250,1320,590)), "crowd reaction never covers central playing surface")
+		var layouts: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/court_layouts.json"))
+		var b: Array = layouts[court].bounds
+		var mask: Image = crowd.material.get_shader_parameter("seat_map").get_image()
+		for y in range(ceili(b[1]*3.75),floori(b[4]*3.75),7):
+			var t := inverse_lerp(b[1]*3.75,b[4]*3.75,float(y))
+			var left := ceili(lerpf(b[0],b[3],t)*3.75)
+			var right := floori(lerpf(b[2],b[5],t)*3.75)
+			for x in range(left,right,17):
+				check(mask.get_pixel(x,y).r == 0, "crowd reaction mask excludes the actual projected court")
 
 func test_pixel_referee_and_disc_assets() -> void:
 	var art = load("res://scripts/game/view/character_art.gd").new("referee")

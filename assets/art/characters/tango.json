@@ -463,5 +463,17 @@
       ]
     }
   ],
-  "pixel_art": true
+  "pixel_art": true,
+  "portrait_face": [
+    135,
+    15,
+    505,
+    438
+  ],
+  "portrait_bust": [
+    30,
+    20,
+    600,
+    520
+  ]
 }

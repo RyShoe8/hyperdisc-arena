@@ -35,7 +35,7 @@ const COURT_NOTES := {
 
 enum Screen { TITLE, MAIN, SELECT, COURT, VS, MATCH, PAUSED, OPTIONS, RESULTS,
 	ONLINE, ONLINE_WAIT, ONLINE_JOIN, ONLINE_LOBBY, ONLINE_SIGNIN, ONLINE_FRIENDS, ONLINE_ROOM, MIXTAPE, TUTORIAL, SETUP, STORY_MENU, TRAINING, DOUBLES_GUIDE, LAN_BROWSER,
-	ONLINE_ADD_FRIEND, ONLINE_LEADERBOARD }
+	ONLINE_ADD_FRIEND, ONLINE_LEADERBOARD, STORY_LADDER, ENTRANCE }
 
 var balance: Dictionary
 var sim: MatchSim
@@ -279,7 +279,7 @@ func _physics_process(_delta: float) -> void:
 	if not shots.is_empty() and frame >= shots[0]:
 		_take_shot(shots.pop_front())
 	screen_ticks += 1
-	var crowd := screen in [Screen.VS, Screen.MATCH, Screen.PAUSED]
+	var crowd := screen in [Screen.VS, Screen.ENTRANCE, Screen.MATCH, Screen.PAUSED]
 	if crowd != _crowd_on:
 		_crowd_on = crowd
 		Sfx.set_crowd(crowd)
@@ -315,6 +315,20 @@ func _physics_process(_delta: float) -> void:
 			_setup_input()
 		Screen.STORY_MENU:
 			_story_menu_input()
+		Screen.STORY_LADDER:
+			if _back_pressed():
+				_go(Screen.STORY_MENU)
+			elif screen_ticks > 210 or (screen_ticks > 70 and _confirm_device() != -1):
+				_go(Screen.VS)
+		Screen.ENTRANCE:
+			if online:
+				net.entrance_tick()
+			else:
+				view.tick()
+				view.entrance_ticks = screen_ticks
+				if screen_ticks >= 180 or (screen_ticks > 90 and _confirm_device() != -1):
+					view.entrance_ticks = -1
+					_go(Screen.MATCH)
 		Screen.SELECT:
 			_select_input()
 		Screen.COURT:
@@ -516,6 +530,8 @@ func _vs_input() -> void:
 		Sfx.play("supersonic", 0.8)
 	if screen_ticks > 150 or (screen_ticks > 30 and _confirm_device() != -1):
 		_start_match()
+		view.entrance_ticks = 0
+		_go(Screen.ENTRANCE)
 
 
 # --- Match -----------------------------------------------------------------
@@ -1004,6 +1020,12 @@ func _draw() -> void:
 			_draw_setup()
 		Screen.STORY_MENU:
 			_draw_story_menu()
+		Screen.STORY_LADDER:
+			_draw_story_ladder()
+		Screen.ENTRANCE:
+			view.draw(self)
+			if not online:
+				_hint("%s SKIP INTRO" % _a())
 		Screen.SELECT:
 			_draw_select()
 		Screen.COURT:
@@ -1184,11 +1206,6 @@ func _draw_vs() -> void:
 	if story:
 		UI.text(self, Vector2(960, 160), "CHAPTER %d  |  %s" % [story_round + 2, STORY_CHAPTERS[story_round].to_upper()], 36, UI.YELLOW, UI.ui, 3)
 		UI.text(self, Vector2(960, 220), STORY_TIPS[story_round], 32, Color.WHITE, UI.ui, 4)
-		var ladder: Array[String] = []
-		for i in story_order.size():
-			ladder.append(("[WIN] " if i < story_round else "") + str(balance.characters[story_order[i]].name))
-		var line := "  >  ".join(ladder)
-		UI.text(self, Vector2(960, 940), line, UI.fit_size(line, 28, 1780, UI.ui), Color.WHITE, UI.ui, 3)
 	elif doubles:
 		UI.text(self, Vector2(960, 160), "DOUBLES  |  TEAM A vs TEAM B", 40, UI.YELLOW, UI.ui, 3)
 		UI.text(self, Vector2(960, 930), "%s + %s   VS   %s + %s" % [balance.characters[slot_picks[0]].name, balance.characters[slot_picks[2]].name, balance.characters[slot_picks[1]].name, balance.characters[slot_picks[3]].name], 28, Color.WHITE, UI.ui, 3)
@@ -1438,27 +1455,17 @@ func _prepare_story() -> void:
 	versus = false
 	pick = [story_fighter, story_order[story_round]]
 	court = STORY_COURTS[story_round]
-	_go(Screen.VS)
+	_go(Screen.STORY_LADDER)
 
 
 func _story_difficulty() -> Dictionary:
 	var params: Dictionary = balance.cpu.easy.duplicate(true)
-	var factor := pow(1.1, story_round)
-	for key in ["reaction_ticks", "hold_min", "hold_max"]:
-		params[key] = maxi(1, roundi(float(params[key]) / factor))
-	params.aim_error = maxf(8.0, float(params.aim_error) / factor)
-	params.dash_distance = maxf(95.0, 220.0 / factor)
-	for key in ["jump_chance", "slap_chance", "block_chance", "drop_chance", "special_chance", "ex_chance", "power_toss_chance", "curve_chance"]:
-		params[key] = minf(float(balance.cpu.hard[key]), (float(params[key]) + 0.05) * factor - 0.05)
-	match story_round:
-		1: params.curve_chance = maxf(params.curve_chance, 0.55)
-		2: params.hold_max = maxi(params.hold_min, int(params.hold_max) / 2)
-		3:
-			params.lob_chance = maxf(params.lob_chance, 0.38)
-			params.special_chance = maxf(params.special_chance, 0.7)
-		4:
-			params.slap_chance = maxf(params.slap_chance, 0.35)
-			params.drop_chance = maxf(params.drop_chance, 0.25)
+	# Small, predictable steps. No opponent-specific spikes in reaction or specials.
+	var progress := clampf(story_round / 5.0, 0.0, 1.0) * 0.45
+	for key in balance.cpu.easy:
+		if balance.cpu.easy[key] is float or balance.cpu.easy[key] is int:
+			var value := lerpf(float(balance.cpu.easy[key]), float(balance.cpu.normal[key]), progress)
+			params[key] = roundi(value) if balance.cpu.easy[key] is int else value
 	return params
 
 
@@ -1800,3 +1807,26 @@ func _draw_match_select() -> void:
 		_hint("%s CONFIRM     %s BACK" % [_a(), _b()])
 
 
+
+
+func _draw_story_ladder() -> void:
+	UI.outrun_background(self, SCREEN, frame / 60.0, 0.25)
+	UI.text(self, Vector2(960,110), "ROAD TO THE HYPERDOME", 76, UI.YELLOW, UI.display, 4)
+	UI.text(self, Vector2(960,170), "WIN %d OF 6  |  %s" % [story_round+1, STORY_VENUES[story_round].to_upper()], 28, Color.WHITE, UI.ui, 2)
+	for i in 6:
+		var y := 820.0-i*105.0
+		var active := i == story_round
+		var box := Rect2(610,y-60,940,88)
+		UI.slant_panel(self,box,Color("17112e"),UI.YELLOW if active else UI.DIM,16,3)
+		var name: String = balance.characters[story_order[i]].name
+		UI.text(self,Vector2(680,y),"%d" % [i+1],40,UI.YELLOW,UI.display,2)
+		UI.text(self,Vector2(1080,y),name.to_upper(),38,Color.WHITE if active else UI.DIM,UI.display,2)
+		if i < story_round:
+			UI.text(self,Vector2(1450,y),"WIN",24,UI.CYAN,UI.ui,1)
+	var step := smoothstep(0.0,1.0,clampf((screen_ticks-25)/55.0,0,1))
+	var rank := lerpf(float(maxi(0,story_round-1)),float(story_round),step)
+	var y := 820.0-rank*105.0
+	draw_texture_rect(portraits[story_fighter],Rect2(410,y-85,140,140),false)
+	UI.text(self,Vector2(555,y),">",50,UI.YELLOW,UI.display,2)
+	UI.text(self,Vector2(960,950),STORY_TIPS[story_round],30,Color.WHITE,UI.ui,2)
+	_hint("%s CONTINUE    %s BACK" % [_a(),_b()])
