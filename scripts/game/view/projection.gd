@@ -13,6 +13,7 @@ var court_size := Vector2.ZERO
 var wall_height := 70.0
 var panel_depth := 64.0
 var art_bounds: Array = []
+var integrated_walls := false
 
 
 func _init(court_width: float, court_height: float, court_id: String = "") -> void:
@@ -32,6 +33,7 @@ func _init(court_width: float, court_height: float, court_id: String = "") -> vo
 		var layouts: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/court_layouts.json"))
 		if layouts.has(court_id):
 			art_bounds = layouts[court_id].bounds
+			integrated_walls = layouts[court_id].get("integrated_walls",false)
 			origin = Vector2(art_bounds[0],art_bounds[1])*3.75
 			floor_y = (float(art_bounds[4])-float(art_bounds[1]))*3.75/court_height
 
@@ -63,6 +65,11 @@ func scenery_point(pos: Vector2, z: float) -> Vector2:
 func goal_strip(side: int, y0: float, y1: float, inset := 0.12) -> PackedVector2Array:
 	var x := 0.0 if side == 0 else court_size.x
 	var out := -1.0 if side == 0 else 1.0
+	if integrated_walls:
+		var bottom_a := floor_point(Vector2(x,y0))
+		var bottom_b := floor_point(Vector2(x,y1))
+		var shift := Vector2(out*18,-18)
+		return PackedVector2Array([bottom_a+shift,bottom_a+shift*2,bottom_b+shift*2,bottom_b+shift])
 	var d0 := panel_depth * inset
 	var d1 := panel_depth * (1.0 - inset)
 	var a := scenery_point(Vector2(x + out * d0, y0), d0)

@@ -432,7 +432,7 @@ func _title_input() -> void:
 
 
 func _main_items() -> Array:
-	var items := ["STORY", "VS", "MULTIPLAYER", "TUTORIAL", "MIXTAPES", "OPTIONS"]
+	var items := ["STORY", "QUICK MATCH", "MULTIPLAYER", "TUTORIAL", "MIXTAPES", "OPTIONS"]
 	if not OS.has_feature("web"):
 		items.append("QUIT")
 	return items
@@ -461,7 +461,7 @@ func _main_input() -> void:
 		"STORY":
 			story_menu_index = 0 if _load_story() else 1
 			_go(Screen.STORY_MENU)
-		"VS":
+		"QUICK MATCH":
 			setup_row = 0
 			setup_return = Screen.MAIN
 			_go(Screen.SETUP)
@@ -1472,15 +1472,13 @@ func _story_difficulty() -> Dictionary:
 func _story_menu_input() -> void:
 	var n := Controls.menu_nudged()
 	if n.y != 0:
-		story_menu_index = posmod(story_menu_index + n.y, 3)
+		story_menu_index = posmod(story_menu_index + n.y, 2)
 	if _back_pressed():
 		_go(Screen.MAIN)
 	elif _confirm_device() != -1:
 		if story_menu_index == 0:
 			if _load_story():
 				_prepare_story()
-		elif story_menu_index == 2:
-			_open_local_setup(false, [0, -1, -1, -1], Screen.STORY_MENU)
 		else:
 			story_fighter = 0
 			story_round = 0
@@ -1495,7 +1493,7 @@ func _draw_story_menu() -> void:
 	var save := ConfigFile.new()
 	var resumable: bool = save.load(story_save_path) == OK and save.get_value("story", "order", []) == _story_ladder() and int(save.get_value("story", "round", -1)) < STORY_IDS.size()
 	UI.text(self, Vector2(960, 320), "WIN SIX MATCHES AS MICK TO ENTER THE HYPERDISC ARENA LEAGUE.", 30, Color.WHITE, UI.ui, 3)
-	var items := ["CONTINUE" if resumable else "NO SAVED RUN", "NEW STORY", "QUICK MATCH vs CPU"]
+	var items := ["CONTINUE" if resumable else "NO SAVED RUN", "NEW STORY"]
 	for i in items.size():
 		UI.button(self, Rect2(560, 420 + i * 100, 800, 75), items[i], story_menu_index == i, frame, 36)
 	_hint("%s SELECT     %s BACK" % [_a(), _b()])
@@ -1520,9 +1518,9 @@ func _setup_input() -> void:
 
 func _draw_setup() -> void:
 	UI.outrun_background(self, SCREEN, frame / 60.0, 0.25)
-	UI.text(self, Vector2(960, 200), "VS", 110, UI.YELLOW, UI.display, 6)
+	UI.text(self, Vector2(960, 200), "QUICK MATCH", 110, UI.YELLOW, UI.display, 6)
 	var items := ["SINGLES  1v1", "DOUBLES  2v2"]
-	var notes := ["ONE PLAYER EACH SIDE", "TWO PLAYERS EACH SIDE: ONE DISC, ONE TEAM SCORE"]
+	var notes := ["ONE-OFF MATCH: ONE PLAYER EACH SIDE", "ONE-OFF MATCH: TWO PLAYERS EACH SIDE, ONE TEAM SCORE"]
 	for i in items.size():
 		UI.button(self, Rect2(560, 420 + i * 110, 800, 80), items[i], setup_row == i, frame, 40)
 	UI.text(self, Vector2(960, 700), notes[setup_row], 28, UI.CYAN, UI.ui, 3)
@@ -1539,7 +1537,7 @@ func _draw_doubles_guide() -> void:
 		"WHEN YOUR PARTNER GOES FOR THE CATCH, COVER THE OPEN SPACE.",
 		"MOVE THROUGH YOUR TEAMMATE FREELY. ALL YOUR MOVES STILL WORK.",
 		"EACH PLAYER HAS THEIR OWN POWER METER.",
-		"VS: ASSIGN PLAYERS OR CPUs TO ANY TEAM SLOT.",
+		"QUICK MATCH: ASSIGN PLAYERS OR CPUs TO ANY TEAM SLOT.",
 		"ONLINE: TWO MACHINES, EACH WITH A LOCAL OR CPU PARTNER."]
 	for i in lines.size():
 		UI.text(self, Vector2(960, 310 + i * 75), lines[i], 30, UI.CYAN if i % 2 == 0 else Color.WHITE, UI.ui, 3)

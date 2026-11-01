@@ -7,6 +7,7 @@ static var canvases: Array[RID] = []
 var frames: Dictionary = {}
 var people: Array[Dictionary] = []
 var atlas: Texture2D = preload("res://assets/art/crowds/fans.png")
+var fan_regions: Array[Rect2] = []
 var fan_rng := RandomNumberGenerator.new()
 
 var reaction := "watch"
@@ -60,6 +61,15 @@ func _init(court: String = "stadium") -> void:
 	material.set_shader_parameter("audience_count",sections.size())
 	material.set_shader_parameter("seat_map",ImageTexture.create_from_image(seat_map))
 
+	# Register each authored pose on its opaque feet rather than the cell boundary.
+	var source_image := atlas.get_image()
+	var row_cuts := [0.0,0.281,0.561,0.86]
+	for row in 3:
+		for column in 8:
+			var cell := Rect2i(column*source_image.get_width()/8+3, int(source_image.get_height()*row_cuts[row])+4,
+				source_image.get_width()/8-6, int(source_image.get_height()*(row_cuts[row+1]-row_cuts[row]))-8)
+			var used := source_image.get_region(cell).get_used_rect()
+			fan_regions.append(Rect2(Vector2(cell.position+used.position),Vector2(used.size)))
 	fan_rng.seed = court.hash()
 	# A terrace is a space to stand or wander, with enough room for raised arms.
 	for band in layouts[court].audience:
@@ -69,12 +79,12 @@ func _init(court: String = "stadium") -> void:
 		var right := float(band[2])*3.75
 		var top := float(band[1])*3.75
 		var bottom := float(band[3])*3.75
-		var size := 68.0 if near_row else 51.0
+		var size := 112.0 if near_row else 92.0
 		var count := maxi(1,int((bottom-top if side_row else right-left)/(size*0.94)))
 		for j in count:
 			var u := (j+0.5)/count
 			var anchor := Vector2((left+right)/2 if side_row else lerpf(left,right,u), lerpf(top,bottom,u) if side_row else bottom)
-			anchor.y += fan_rng.randf_range(-4,4)
+			anchor.y += fan_rng.randf_range(-11,5)
 			var identity := fan_rng.randi_range(0,3)+(4 if near_row else 0)
 			people.append({"home":anchor,"x":anchor.x,"goal":anchor.x,"id":identity,"size":size*fan_rng.randf_range(0.91,1.06),
 				"tempo":fan_rng.randi_range(7,13),"next":fan_rng.randi_range(20,330),"team":fan_rng.randi_range(0,1),
@@ -214,11 +224,9 @@ func _draw_fans(ci: CanvasItem) -> void:
 				row = 1 if beat in [1,2,4,5] else 0
 		elif posmod(clock+int(fan.phase)*17,270+int(fan.tempo)*9)<36:
 			row = 1
-		# Atlas rows have different heights; the third includes raised hands.
-		var cuts := [0.0,0.281,0.561,0.86]
-		var tex := atlas.get_size()
-		var source := Rect2(tex.x*int(fan.id)/8,tex.y*cuts[row],tex.x/8,tex.y*(cuts[row+1]-cuts[row]))
-		var scale_factor := float(fan.size)/(tex.y*0.281)
+		var source: Rect2 = fan_regions[row*8+int(fan.id)]
+		var reference: Rect2 = fan_regions[int(fan.id)]
+		var scale_factor := float(fan.size)/reference.size.y
 		var size := source.size*scale_factor
 		var feet := Vector2(fan.x,fan.home.y-lift)
-		ci.draw_texture_rect_region(atlas,Rect2(feet-Vector2(size.x/2,size.y),size),source)
+		ci.draw_texture_rect_region(atlas,Rect2(feet-Vector2(size.x/2,size.y),size),source,Color.WHITE,false,true)

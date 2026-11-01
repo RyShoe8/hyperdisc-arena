@@ -423,7 +423,7 @@ func _draw_shadows(ci: CanvasItem) -> void:
 func _catch_zone(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
 	# Project the same floor collision radius onto the incoming disc's plane.
 	# Airborne lobs still use their landing circle on the court.
-	var g := proj.air_point(p.pos, FLY_HEIGHT) if sim.disc.state == MatchSim.Disc.FLYING else proj.floor_point(p.pos)
+	var g := proj.air_point(p.pos, FLY_HEIGHT)
 	var r := float(sim.cfg.player.catch_radius) * proj.scale
 	var c := UI.P1 if p.side == MatchSim.LEFT else UI.P2
 	ci.draw_set_transform(g + _current_offset, 0.0, Vector2(1.0, proj.floor_y / proj.scale))
@@ -503,11 +503,14 @@ func _anim_for(p: MatchSim.PlayerState) -> Array:
 		return ["jump", 19]
 	if p.holding:
 		return ["hold", frame]
-	if p.charge > 0:
+	if p.charge > 0 and sim.disc.air_kind != MatchSim.Air.REF:
 		return ["charge", frame]
 	if moving[p.slot]:
 		var direction: String = run_direction[p.slot]
 		return [direction if arts[p.slot].animations.has(direction) else "run", run_phase[p.slot]]
+	# Keep the receiving stance planted throughout the referee delivery.
+	if sim.disc.state == MatchSim.Disc.AIR and sim.disc.air_kind == MatchSim.Air.REF:
+		return ["idle", 0]
 	return ["idle", idle_age[p.slot]]
 
 
@@ -619,7 +622,7 @@ func _draw_player(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
 	if p.knock_ticks > 0 and (frame / 2) % 2 == 0:
 		tint = Color(1.5, 1.5, 1.5)
 	art.draw(ci, f, ground, facing_right, SPRITE_SCALE, tint, pose.stretch, pose.lean)
-	if Settings.show_catch_zones:
+	if Settings.show_catch_zones and not p.holding and sim.phase == MatchSim.Phase.PLAY:
 		_catch_zone(ci, p)
 	if p.holding and sim.disc.owner == p.slot and sim.phase != MatchSim.Phase.MATCH_OVER \
 			and sim.phase != MatchSim.Phase.POINT_PAUSE and sim.phase != MatchSim.Phase.SET_PAUSE:
@@ -930,6 +933,9 @@ func _draw_cutin(ci: CanvasItem) -> void:
 
 
 func _draw_court_boundaries(ci: CanvasItem) -> void:
+	if sim.court.id == "concrete":
+		_draw_centre_divider(ci)
+		return
 	var w := sim.court_width()
 	var h := sim.court_height()
 	var palette: Array = {
@@ -968,6 +974,12 @@ func _draw_court_boundaries(ci: CanvasItem) -> void:
 				_:
 					ci.draw_rect(Rect2(at-Vector2(0,35),Vector2(29,16)),Color(palette[2]))
 					ci.draw_line(at-Vector2(0,31),at+Vector2(24,-31),Color(palette[1]),3)
+	_draw_centre_divider(ci)
+
+
+func _draw_centre_divider(ci: CanvasItem) -> void:
+	var w := sim.court_width()
+	var h := sim.court_height()
 	var a := proj.floor_point(Vector2(w/2,0))
 	var b := proj.floor_point(Vector2(w/2,h))
 	ci.draw_line(a,b,Color("151c35"),4)

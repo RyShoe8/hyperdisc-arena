@@ -17,6 +17,23 @@ func _run() -> void:
 	var sim=load("res://scripts/sim/match_sim.gd").new(rules,rules.characters[0],rules.characters[1],0)
 	var names: Array[String]=["LEFT","RIGHT"]
 	var view=load("res://scripts/game/view/match_view.gd").new(sim,["mick","tiffany"],names)
+	# Referee delivery must never select the power-up pose, even with stale charge.
+	var serve_sim = load("res://scripts/sim/match_sim.gd").new(rules,rules.characters[0],rules.characters[6],3)
+	var serve_view = load("res://scripts/game/view/match_view.gd").new(serve_sim,["mick","alex"],names)
+	var saw_toss := false
+	var saw_catch := false
+	for tick in 260:
+		serve_sim.step([{},{}])
+		serve_view.tick()
+		if serve_sim.disc.state == serve_sim.Disc.AIR and serve_sim.disc.air_kind == serve_sim.Air.REF:
+			saw_toss = true
+			for receiver in serve_sim.players:
+				assert(receiver.charge == 0)
+				assert(serve_view._anim_for(receiver)[0] != "charge")
+		if serve_sim.players[serve_sim.server].serving:
+			saw_catch = true
+			break
+	assert(saw_toss and saw_catch, "exercise the full referee delivery and catch")
 	sim.phase=sim.Phase.PLAY
 	var p=sim.players[0]
 	# A prior jump must not suppress a subsequent dive or its recovery.

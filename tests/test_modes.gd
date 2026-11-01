@@ -96,7 +96,7 @@ func _run() -> void:
 	var game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
 	game.set_physics_process(false)
-	check(game._main_items() == ["STORY", "VS", "MULTIPLAYER", "TUTORIAL", "MIXTAPES", "OPTIONS", "QUIT"], "approved menu order")
+	check(game._main_items() == ["STORY", "QUICK MATCH", "MULTIPLAYER", "TUTORIAL", "MIXTAPES", "OPTIONS", "QUIT"], "approved menu order")
 	check(game.net.menu_items().map(func(item): return item[0]) == ["online", "lan", "add_friend"], "multiplayer offers online, LAN and add friend")
 	game.main_index = 1
 	game._open_local_setup(false, [0, 1, -1, -1], game.Screen.MAIN)
@@ -219,4 +219,3 @@ func _run() -> void:
 	await process_frame
 	print("MODE TESTS PASSED" if failures == 0 else "%d MODE TESTS FAILED" % failures)
 	quit(0 if failures == 0 else 1)
-
