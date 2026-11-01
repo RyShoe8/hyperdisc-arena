@@ -15,6 +15,8 @@
 ## Missing keys count as released, so older callers keep working.
 extends RefCounted
 
+const INTRO_TICKS := 300
+
 enum Phase { READY, SERVE, PLAY, POINT_PAUSE, SET_PAUSE, MATCH_OVER }
 enum Disc { HELD, FLYING, AIR }
 ## What kind of airborne disc this is decides who may catch it and who
@@ -498,7 +500,7 @@ func _try_defend(p: PlayerState, input: Dictionary) -> bool:
 
 
 func _update_charge(p: PlayerState) -> void:
-	if disc.state != Disc.AIR or side_of(disc.air_to.x) != p.side or p.z > 0.0 \
+	if disc.state != Disc.AIR or disc.air_kind == Air.REF or side_of(disc.air_to.x) != p.side or p.z > 0.0 \
 			or not _may_catch_air(p) \
 			or p.pos.distance_to(disc.air_to) > float(cfg.charge.radius):
 		p.charge = 0

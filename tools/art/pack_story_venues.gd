@@ -9,16 +9,15 @@ func _initialize():
 	for court in rules.courts:
 		var id:String=court.id
 		var config:Dictionary=configs[id]
-		for reaction in ["watch","cheer"]:
-			var source_path:="res://tools/art/venues/%s-%s.png"%[config.slug,reaction]
-			if not FileAccess.file_exists(source_path):
-				source_path="res://tools/art/venues/%s-watch.png"%config.slug
-			var img:=Image.load_from_file(source_path)
-			if img==null or img.is_empty(): quit(1);return
-			var out: Image = img
-			out.resize(1920,1080,Image.INTERPOLATE_NEAREST)
-			var path:=("res://build/venues/%s_pixel.png" if reaction=="watch" else "res://build/venues/%s_cheer.png")%id
-			if out.save_png(ProjectSettings.globalize_path(path))!=OK: quit(1);return
+		var source_path := "res://tools/art/venues/%s-empty.png" % config.slug
+		var img := Image.load_from_file(source_path)
+		if img == null or img.is_empty():
+			quit(1)
+			return
+		img.resize(1920,1080,Image.INTERPOLATE_NEAREST)
+		if img.save_png(ProjectSettings.globalize_path("res://build/venues/%s_pixel.png" % id)) != OK:
+			quit(1)
+			return
 		var boxes:=[]
 		for band in config.audience:
 			var count:=int(band[4])

@@ -5,6 +5,10 @@ extends RefCounted
 const POSES := ["watch","clap","cheer","surprise"]
 static var canvases: Array[RID] = []
 var frames: Dictionary = {}
+var people: Array[Dictionary] = []
+var atlas: Texture2D = preload("res://assets/art/crowds/fans.png")
+var fan_rng := RandomNumberGenerator.new()
+
 var reaction := "watch"
 var ticks_left := 0
 var clock := 0
@@ -20,11 +24,6 @@ var event_serial := 0
 
 func _init(court: String = "stadium") -> void:
 	frames.watch = load("res://assets/art/courts/%s_pixel.png" % court)
-	# Two registered, hand-authored crowd states. The shader times partial
-	# applause, recoil and full celebration independently by seating section.
-	frames.cheer = load("res://assets/art/crowds/%s_cheer.png" % court)
-	frames.clap = frames.cheer
-	frames.surprise = frames.watch
 	_build_sections(court)
 	var groups_path := "res://assets/art/crowds/%s_groups.json" % court
 	if FileAccess.file_exists(groups_path):
@@ -33,9 +32,6 @@ func _init(court: String = "stadium") -> void:
 			sections.append(Rect2(box[0],box[1],box[2],box[3]))
 	material = ShaderMaterial.new()
 	material.shader = load("res://scripts/game/view/shaders/living_arena.gdshader")
-	material.set_shader_parameter("applause",frames.clap)
-	material.set_shader_parameter("celebration",frames.cheer)
-	material.set_shader_parameter("surprise",frames.surprise)
 	material.set_shader_parameter("court_style",["beach","lawn","tiled","concrete","clay","stadium"].find(court))
 	var boxes := PackedVector4Array()
 	var grids := PackedVector2Array()
@@ -63,6 +59,26 @@ func _init(court: String = "stadium") -> void:
 	material.set_shader_parameter("grids",grids)
 	material.set_shader_parameter("audience_count",sections.size())
 	material.set_shader_parameter("seat_map",ImageTexture.create_from_image(seat_map))
+
+	fan_rng.seed = court.hash()
+	# A terrace is a space to stand or wander, with enough room for raised arms.
+	for band in layouts[court].audience:
+		var near_row := float(band[1]) > float(bounds[4])-4.0
+		var side_row := float(band[3])-float(band[1]) > float(band[2])-float(band[0])
+		var left := float(band[0])*3.75
+		var right := float(band[2])*3.75
+		var top := float(band[1])*3.75
+		var bottom := float(band[3])*3.75
+		var size := 68.0 if near_row else 51.0
+		var count := maxi(1,int((bottom-top if side_row else right-left)/(size*0.94)))
+		for j in count:
+			var u := (j+0.5)/count
+			var anchor := Vector2((left+right)/2 if side_row else lerpf(left,right,u), lerpf(top,bottom,u) if side_row else bottom)
+			anchor.y += fan_rng.randf_range(-4,4)
+			var identity := fan_rng.randi_range(0,3)+(4 if near_row else 0)
+			people.append({"home":anchor,"x":anchor.x,"goal":anchor.x,"id":identity,"size":size*fan_rng.randf_range(0.91,1.06),
+				"tempo":fan_rng.randi_range(7,13),"next":fan_rng.randi_range(20,330),"team":fan_rng.randi_range(0,1),
+				"delay":fan_rng.randi_range(2,35),"phase":fan_rng.randi_range(0,200),"energy":fan_rng.randf(),"step":0.0})
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE and canvas.is_valid():
@@ -111,6 +127,13 @@ func _build_sections(court: String) -> void:
 
 func tick() -> void:
 	clock += 1
+	for fan in people:
+		if clock >= fan.next:
+			fan.goal = fan.home.x + fan_rng.randf_range(-11,11) + (rally_x-0.5)*5
+			fan.next = clock+fan_rng.randi_range(80,420)
+		var dx := float(fan.goal)-float(fan.x)
+		fan.x = move_toward(float(fan.x),float(fan.goal),0.34)
+		fan.step = absf(sin(clock*0.18+fan.phase))*1.8 if absf(dx)>0.5 else 0.0
 	excitement = maxf(0.0, excitement - 0.003)
 	reaction_age += 1
 	ticks_left = maxi(0,ticks_left-1)
@@ -175,3 +198,27 @@ func draw(ci: CanvasItem, offset: Vector2 = Vector2.ZERO) -> void:
 	if reaction == "surprise": kind = 3
 	material.set_shader_parameter("reaction",kind)
 
+	_draw_fans(ci)
+
+func _draw_fans(ci: CanvasItem) -> void:
+	for fan in people:
+		var beat := posmod((clock+int(fan.phase))/int(fan.tempo),8)
+		var row := 0
+		var lift := float(fan.step)
+		var engaged := reaction_age >= int(fan.delay) and reaction_age < int(fan.delay)+65+int(fan.energy*155)
+		if reaction != "watch" and engaged:
+			if reaction in ["cheer","victory"] and (reaction_side == fan.team or fan.energy>0.68):
+				row = [0,1,2,2,2,1,1,0][beat]
+				lift += 4.0*absf(sin((clock+fan.phase)*0.16)) if row==2 else 0.0
+			else:
+				row = 1 if beat in [1,2,4,5] else 0
+		elif posmod(clock+int(fan.phase)*17,270+int(fan.tempo)*9)<36:
+			row = 1
+		# Atlas rows have different heights; the third includes raised hands.
+		var cuts := [0.0,0.281,0.561,0.86]
+		var tex := atlas.get_size()
+		var source := Rect2(tex.x*int(fan.id)/8,tex.y*cuts[row],tex.x/8,tex.y*(cuts[row+1]-cuts[row]))
+		var scale_factor := float(fan.size)/(tex.y*0.281)
+		var size := source.size*scale_factor
+		var feet := Vector2(fan.x,fan.home.y-lift)
+		ci.draw_texture_rect_region(atlas,Rect2(feet-Vector2(size.x/2,size.y),size),source)

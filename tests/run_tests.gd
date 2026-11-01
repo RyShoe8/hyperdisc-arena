@@ -944,8 +944,7 @@ func test_pixel_crowd_event_reactions() -> void:
 	for court in ["beach","lawn","tiled","concrete","clay","stadium"]:
 		var crowd = load("res://scripts/game/view/pixel_crowd.gd").new(court)
 		check(crowd.sections.size() >= 4, "%s animates top, sides and near audience" % court)
-		for pose in ["watch","clap","cheer","surprise"]:
-			check(crowd.frames[pose] != null, "%s %s crowd frame loads" % [court,pose])
+		check(crowd.people.size() >= 12 and crowd.atlas != null, "%s populates individual animated spectators" % court)
 		var layouts: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/court_layouts.json"))
 		var b: Array = layouts[court].bounds
 		var mask: Image = crowd.material.get_shader_parameter("seat_map").get_image()

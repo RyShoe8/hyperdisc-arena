@@ -9,6 +9,7 @@ const CourtProjection := preload("res://scripts/game/view/projection.gd")
 const CharacterArt := preload("res://scripts/game/view/character_art.gd")
 const PixelCrowd := preload("res://scripts/game/view/pixel_crowd.gd")
 
+const INTRO_TICKS := MatchSim.INTRO_TICKS
 const CELEBRATION_TICKS := 300  # Five seconds at 60 Hz.
 const CELEBRATION_SKIP_TICKS := 120
 
@@ -335,7 +336,16 @@ func draw(ci: CanvasItem) -> void:
 	_draw_effects(ci, off)
 	ci.draw_set_transform(Vector2.ZERO)
 	_draw_hud(ci)
-	if entrance_ticks < 0:
+	if entrance_ticks >= 0:
+		var side := mini(1,entrance_ticks/150)
+		if entrance_ticks%150 >= 32:
+			_player_card(ci,side,"ENTERING THE COURT")
+	elif sim.phase == MatchSim.Phase.MATCH_OVER:
+		if celebration_ticks < 55:
+			_big_banner(ci,"FINAL POINT",UI.YELLOW,celebration_ticks)
+		else:
+			_player_card(ci,sim.winner,"MATCH WINNER" if celebration_ticks < 175 else "SETS   %d  -  %d" % [sim.sets_won[sim.winner],sim.sets_won[1-sim.winner]])
+	else:
 		_draw_overlays(ci)
 
 
@@ -399,7 +409,7 @@ func _draw_shadows(ci: CanvasItem) -> void:
 	for p in sim.players:
 		var g := proj.floor_point(p.pos)
 		if entrance_ticks >= 0:
-			g.x = lerpf(-180.0 if p.side == 0 else 2100.0,g.x,clampf(entrance_ticks/65.0,0,1))
+			g.x = lerpf(-180.0 if p.side == 0 else 2100.0,g.x,clampf((entrance_ticks-p.side*150)/55.0,0,1))
 		var s := 1.0 - clampf(p.z / 200.0, 0.0, 0.5)
 		_ellipse(ci, g, 34 * s, 12 * s, Color(0.1, 0.0, 0.2, 0.35))
 	var d := sim.disc
@@ -467,7 +477,9 @@ func _draw_referee(ci: CanvasItem) -> void:
 
 func _anim_for(p: MatchSim.PlayerState) -> Array:
 	if entrance_ticks >= 0:
-		return ["run", entrance_ticks] if entrance_ticks < 65 else ["win", entrance_ticks-65]
+		var age := entrance_ticks-p.side*150
+		if age >= 145: return ["idle",age-145]
+		return ["run", maxi(0,age)] if age < 55 else ["win", age-55]
 	if sim.phase == MatchSim.Phase.MATCH_OVER:
 		return ["win" if sim.winner == p.side else "lose", celebration_ticks]
 	if p.dash_ticks > 0:
@@ -586,7 +598,7 @@ func _draw_player(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
 	var pose := _pose(p, anim)
 	var ground: Vector2 = proj.air_point(p.pos, p.z) + pose.offset
 	if entrance_ticks >= 0:
-		var run_in := clampf(entrance_ticks / 65.0, 0, 1)
+		var run_in := clampf((entrance_ticks-p.side*150) / 55.0, 0, 1)
 		ground.x = lerpf(-180.0 if p.side == 0 else 2100.0, ground.x, run_in)
 	var facing_right := p.side == MatchSim.LEFT
 	if anim[0] in ["run_up", "run_down"]:
@@ -920,6 +932,11 @@ func _draw_cutin(ci: CanvasItem) -> void:
 func _draw_court_boundaries(ci: CanvasItem) -> void:
 	var w := sim.court_width()
 	var h := sim.court_height()
+	var palette: Array = {
+		"beach":["795037","ffd68a","aa7248"],"concrete":["714528","ffd883","bc9251"],
+		"lawn":["482354","ff69d8","8240a6"],"clay":["484447","ffb33f","807367"],
+		"tiled":["202842","22eafd","835aca"],"stadium":["242f51","ffd263","566589"]
+	}[sim.court.id]
 	# The end panels cover the old inset goal props and score along the entire wall.
 	for side in [0,1]:
 		var x := 0.0 if side == 0 else w
@@ -927,17 +944,30 @@ func _draw_court_boundaries(ci: CanvasItem) -> void:
 		var a := proj.floor_point(Vector2(x,0))
 		var b := proj.floor_point(Vector2(x,h))
 		var back := Vector2(out*125,-18)
-		ci.draw_colored_polygon(PackedVector2Array([a,b,b+back,a+back]),Color("19233a"))
-		ci.draw_polyline(PackedVector2Array([a+back,b+back,b,a,a+back]),Color("7794a7"),4)
+		ci.draw_colored_polygon(PackedVector2Array([a,b,b+back,a+back]),Color(palette[0]).darkened(0.35))
+		ci.draw_polyline(PackedVector2Array([a+back,b+back,b,a,a+back]),Color(palette[2]),4)
+		ci.draw_line(a,b,Color(palette[1]),8)
+		for corner in [a,b]:
+			ci.draw_colored_polygon(PackedVector2Array([corner,corner+back,corner+back-Vector2(0,28),corner-Vector2(0,46)]),Color(palette[0]))
+			ci.draw_line(corner-Vector2(0,46),corner+back-Vector2(0,28),Color(palette[1]),5)
 	# Bank walls follow the exact bounce lines at the far and near sidelines.
 	for y in [0.0,h]:
 		var a := proj.floor_point(Vector2(0,y))
 		var b := proj.floor_point(Vector2(w,y))
-		ci.draw_colored_polygon(PackedVector2Array([a,b,b-Vector2(0,20),a-Vector2(0,20)]),Color("25354d"))
-		ci.draw_line(a-Vector2(0,20),b-Vector2(0,20),Color("79cdd5"),4)
+		ci.draw_colored_polygon(PackedVector2Array([a,b,b-Vector2(0,46),a-Vector2(0,46)]),Color(palette[0]))
+		ci.draw_line(a-Vector2(0,46),b-Vector2(0,46),Color(palette[1]),6)
+		ci.draw_line(a,b,Color(palette[1]),8)
 		for x in range(0,int(w),48):
 			var at := proj.floor_point(Vector2(x,y))
-			ci.draw_rect(Rect2(at-Vector2(0,14),Vector2(24,7)),Color("456580"))
+			match sim.court.id:
+				"beach","concrete":
+					ci.draw_rect(Rect2(at-Vector2(0,42),Vector2(6,41)),Color(palette[2]))
+					ci.draw_line(at-Vector2(2,32),at+Vector2(10,-29),Color(palette[1]),3)
+				"clay":
+					ci.draw_line(at-Vector2(0,8),at+Vector2(24,-36),Color(palette[1]),8)
+				_:
+					ci.draw_rect(Rect2(at-Vector2(0,35),Vector2(29,16)),Color(palette[2]))
+					ci.draw_line(at-Vector2(0,31),at+Vector2(24,-31),Color(palette[1]),3)
 	var a := proj.floor_point(Vector2(w/2,0))
 	var b := proj.floor_point(Vector2(w/2,h))
 	ci.draw_line(a,b,Color("151c35"),4)
@@ -947,3 +977,13 @@ func _draw_court_boundaries(ci: CanvasItem) -> void:
 		ci.draw_line(at,at-Vector2(0,12),Color(0.75,0.95,1,0.65),2)
 	for at in [a,b]:
 		ci.draw_rect(Rect2(at-Vector2(4,26),Vector2(8,26)),Color("f7d865"))
+
+func _player_card(ci: CanvasItem, side: int, headline: String) -> void:
+	var tint := UI.P1 if side == 0 else UI.P2
+	var x := 60 if side == 0 else 1160
+	UI.slant_panel(ci,Rect2(x,774,700,128),Color("17112e"),tint,20,4)
+	UI.text(ci,Vector2(x+350,816),headline,28,tint,UI.ui,2)
+	var label := str(sim.players[side].character.name).to_upper()
+	if sim.players.size()==4:
+		label += " + " + str(sim.players[side+2].character.name).to_upper()
+	UI.text(ci,Vector2(x+350,877),label,UI.fit_size(label,56,635,UI.display),Color.WHITE,UI.display,3)

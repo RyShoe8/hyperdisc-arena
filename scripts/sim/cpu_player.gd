@@ -69,6 +69,10 @@ func _think_holding(sim: MatchSim, me: MatchSim.PlayerState) -> Dictionary:
 
 	var fwd := MatchSim.forward(side)
 	var aim := rng.randi_range(-1, 1)
+	# Look for an open lane when the opponent commits to either wall.
+	var opponent_y: float = sim.players[1-side].pos.y
+	if absf(opponent_y - sim.court_height()*0.5) > sim.court_height()*0.23 and rng.randf() < 0.55:
+		aim = 1 if opponent_y < sim.court_height()*0.5 else -1
 	if sim.ex_full(slot) and rng.randf() < float(params.ex_chance):
 		return _press({"power": true, "y": aim})
 	if me.charged and rng.randf() < float(params.special_chance):
@@ -116,13 +120,19 @@ func _think_defending(sim: MatchSim, me: MatchSim.PlayerState) -> Dictionary:
 					_defence = Defence.NONE
 					return _press({"a": true})
 
+	# A clean throw already headed into our hands calls for planting our feet.
+	var crossing := _predict_y(sim, me.pos.x) if incoming else me.pos.y
+	var radius := float(sim.cfg.player.catch_radius)
+	if incoming and (me.pos.x-disc.pos.x)*disc.vel.x >= 0 and absf(crossing-me.pos.y) < radius*0.65:
+		return _idle()
+
 	_refresh -= 1
 	if _refresh <= 0:
 		_refresh = int(params.reaction_ticks)
 		if air_to_me:
 			_target = disc.air_to
 		elif incoming:
-			_target = Vector2(sim.home_x(side), _predict_y(sim, me.pos.x) + _aim_offset)
+			_target = Vector2(sim.home_x(side), crossing + _aim_offset * clampf(absf(disc.pos.x-me.pos.x)/sim.court_width(),0.15,0.8))
 		else:
 			_target = Vector2(sim.home_x(side), lerpf(sim.court_height() / 2.0, disc.pos.y, 0.5))
 

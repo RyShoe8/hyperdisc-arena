@@ -326,7 +326,7 @@ func _physics_process(_delta: float) -> void:
 			else:
 				view.tick()
 				view.entrance_ticks = screen_ticks
-				if screen_ticks >= 180 or (screen_ticks > 90 and _confirm_device() != -1):
+				if screen_ticks >= MatchView.INTRO_TICKS or (screen_ticks > 90 and _confirm_device() != -1):
 					view.entrance_ticks = -1
 					_go(Screen.MATCH)
 		Screen.SELECT:
@@ -1461,7 +1461,7 @@ func _prepare_story() -> void:
 func _story_difficulty() -> Dictionary:
 	var params: Dictionary = balance.cpu.easy.duplicate(true)
 	# Small, predictable steps. No opponent-specific spikes in reaction or specials.
-	var progress := clampf(story_round / 5.0, 0.0, 1.0) * 0.45
+	var progress := clampf(story_round / 5.0, 0.0, 1.0) * 0.30
 	for key in balance.cpu.easy:
 		if balance.cpu.easy[key] is float or balance.cpu.easy[key] is int:
 			var value := lerpf(float(balance.cpu.easy[key]), float(balance.cpu.normal[key]), progress)

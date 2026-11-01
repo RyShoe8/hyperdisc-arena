@@ -794,7 +794,7 @@ func entrance_tick() -> void:
 		return
 	_step(true)
 	m.view.entrance_ticks = maxi(0,om().session.frame-100)
-	if om().session.frame >= 280:
+	if om().session.frame >= 100 + MatchView.INTRO_TICKS:
 		m.view.entrance_ticks = -1
 		m._go(m.Screen.MATCH)
 
