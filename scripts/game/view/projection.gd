@@ -14,6 +14,7 @@ var wall_height := 70.0
 var panel_depth := 64.0
 var art_bounds: Array = []
 var integrated_walls := false
+var wall_edges: Array = []
 
 
 func _init(court_width: float, court_height: float, court_id: String = "") -> void:
@@ -34,6 +35,7 @@ func _init(court_width: float, court_height: float, court_id: String = "") -> vo
 		if layouts.has(court_id):
 			art_bounds = layouts[court_id].bounds
 			integrated_walls = layouts[court_id].get("integrated_walls",false)
+			wall_edges = layouts[court_id].get("wall_edges",[])
 			origin = Vector2(art_bounds[0],art_bounds[1])*3.75
 			floor_y = (float(art_bounds[4])-float(art_bounds[1]))*3.75/court_height
 
@@ -41,12 +43,26 @@ func _init(court_width: float, court_height: float, court_id: String = "") -> vo
 
 ## A point on the floor (z = 0).
 func floor_point(pos: Vector2) -> Vector2:
+	if not wall_edges.is_empty():
+		var y := lerpf(float(art_bounds[1]),float(art_bounds[4]),pos.y/court_size.y)
+		return _wall_point(0,y).lerp(_wall_point(1,y),pos.x/court_size.x)
 	if not art_bounds.is_empty():
 		var t := pos.y/court_size.y
 		var left := lerpf(float(art_bounds[0]),float(art_bounds[3]),t)*3.75
 		var right := lerpf(float(art_bounds[2]),float(art_bounds[5]),t)*3.75
 		return Vector2(lerpf(left,right,pos.x/court_size.x),origin.y+pos.y*floor_y)
 	return origin + Vector2(pos.x * scale, pos.y * floor_y)
+
+
+## Authored wall corners, including bevels, share one mapping with gameplay.
+func _wall_point(side: int, y: float) -> Vector2:
+	var edge: Array = wall_edges[side]
+	for i in range(1,edge.size()):
+		if y <= float(edge[i][1]) or i == edge.size()-1:
+			var a := Vector2(edge[i-1][0],edge[i-1][1])
+			var b := Vector2(edge[i][0],edge[i][1])
+			return a.lerp(b,inverse_lerp(a.y,b.y,y))*3.75
+	return Vector2(edge[0][0],y)*3.75
 
 
 ## A point above the floor, using the exaggerated height of gameplay objects.
@@ -66,10 +82,26 @@ func goal_strip(side: int, y0: float, y1: float, inset := 0.12) -> PackedVector2
 	var x := 0.0 if side == 0 else court_size.x
 	var out := -1.0 if side == 0 else 1.0
 	if integrated_walls:
+		if not wall_edges.is_empty():
+			var start := lerpf(float(art_bounds[1]),float(art_bounds[4]),y0/court_size.y)
+			var end := lerpf(float(art_bounds[1]),float(art_bounds[4]),y1/court_size.y)
+			var samples: Array[float] = [start]
+			for vertex in wall_edges[side]:
+				if float(vertex[1]) > start and float(vertex[1]) < end:
+					samples.append(float(vertex[1]))
+			samples.append(end)
+			var polygon := PackedVector2Array()
+			var rise := Vector2(out*7,0)*3.75
+			for y in samples:
+				polygon.append(_wall_point(side,y)+rise*inset)
+			samples.reverse()
+			for y in samples:
+				polygon.append(_wall_point(side,y)+rise*(1.0-inset))
+			return polygon
 		var bottom_a := floor_point(Vector2(x,y0))
 		var bottom_b := floor_point(Vector2(x,y1))
-		var shift := Vector2(out*18,-18)
-		return PackedVector2Array([bottom_a+shift,bottom_a+shift*2,bottom_b+shift*2,bottom_b+shift])
+		var shift := Vector2(out*14,-18)
+		return PackedVector2Array([bottom_a,bottom_a+shift,bottom_b+shift,bottom_b])
 	var d0 := panel_depth * inset
 	var d1 := panel_depth * (1.0 - inset)
 	var a := scenery_point(Vector2(x + out * d0, y0), d0)

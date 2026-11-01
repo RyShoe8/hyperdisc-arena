@@ -921,7 +921,7 @@ func test_pixel_mick_frames_and_reverse_run() -> void:
 
 
 func test_pixel_crowd_event_reactions() -> void:
-	var spectators = load("res://scripts/game/view/pixel_crowd.gd").new()
+	var spectators = load("res://scripts/game/view/pixel_crowd.gd").new("concrete")
 	check(spectators.frames.watch != null, "arena crowd frame loads")
 	spectators.handle({"type":"catch","speed":12})
 	check(spectators.reaction == "watch", "routine catch does not trigger uniform applause")
@@ -941,19 +941,23 @@ func test_pixel_crowd_event_reactions() -> void:
 		spectators.tick()
 	check(seen.has(1) and seen.has(2), "celebration animates clap and raised arms")
 	check(spectators.reaction == "watch" and spectators.priority == 0, "crowd settles after reaction")
-	for court in ["beach","lawn","tiled","concrete","clay","stadium"]:
+	check(spectators.people.size() == 12, "twelve authored spectators loaded across the venue")
+	spectators.handle({"type":"point","side":0})
+	var differences := false
+	for tick in 150:
+		check(spectators.pose_for(1) == 0, "opponent supporter does not celebrate loss")
+		if spectators.pose_for(0) != spectators.pose_for(2): differences = true
+		spectators.tick()
+	check(differences, "supporters react at individual timings")
+	spectators.reaction="watch"
+	spectators.excitement=0.0
+	spectators.clock=int(spectators.people[2].idle_period)-int(spectators.people[2].idle_offset)
+	check(spectators.pose_for(2)==3, "quiet spectator takes a drink on their own schedule")
+	spectators.excitement=0.9
+	check(spectators.pose_for(2)==0, "spectator watches during intense rallies")
+	for court in ["beach","lawn","tiled","clay","stadium"]:
 		var crowd = load("res://scripts/game/view/pixel_crowd.gd").new(court)
-		check(crowd.sections.size() >= 4, "%s animates top, sides and near audience" % court)
-		check(crowd.people.size() >= 12 and crowd.atlas != null, "%s populates individual animated spectators" % court)
-		var layouts: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/court_layouts.json"))
-		var b: Array = layouts[court].bounds
-		var mask: Image = crowd.material.get_shader_parameter("seat_map").get_image()
-		for y in range(ceili(b[1]*3.75),floori(b[4]*3.75),7):
-			var t := inverse_lerp(b[1]*3.75,b[4]*3.75,float(y))
-			var left := ceili(lerpf(b[0],b[3],t)*3.75)
-			var right := floori(lerpf(b[2],b[5],t)*3.75)
-			for x in range(left,right,17):
-				check(mask.get_pixel(x,y).r == 0, "crowd reaction mask excludes the actual projected court")
+		check(crowd.people.is_empty(), "unregistered crowds remain intact without random substitutes")
 
 func test_pixel_referee_and_disc_assets() -> void:
 	var art = load("res://scripts/game/view/character_art.gd").new("referee")

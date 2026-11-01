@@ -101,7 +101,7 @@ func _run() -> void:
 	assert(view._anim_for(p)==["win",1])
 	var crowd=view.pixel_spectators
 	crowd.ticks_left=0
-	assert(crowd.sections.size()>20 and crowd.sections.size()<=64)
+	assert(crowd.frames.watch != null)
 	crowd.handle({"type":"point","side":0})
 	var serial: int=crowd.event_serial
 	crowd.handle({"type":"catch","side":1,"speed":30})

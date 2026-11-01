@@ -1,0 +1,221 @@
+{
+  "version": 1,
+  "court": "concrete",
+  "base_sha256": "13782a6eaeb27ed245bed95ff43219e49578c4b35196dc6816c9bca1b90bd594",
+  "source_size": [
+    1672,
+    941
+  ],
+  "poses": [
+    "watch",
+    "clap",
+    "cheer",
+    "idle"
+  ],
+  "fans": [
+    {
+      "id": "blue-shirt",
+      "rect": [
+        448,
+        128,
+        70,
+        82
+      ],
+      "team": 0,
+      "delay": 5,
+      "tempo": 8,
+      "energy": 0.65,
+      "idle_pose": 0,
+      "idle_period": 1100,
+      "idle_offset": 0,
+      "sources": {
+        "clap": "concrete-far-clap.png",
+        "cheer": "concrete-far-cheer.png"
+      }
+    },
+    {
+      "id": "teal-tank",
+      "rect": [
+        518,
+        128,
+        64,
+        82
+      ],
+      "team": 1,
+      "delay": 12,
+      "tempo": 11,
+      "energy": 0.9,
+      "idle_pose": 0,
+      "idle_period": 1237,
+      "idle_offset": 233,
+      "sources": {
+        "clap": "concrete-far-clap.png",
+        "cheer": "concrete-far-cheer.png"
+      }
+    },
+    {
+      "id": "straw-hat",
+      "rect": [
+        584,
+        128,
+        55,
+        82
+      ],
+      "team": 0,
+      "delay": 19,
+      "tempo": 14,
+      "energy": 0.35,
+      "idle_pose": 3,
+      "idle_period": 1374,
+      "idle_offset": 466,
+      "sources": {
+        "clap": "concrete-far-clap.png",
+        "cheer": "concrete-far-cheer.png"
+      }
+    },
+    {
+      "id": "yellow-top",
+      "rect": [
+        693,
+        128,
+        62,
+        82
+      ],
+      "team": 1,
+      "delay": 26,
+      "tempo": 8,
+      "energy": 0.8,
+      "idle_pose": 3,
+      "idle_period": 1511,
+      "idle_offset": 699,
+      "sources": {
+        "clap": "concrete-far-clap.png",
+        "cheer": "concrete-far-cheer.png"
+      }
+    },
+    {
+      "id": "blue-top",
+      "rect": [
+        775,
+        128,
+        58,
+        82
+      ],
+      "team": 0,
+      "delay": 33,
+      "tempo": 11,
+      "energy": 0.55,
+      "idle_pose": 0,
+      "idle_period": 1648,
+      "idle_offset": 932,
+      "sources": {
+        "clap": "concrete-far-clap.png",
+        "cheer": "concrete-far-cheer.png"
+      }
+    },
+    {
+      "id": "floral-shirt",
+      "rect": [
+        868,
+        128,
+        65,
+        82
+      ],
+      "team": 1,
+      "delay": 40,
+      "tempo": 14,
+      "energy": 0.4,
+      "idle_pose": 0,
+      "idle_period": 1785,
+      "idle_offset": 1165,
+      "sources": {
+        "clap": "concrete-far-clap.png",
+        "cheer": "concrete-far-cheer.png"
+      }
+    },
+    {
+      "id": "left-green",
+      "rect": [
+        14,
+        350,
+        76,
+        80
+      ],
+      "team": 0,
+      "delay": 12,
+      "tempo": 9,
+      "energy": 0.35,
+      "idle_pose": 0
+    },
+    {
+      "id": "right-shades",
+      "rect": [
+        1586,
+        350,
+        80,
+        85
+      ],
+      "team": 1,
+      "delay": 18,
+      "tempo": 11,
+      "energy": 0.44999999999999996,
+      "idle_pose": 0
+    },
+    {
+      "id": "near-pink",
+      "rect": [
+        445,
+        765,
+        90,
+        79
+      ],
+      "team": 0,
+      "delay": 24,
+      "tempo": 13,
+      "energy": 0.55,
+      "idle_pose": 0
+    },
+    {
+      "id": "near-green",
+      "rect": [
+        579,
+        780,
+        86,
+        77
+      ],
+      "team": 1,
+      "delay": 30,
+      "tempo": 15,
+      "energy": 0.65,
+      "idle_pose": 0
+    },
+    {
+      "id": "near-blue",
+      "rect": [
+        969,
+        775,
+        91,
+        92
+      ],
+      "team": 0,
+      "delay": 36,
+      "tempo": 9,
+      "energy": 0.75,
+      "idle_pose": 0
+    },
+    {
+      "id": "near-floral",
+      "rect": [
+        1290,
+        744,
+        96,
+        87
+      ],
+      "team": 1,
+      "delay": 42,
+      "tempo": 11,
+      "energy": 0.85,
+      "idle_pose": 0
+    }
+  ]
+}

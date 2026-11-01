@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "courts": {
+    "beach": {
+      "path": "assets/art/courts/beach_pixel.png",
+      "sha256": "9d2aca31ed410bdeae503313d39b16e4b24ca55f64fb6c3c6d1261d20ab85563"
+    },
+    "concrete": {
+      "path": "assets/art/courts/concrete_pixel.png",
+      "sha256": "13782a6eaeb27ed245bed95ff43219e49578c4b35196dc6816c9bca1b90bd594"
+    },
+    "lawn": {
+      "path": "assets/art/courts/lawn_pixel.png",
+      "sha256": "a4fc0e47c0936afa13e7f0704e1d4f691f3dd6c2d86b0ffb1cf5149ee473253c"
+    },
+    "clay": {
+      "path": "assets/art/courts/clay_pixel.png",
+      "sha256": "91a3aad46eee57260839cd81c6dd70e25befbbfb2fdad69ff6f5b439d33cf3a2"
+    },
+    "tiled": {
+      "path": "assets/art/courts/tiled_pixel.png",
+      "sha256": "4db1141d882abb47903fcf10b53f2853a7a37e720cda43b43faf328bb83824f7"
+    },
+    "stadium": {
+      "path": "assets/art/courts/stadium_pixel.png",
+      "sha256": "4027c588e7af04e290adb75769fdf7f5622c0c8b42e2cfb5f1512654062d2f0f"
+    }
+  },
+  "calibration_sha256": "edbec1e71a9f49044ff7ceab22c93c3ffbf52a59863bd689511601866c10cf89"
+}

@@ -1,0 +1,402 @@
+{
+  "coordinate_size": [
+    512.0,
+    288.0
+  ],
+  "courts": {
+    "beach": {
+      "regions": [
+        {
+          "id": "water-0",
+          "kind": "water",
+          "phase": 0.0,
+          "rect": [
+            134.0,
+            29.0,
+            93.0,
+            17.0
+          ]
+        },
+        {
+          "id": "water-1",
+          "kind": "water",
+          "phase": 1.37,
+          "rect": [
+            263.0,
+            29.0,
+            60.0,
+            17.0
+          ]
+        },
+        {
+          "id": "water-2",
+          "kind": "water",
+          "phase": 2.74,
+          "rect": [
+            65.0,
+            31.0,
+            25.0,
+            13.0
+          ]
+        },
+        {
+          "id": "lantern-3",
+          "kind": "lantern",
+          "phase": 4.11,
+          "rect": [
+            10.0,
+            46.0,
+            7.0,
+            14.0
+          ]
+        },
+        {
+          "id": "lantern-4",
+          "kind": "lantern",
+          "phase": 5.48,
+          "rect": [
+            493.0,
+            46.0,
+            7.0,
+            13.0
+          ]
+        }
+      ],
+      "texture_sha256": "ab3f5ec53c38bb3c37eb60da0bc7c7eb8264633b483bc8e427d102c244ab10c3"
+    },
+    "clay": {
+      "regions": [
+        {
+          "id": "lantern-0",
+          "kind": "lantern",
+          "phase": 0.0,
+          "rect": [
+            61.0,
+            5.0,
+            8.0,
+            9.0
+          ]
+        },
+        {
+          "id": "lantern-1",
+          "kind": "lantern",
+          "phase": 1.37,
+          "rect": [
+            249.0,
+            9.0,
+            7.0,
+            8.0
+          ]
+        },
+        {
+          "id": "beacon-2",
+          "kind": "beacon",
+          "phase": 2.74,
+          "rect": [
+            361.0,
+            59.0,
+            9.0,
+            6.0
+          ]
+        },
+        {
+          "id": "beacon-3",
+          "kind": "beacon",
+          "phase": 4.11,
+          "rect": [
+            407.0,
+            60.0,
+            9.0,
+            6.0
+          ]
+        },
+        {
+          "id": "neon-4",
+          "kind": "neon",
+          "phase": 5.48,
+          "rect": [
+            66.0,
+            32.0,
+            21.0,
+            9.0
+          ]
+        }
+      ],
+      "texture_sha256": "781c98b2adc428e7d8d543121cad8233e2d05d2d166bafe51070b4824675178d"
+    },
+    "concrete": {
+      "regions": [
+        {
+          "id": "water-0",
+          "kind": "water",
+          "phase": 0.0,
+          "rect": [
+            418.0,
+            12.0,
+            68.0,
+            26.0
+          ]
+        },
+        {
+          "id": "lantern-1",
+          "kind": "lantern",
+          "phase": 1.37,
+          "rect": [
+            157.0,
+            18.0,
+            7.0,
+            12.0
+          ]
+        },
+        {
+          "id": "lantern-2",
+          "kind": "lantern",
+          "phase": 2.74,
+          "rect": [
+            178.0,
+            13.0,
+            7.0,
+            13.0
+          ]
+        },
+        {
+          "id": "lantern-3",
+          "kind": "lantern",
+          "phase": 4.11,
+          "rect": [
+            198.0,
+            18.0,
+            7.0,
+            11.0
+          ]
+        },
+        {
+          "id": "lantern-4",
+          "kind": "lantern",
+          "phase": 5.48,
+          "rect": [
+            219.0,
+            17.0,
+            6.0,
+            11.0
+          ]
+        },
+        {
+          "id": "lantern-5",
+          "kind": "lantern",
+          "phase": 6.85,
+          "rect": [
+            258.0,
+            15.0,
+            7.0,
+            12.0
+          ]
+        },
+        {
+          "id": "lantern-6",
+          "kind": "lantern",
+          "phase": 8.22,
+          "rect": [
+            274.0,
+            14.0,
+            7.0,
+            12.0
+          ]
+        },
+        {
+          "id": "lantern-7",
+          "kind": "lantern",
+          "phase": 9.59,
+          "rect": [
+            381.0,
+            14.0,
+            7.0,
+            13.0
+          ]
+        }
+      ],
+      "texture_sha256": "92ee877a44f6750cfc696c91a53dd69b8042e2b91bb203d5c5ecbc4c516c8dde"
+    },
+    "lawn": {
+      "regions": [
+        {
+          "id": "water-0",
+          "kind": "water",
+          "phase": 0.0,
+          "rect": [
+            273.0,
+            23.0,
+            81.0,
+            13.0
+          ]
+        },
+        {
+          "id": "neon-1",
+          "kind": "neon",
+          "phase": 1.37,
+          "rect": [
+            195.0,
+            53.0,
+            27.0,
+            23.0
+          ]
+        },
+        {
+          "id": "neon-2",
+          "kind": "neon",
+          "phase": 2.74,
+          "rect": [
+            296.0,
+            51.0,
+            20.0,
+            26.0
+          ]
+        },
+        {
+          "id": "lantern-3",
+          "kind": "lantern",
+          "phase": 4.11,
+          "rect": [
+            87.0,
+            78.0,
+            9.0,
+            7.0
+          ]
+        },
+        {
+          "id": "lantern-4",
+          "kind": "lantern",
+          "phase": 5.48,
+          "rect": [
+            368.0,
+            78.0,
+            9.0,
+            7.0
+          ]
+        }
+      ],
+      "texture_sha256": "e9c37c8cf76a884f4b676c30cddaa1df7b6eaf26d9f8a04ccebc6e2ed95b70bc"
+    },
+    "stadium": {
+      "regions": [
+        {
+          "id": "neon-0",
+          "kind": "neon",
+          "phase": 0.0,
+          "rect": [
+            194.0,
+            7.0,
+            118.0,
+            33.0
+          ]
+        },
+        {
+          "id": "beacon-1",
+          "kind": "beacon",
+          "phase": 1.37,
+          "rect": [
+            54.0,
+            4.0,
+            36.0,
+            8.0
+          ]
+        },
+        {
+          "id": "beacon-2",
+          "kind": "beacon",
+          "phase": 2.74,
+          "rect": [
+            422.0,
+            4.0,
+            36.0,
+            8.0
+          ]
+        },
+        {
+          "id": "neon-3",
+          "kind": "neon",
+          "phase": 4.11,
+          "rect": [
+            207.0,
+            75.0,
+            96.0,
+            4.0
+          ]
+        }
+      ],
+      "texture_sha256": "af029a6eaf698f3f68905c79ca8f84bf868d8e4cb999673770034a0f922681ba"
+    },
+    "tiled": {
+      "regions": [
+        {
+          "id": "neon-0",
+          "kind": "neon",
+          "phase": 0.0,
+          "rect": [
+            2.0,
+            32.0,
+            15.0,
+            25.0
+          ]
+        },
+        {
+          "id": "neon-1",
+          "kind": "neon",
+          "phase": 1.37,
+          "rect": [
+            496.0,
+            33.0,
+            14.0,
+            24.0
+          ]
+        },
+        {
+          "id": "neon-2",
+          "kind": "neon",
+          "phase": 2.74,
+          "rect": [
+            86.0,
+            48.0,
+            9.0,
+            12.0
+          ]
+        },
+        {
+          "id": "neon-3",
+          "kind": "neon",
+          "phase": 4.11,
+          "rect": [
+            416.0,
+            48.0,
+            12.0,
+            12.0
+          ]
+        },
+        {
+          "id": "neon-4",
+          "kind": "neon",
+          "phase": 5.48,
+          "rect": [
+            131.0,
+            3.0,
+            39.0,
+            6.0
+          ]
+        },
+        {
+          "id": "neon-5",
+          "kind": "neon",
+          "phase": 6.85,
+          "rect": [
+            327.0,
+            7.0,
+            44.0,
+            5.0
+          ]
+        }
+      ],
+      "texture_sha256": "293a1e2c6774282c892aad60d63e160af9a8adbd48a502eb87e44d0b03e9d2cf"
+    }
+  },
+  "version": 1.0
+}

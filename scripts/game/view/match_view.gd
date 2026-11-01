@@ -38,7 +38,6 @@ var names: Array[String] = ["P1", "CPU"]
 var court_bg: Texture2D
 var pixel_court := false
 var pixel_spectators: PixelCrowd
-var venue_life := preload("res://scripts/game/view/venue_life.gd").new()
 var crowd: Array[Texture2D] = []
 
 var entrance_ticks := -1
@@ -109,7 +108,6 @@ func tick() -> void:
 	if sim.phase == MatchSim.Phase.MATCH_OVER:
 		celebration_ticks += 1
 	frame += 1
-	venue_life.tick()
 	if pixel_spectators != null:
 		pixel_spectators.tick()
 		pixel_spectators.rally_x = clampf(float(sim.disc.pos.x)/float(sim.court_width()),0.0,1.0)
@@ -203,7 +201,6 @@ func handle(e: Dictionary) -> void:
 	var actor := int(e.get("player", e.get("side", 0)))
 	if pixel_spectators != null:
 		pixel_spectators.handle(e)
-	venue_life.handle(sim.court.id, e, sim.disc.pos.x / sim.court_width())
 	var s := Settings.shake_scale()
 	match e.type:
 		"dash":
@@ -325,7 +322,7 @@ func draw(ci: CanvasItem) -> void:
 	if pixel_spectators == null:
 		ci.draw_texture_rect(court_bg, Rect2(Vector2.ZERO, proj.screen), false)
 	_draw_crowd(ci)
-	venue_life.draw(ci, sim.court.id, proj, frame)
+	# Venue illumination is registered to the composed artwork by PixelCrowd.
 	_draw_court_boundaries(ci)
 	_draw_goal_lights(ci)
 	_draw_markers(ci)
@@ -368,7 +365,7 @@ func _draw_goal_lights(ci: CanvasItem) -> void:
 		for i in zones.size():
 			var z: Dictionary = zones[i]
 			var h := sim.court_height()
-			var strip := proj.goal_strip(side, float(z.from) * h + 6.0, float(z.to) * h - 6.0)
+			var strip := proj.goal_strip(side, float(z.from) * h, float(z.to) * h)
 			var base := UI.ZONE_5 if int(z.points) == 5 else UI.ZONE_3
 			var key := "%d:%d" % [side, i]
 			var color := Color(base, pulse)
@@ -377,7 +374,10 @@ func _draw_goal_lights(ci: CanvasItem) -> void:
 			ci.draw_colored_polygon(strip, Color(color, 0.35))
 			var inner := proj.goal_strip(side, float(z.from) * h + 14.0, float(z.to) * h - 14.0, 0.3)
 			ci.draw_colored_polygon(inner, color)
-			var mid := (inner[0] + inner[2]) / 2.0
+			var mid := Vector2.ZERO
+			for point in inner:
+				mid += point
+			mid /= inner.size()
 			UI.text(ci, mid + Vector2(0, 14), str(int(z.points)), 38, Color.WHITE, UI.display)
 
 
@@ -466,7 +466,7 @@ func _draw_world(ci: CanvasItem, off: Vector2) -> void:
 
 
 func _draw_referee(ci: CanvasItem) -> void:
-	var ground := proj.floor_point(Vector2(sim.net_x() + 4.0, sim.court_height() + 58.0))
+	var ground := Vector2(960, 952)
 	var watching := "center" if absf(ref_focus) < 100.0 else "idle"
 	if sim.disc.state == MatchSim.Disc.FLYING and sim.disc.vel.length() > 20.0:
 		watching = "focus"
@@ -479,7 +479,11 @@ func _anim_for(p: MatchSim.PlayerState) -> Array:
 	if entrance_ticks >= 0:
 		var age := entrance_ticks-p.side*150
 		if age >= 145: return ["idle",age-145]
-		return ["run", maxi(0,age)] if age < 55 else ["win", age-55]
+		if age < 0:
+			return ["idle",0]
+		if age < 55:
+			return ["jump",mini(19,int(age*20.0/55.0))]
+		return ["win",age-55]
 	if sim.phase == MatchSim.Phase.MATCH_OVER:
 		return ["win" if sim.winner == p.side else "lose", celebration_ticks]
 	if p.dash_ticks > 0:
@@ -603,6 +607,7 @@ func _draw_player(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
 	if entrance_ticks >= 0:
 		var run_in := clampf((entrance_ticks-p.side*150) / 55.0, 0, 1)
 		ground.x = lerpf(-180.0 if p.side == 0 else 2100.0, ground.x, run_in)
+		ground.y -= sin(run_in*PI)*170.0
 	var facing_right := p.side == MatchSim.LEFT
 	if anim[0] in ["run_up", "run_down"]:
 		facing_right = run_facing_right[p.slot]
@@ -622,8 +627,6 @@ func _draw_player(ci: CanvasItem, p: MatchSim.PlayerState) -> void:
 	if p.knock_ticks > 0 and (frame / 2) % 2 == 0:
 		tint = Color(1.5, 1.5, 1.5)
 	art.draw(ci, f, ground, facing_right, SPRITE_SCALE, tint, pose.stretch, pose.lean)
-	if Settings.show_catch_zones and not p.holding and sim.phase == MatchSim.Phase.PLAY:
-		_catch_zone(ci, p)
 	if p.holding and sim.disc.owner == p.slot and sim.phase != MatchSim.Phase.MATCH_OVER \
 			and sim.phase != MatchSim.Phase.POINT_PAUSE and sim.phase != MatchSim.Phase.SET_PAUSE:
 		var hand: Vector2 = art.point(f, "hand") * SPRITE_SCALE
@@ -933,8 +936,7 @@ func _draw_cutin(ci: CanvasItem) -> void:
 
 
 func _draw_court_boundaries(ci: CanvasItem) -> void:
-	if sim.court.id == "concrete":
-		_draw_centre_divider(ci)
+	if proj.integrated_walls:
 		return
 	var w := sim.court_width()
 	var h := sim.court_height()

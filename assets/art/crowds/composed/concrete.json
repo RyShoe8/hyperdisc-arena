@@ -1,0 +1,226 @@
+{
+  "base_sha256": "13782a6eaeb27ed245bed95ff43219e49578c4b35196dc6816c9bca1b90bd594",
+  "cell": [
+    96,
+    96
+  ],
+  "court": "concrete",
+  "fans": [
+    {
+      "delay": 5.0,
+      "energy": 0.65,
+      "id": "blue-shirt",
+      "idle_offset": 0.0,
+      "idle_period": 1100.0,
+      "idle_pose": 0.0,
+      "rect": [
+        448.0,
+        128.0,
+        70.0,
+        82.0
+      ],
+      "sources": {
+        "cheer": "concrete-far-cheer.png",
+        "clap": "concrete-far-clap.png"
+      },
+      "team": 0.0,
+      "tempo": 8.0
+    },
+    {
+      "delay": 12.0,
+      "energy": 0.9,
+      "id": "teal-tank",
+      "idle_offset": 233.0,
+      "idle_period": 1237.0,
+      "idle_pose": 0.0,
+      "rect": [
+        518.0,
+        128.0,
+        64.0,
+        82.0
+      ],
+      "sources": {
+        "cheer": "concrete-far-cheer.png",
+        "clap": "concrete-far-clap.png"
+      },
+      "team": 1.0,
+      "tempo": 11.0
+    },
+    {
+      "delay": 19.0,
+      "energy": 0.35,
+      "id": "straw-hat",
+      "idle_offset": 466.0,
+      "idle_period": 1374.0,
+      "idle_pose": 3.0,
+      "rect": [
+        584.0,
+        128.0,
+        55.0,
+        82.0
+      ],
+      "sources": {
+        "cheer": "concrete-far-cheer.png",
+        "clap": "concrete-far-clap.png"
+      },
+      "team": 0.0,
+      "tempo": 14.0
+    },
+    {
+      "delay": 26.0,
+      "energy": 0.8,
+      "id": "yellow-top",
+      "idle_offset": 699.0,
+      "idle_period": 1511.0,
+      "idle_pose": 3.0,
+      "rect": [
+        693.0,
+        128.0,
+        62.0,
+        82.0
+      ],
+      "sources": {
+        "cheer": "concrete-far-cheer.png",
+        "clap": "concrete-far-clap.png"
+      },
+      "team": 1.0,
+      "tempo": 8.0
+    },
+    {
+      "delay": 33.0,
+      "energy": 0.55,
+      "id": "blue-top",
+      "idle_offset": 932.0,
+      "idle_period": 1648.0,
+      "idle_pose": 0.0,
+      "rect": [
+        775.0,
+        128.0,
+        58.0,
+        82.0
+      ],
+      "sources": {
+        "cheer": "concrete-far-cheer.png",
+        "clap": "concrete-far-clap.png"
+      },
+      "team": 0.0,
+      "tempo": 11.0
+    },
+    {
+      "delay": 40.0,
+      "energy": 0.4,
+      "id": "floral-shirt",
+      "idle_offset": 1165.0,
+      "idle_period": 1785.0,
+      "idle_pose": 0.0,
+      "rect": [
+        868.0,
+        128.0,
+        65.0,
+        82.0
+      ],
+      "sources": {
+        "cheer": "concrete-far-cheer.png",
+        "clap": "concrete-far-clap.png"
+      },
+      "team": 1.0,
+      "tempo": 14.0
+    },
+    {
+      "delay": 12.0,
+      "energy": 0.35,
+      "id": "left-green",
+      "idle_pose": 0.0,
+      "rect": [
+        14.0,
+        350.0,
+        76.0,
+        80.0
+      ],
+      "team": 0.0,
+      "tempo": 9.0
+    },
+    {
+      "delay": 18.0,
+      "energy": 0.45,
+      "id": "right-shades",
+      "idle_pose": 0.0,
+      "rect": [
+        1586.0,
+        350.0,
+        80.0,
+        85.0
+      ],
+      "team": 1.0,
+      "tempo": 11.0
+    },
+    {
+      "delay": 24.0,
+      "energy": 0.55,
+      "id": "near-pink",
+      "idle_pose": 0.0,
+      "rect": [
+        445.0,
+        765.0,
+        90.0,
+        79.0
+      ],
+      "team": 0.0,
+      "tempo": 13.0
+    },
+    {
+      "delay": 30.0,
+      "energy": 0.65,
+      "id": "near-green",
+      "idle_pose": 0.0,
+      "rect": [
+        579.0,
+        780.0,
+        86.0,
+        77.0
+      ],
+      "team": 1.0,
+      "tempo": 15.0
+    },
+    {
+      "delay": 36.0,
+      "energy": 0.75,
+      "id": "near-blue",
+      "idle_pose": 0.0,
+      "rect": [
+        969.0,
+        775.0,
+        91.0,
+        92.0
+      ],
+      "team": 0.0,
+      "tempo": 9.0
+    },
+    {
+      "delay": 42.0,
+      "energy": 0.85,
+      "id": "near-floral",
+      "idle_pose": 0.0,
+      "rect": [
+        1290.0,
+        744.0,
+        96.0,
+        87.0
+      ],
+      "team": 1.0,
+      "tempo": 11.0
+    }
+  ],
+  "poses": [
+    "watch",
+    "clap",
+    "cheer",
+    "idle"
+  ],
+  "source_size": [
+    1672.0,
+    941.0
+  ],
+  "texture_sha256": "92ee877a44f6750cfc696c91a53dd69b8042e2b91bb203d5c5ecbc4c516c8dde",
+  "version": 1.0
+}

@@ -804,7 +804,6 @@ func _option_rows() -> Array:
 				["EFFECTS", Settings.EFFECT_LEVELS[Settings.effects]],
 				["RETRO SCANLINES", "ON" if Settings.scanlines else "OFF"],
 				["SHOW FPS", "ON" if Settings.show_fps else "OFF"],
-				["SHOW CATCH ZONES", "ON" if Settings.show_catch_zones else "OFF"],
 			]
 		"AUDIO":
 			return [
@@ -891,8 +890,6 @@ func _options_input() -> void:
 					Settings.scanlines = not Settings.scanlines
 				5:
 					Settings.show_fps = not Settings.show_fps
-				6:
-					Settings.show_catch_zones = not Settings.show_catch_zones
 			Settings.apply()
 		"AUDIO":
 			var delta := 0.1 * signf(step) if n.x != 0 else 0.0
@@ -1185,6 +1182,9 @@ func _draw_vs() -> void:
 	draw_rect(Rect2(Vector2.ZERO, SCREEN), Color("0f3d7a"))
 	UI.starburst(self, Vector2(960, 540), 300, 1400, 28, Color("2de2e6"), t * 0.004)
 	UI.starburst(self, Vector2(960, 540), 200, 900, 28, Color("8ff7ff"), -t * 0.006)
+	if doubles and not story:
+		_draw_doubles_vs()
+		return
 	var slide := clampf(t / 14.0, 0.0, 1.0)
 	for who in [0, 1]:
 		var left: bool = who == 0
@@ -1206,9 +1206,34 @@ func _draw_vs() -> void:
 	if story:
 		UI.text(self, Vector2(960, 160), "CHAPTER %d  |  %s" % [story_round + 2, STORY_CHAPTERS[story_round].to_upper()], 36, UI.YELLOW, UI.ui, 3)
 		UI.text(self, Vector2(960, 220), STORY_TIPS[story_round], 32, Color.WHITE, UI.ui, 4)
-	elif doubles:
-		UI.text(self, Vector2(960, 160), "DOUBLES  |  TEAM A vs TEAM B", 40, UI.YELLOW, UI.ui, 3)
-		UI.text(self, Vector2(960, 930), "%s + %s   VS   %s + %s" % [balance.characters[slot_picks[0]].name, balance.characters[slot_picks[2]].name, balance.characters[slot_picks[1]].name, balance.characters[slot_picks[3]].name], 28, Color.WHITE, UI.ui, 3)
+
+
+func _draw_doubles_vs() -> void:
+	UI.text(self, Vector2(960, 80), balance.courts[court].name, 48, Color.WHITE, UI.display, 6)
+	UI.text(self, Vector2(960, 145), "DOUBLES  |  2 vs 2", 36, UI.YELLOW, UI.ui, 3)
+	for side in 2:
+		var color := UI.P1 if side == 0 else UI.P2
+		var slide := clampf(screen_ticks / 14.0, 0.0, 1.0)
+		var x := lerpf(-740.0 if side == 0 else 1960.0, 70.0 if side == 0 else 1150.0, slide)
+		UI.text(self, Vector2(x + 350, 215), "TEAM A" if side == 0 else "TEAM B", 40, color, UI.display, 4)
+		for row in 2:
+			var slot := side + row * 2
+			var index: int = slot_picks[slot]
+			var label := _slot_tag(slot)
+			# Online roster belongs to the negotiated match, not local setup picks.
+			if online:
+				index = net._index_of(sim.players[slot].character)
+				label = view.names[slot]
+			var top := 240.0 + row * 380.0
+			UI.slant_panel(self, Rect2(x, top, 700, 350), UI.DEEP, color, 18, 4)
+			draw_set_transform(Vector2(x + 180, top + 175), 0.0, Vector2(0.5 if side == 0 else -0.5, 0.5))
+			draw_texture(portraits[index], Vector2(-320, -320))
+			draw_set_transform(Vector2.ZERO)
+			var name_text := str(balance.characters[index].name).to_upper()
+			UI.text(self, Vector2(x + 365, top + 135), label, UI.fit_size(label, 28, 300), color, UI.ui, 3, HORIZONTAL_ALIGNMENT_LEFT)
+			UI.text(self, Vector2(x + 365, top + 195), name_text, UI.fit_size(name_text, 46, 300, UI.display), Color.WHITE, UI.display, 4, HORIZONTAL_ALIGNMENT_LEFT)
+	if screen_ticks > 10:
+		UI.text(self, Vector2(960, 600), "VS", 150, UI.YELLOW, UI.display, 10, HORIZONTAL_ALIGNMENT_CENTER, -1.0, true)
 
 
 func _draw_pause() -> void:

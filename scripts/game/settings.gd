@@ -62,7 +62,7 @@ func load_settings() -> void:
 	effects = int(cfg.get_value("graphics", "effects", effects))
 	scanlines = bool(cfg.get_value("graphics", "scanlines", scanlines))
 	show_fps = bool(cfg.get_value("graphics", "show_fps", show_fps))
-	show_catch_zones = bool(cfg.get_value("graphics", "show_catch_zones", show_catch_zones))
+	show_catch_zones = false
 	button_labels = int(cfg.get_value("controls", "button_labels", button_labels))
 	if cfg.has_section_key("controls", "rumble_level"):
 		rumble_level = clampi(int(cfg.get_value("controls", "rumble_level", 1)), 0, RUMBLE_LEVELS.size() - 1)

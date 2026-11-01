@@ -5,7 +5,7 @@ func _initialize():
 	var configs: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://tools/art/venues/calibration.json"))
 	var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/balance.json"))
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://build/venues"))
-	FileAccess.open("res://data/court_layouts.json",FileAccess.WRITE).store_string(JSON.stringify(configs,"  "))
+	FileAccess.open("res://build/venues/court_layouts.json",FileAccess.WRITE).store_string(JSON.stringify(configs,"  "))
 	for court in rules.courts:
 		var id:String=court.id
 		var config:Dictionary=configs[id]
