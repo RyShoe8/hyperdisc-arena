@@ -1137,8 +1137,8 @@ func _draw_fighter_card(who: int, c: Dictionary, index := -1) -> void:
 	var col := UI.P1 if left else UI.P2
 	var art: Texture2D = select_art[pick[who] if index < 0 else index]
 	var bob := sin(frame * 0.06 + who) * 6.0
-	draw_set_transform(Vector2(x + 200, 600 + bob), 0.0, Vector2(1.0 if left else -1.0, 1.0) * 0.76)
-	draw_texture(art, Vector2(-400, -500), Color.WHITE if available(pick[who] if index < 0 else index) else Color.BLACK)
+	draw_set_transform(Vector2(x + 200, 780 + bob), 0.0, Vector2(1.0 if left else -1.0, 1.0) * 0.76)
+	draw_texture(art, Vector2(-320, -600), Color.WHITE if available(pick[who] if index < 0 else index) else Color.BLACK)
 	draw_set_transform(Vector2.ZERO)
 	var panel := Rect2(Vector2(x, 820), Vector2(400, 200))
 	UI.slant_panel(self, panel, Color("120826"), col, 24, 4)
@@ -1715,7 +1715,7 @@ func _draw_select_grid(slots: Array) -> void:
 		if available(i):
 			draw_texture_rect_region(portraits[i], r, Rect2(100, 40, 440, 440))
 		else:
-			draw_texture_rect_region(select_art[i], r, Rect2(0, 100, 800, 800), Color.BLACK)
+			draw_texture_rect(select_art[i], r, false, Color.BLACK)
 		UI.text(self, pos + Vector2(cell.x / 2, cell.y - 12), str(chars[i].name).to_upper() if available(i) else "STORY LOCK", 17,
 			Color.WHITE, UI.ui, 4)
 	# Outlines after every portrait so neighbouring tiles can't cover them;
@@ -1742,8 +1742,8 @@ func _draw_mini_card(left: bool, row: int, index: int, col: Color, tag: String, 
 	var x := 40.0 if left else 1480.0
 	var top := 150.0 + row * 420.0
 	var bob := sin(frame * 0.06 + row + (0 if left else 2)) * 4.0
-	draw_set_transform(Vector2(x + 200, top + 175 + bob), 0.0, Vector2(1.0 if left else -1.0, 1.0) * 0.36)
-	draw_texture(select_art[index], Vector2(-400, -500), Color.WHITE if available(index) else Color.BLACK)
+	draw_set_transform(Vector2(x + 200, top + 219 + bob), 0.0, Vector2(1.0 if left else -1.0, 1.0) * 0.36)
+	draw_texture(select_art[index], Vector2(-320, -600), Color.WHITE if available(index) else Color.BLACK)
 	draw_set_transform(Vector2.ZERO)
 	var panel := Rect2(Vector2(x, top + 230), Vector2(400, 150))
 	UI.slant_panel(self, panel, Color("120826"), col, 20, 4)

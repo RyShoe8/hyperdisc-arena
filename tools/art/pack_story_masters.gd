@@ -30,15 +30,6 @@ func _initialize():
 			sheet.blit_rect(pose,Rect2i(Vector2i.ZERO,pose.get_size()),Vector2i(512*col,0)+off)
 			reference.blit_rect(pose,Rect2i(Vector2i.ZERO,pose.get_size()),Vector2i(512*(col%2),512*(col/2))+off)
 			frames.append({"head":[256+(75 if row==3 else 10),off.y+25],"hand":[256+pose.get_width()*(0.38 if col!=2 else 0.47),off.y+pose.get_height()*0.35],"air":false})
-			if col==0:
-				var select:=Image.create_empty(800,1000,false,Image.FORMAT_RGBA8)
-				var figure:=pose.duplicate() as Image
-				figure.resize(roundi(figure.get_width()*2.15),roundi(figure.get_height()*2.15),Image.INTERPOLATE_NEAREST)
-				select.blit_rect(figure,Rect2i(Vector2i.ZERO,figure.get_size()),Vector2i(400-figure.get_width()/2,900-figure.get_height()))
-				select.save_webp(base+"_select.webp",false)
-				var portrait:=Image.create_empty(640,640,false,Image.FORMAT_RGBA8)
-				portrait.blit_rect(figure,Rect2i(Vector2i.ZERO,figure.get_size()),Vector2i(320-figure.get_width()/2,55))
-				portrait.save_webp(base+"_portrait.webp",false)
 		reference.save_png(folder+"reference.png")
 		sheet.save_webp(base+".webp",false)
 		var anim:={}

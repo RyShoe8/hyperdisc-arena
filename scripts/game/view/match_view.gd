@@ -109,8 +109,9 @@ func tick() -> void:
 		celebration_ticks += 1
 	frame += 1
 	if pixel_spectators != null:
-		pixel_spectators.tick()
 		pixel_spectators.rally_x = clampf(float(sim.disc.pos.x)/float(sim.court_width()),0.0,1.0)
+		pixel_spectators.rally_y = clampf(float(sim.disc.pos.y)/sim.court_height(),0.0,1.0)
+		pixel_spectators.tick()
 	ref_ticks += 1
 	if ref_anim != "idle" and ref_ticks > (54 if ref_anim == "win" else 30):
 		ref_anim = "idle"

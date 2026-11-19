@@ -921,43 +921,37 @@ func test_pixel_mick_frames_and_reverse_run() -> void:
 
 
 func test_pixel_crowd_event_reactions() -> void:
-	var spectators = load("res://scripts/game/view/pixel_crowd.gd").new("concrete")
-	check(spectators.frames.watch != null, "arena crowd frame loads")
-	spectators.handle({"type":"catch","speed":12})
-	check(spectators.reaction == "watch", "routine catch does not trigger uniform applause")
-	spectators.handle({"type":"catch","speed":25})
-	check(spectators.reaction == "clap", "fast catch gets applause")
-	spectators.handle({"type":"special"})
-	check(spectators.reaction == "surprise", "power play surprises spectators")
-	spectators.handle({"type":"point"})
-	check(spectators.reaction == "cheer", "goal gets cheering")
-	spectators.handle({"type":"throw"})
-	check(spectators.reaction == "cheer", "rally event cannot interrupt a goal celebration")
-	spectators.handle({"type":"match_over"})
-	check(spectators.reaction == "victory" and spectators.ticks_left == 480, "match win gets extended celebration")
-	var seen := {}
-	for tick in 480:
-		seen[spectators.pose_for(0)] = true
-		spectators.tick()
-	check(seen.has(1) and seen.has(2), "celebration animates clap and raised arms")
-	check(spectators.reaction == "watch" and spectators.priority == 0, "crowd settles after reaction")
-	check(spectators.people.size() == 12, "twelve authored spectators loaded across the venue")
-	spectators.handle({"type":"point","side":0})
-	var differences := false
-	for tick in 150:
-		check(spectators.pose_for(1) == 0, "opponent supporter does not celebrate loss")
-		if spectators.pose_for(0) != spectators.pose_for(2): differences = true
-		spectators.tick()
-	check(differences, "supporters react at individual timings")
-	spectators.reaction="watch"
-	spectators.excitement=0.0
-	spectators.clock=int(spectators.people[2].idle_period)-int(spectators.people[2].idle_offset)
-	check(spectators.pose_for(2)==3, "quiet spectator takes a drink on their own schedule")
-	spectators.excitement=0.9
-	check(spectators.pose_for(2)==0, "spectator watches during intense rallies")
-	for court in ["beach","lawn","tiled","clay","stadium"]:
-		var crowd = load("res://scripts/game/view/pixel_crowd.gd").new(court)
-		check(crowd.people.is_empty(), "unregistered crowds remain intact without random substitutes")
+	for id in ["beach","lawn","tiled","concrete","clay","stadium"]:
+		var crowd = load("res://scripts/game/view/pixel_crowd.gd").new(id)
+		check(crowd.background != null and crowd.people.size() >= 40, id+" has a staffed venue")
+		check(crowd.order.size() == crowd.people.size(), "every seat has a rendered actor")
+		crowd.handle({"type":"catch","speed":12})
+		check(crowd.people.all(func(f): return f.action==""), "routine catch stays quiet")
+		crowd.handle({"type":"slap","side":0})
+		var initiated: int = crowd.people.filter(func(f): return f.action=="clap").size()
+		check(initiated > 0 and initiated < crowd.people.size(), "selective rally applause")
+		var social := false
+		for i in 140:
+			crowd.tick()
+			for fan in crowd.people:
+				if fan.action=="clap" and fan.partner>=0:
+					social = true
+					check(fan.partner in fan.neighbors, "applause propagates along a bench")
+		check(social, "neighbors pick up the rally reaction on "+id)
+		crowd.handle({"type":"point","side":1})
+		crowd.handle({"type":"catch","speed":30})
+		for fan in crowd.people:
+			check(fan.priority==3 and ((fan.action in ["clap","cheer"]) == (fan.team==1)), "fans follow their side through a goal")
+		var exchange := false
+		for i in 850:
+			crowd.tick()
+			for fan in crowd.people:
+				if fan.action=="talk" and fan.partner>=0 and crowd.people[fan.partner].action=="listen":
+					exchange = true
+		check(exchange, "bench neighbors converse between plays")
+		for clip in crowd.clips.values():
+			for key in clip:
+				check(int(key[0])>=0 and int(key[0])<25, "motion samples stay in the illustrated atlas")
 
 func test_pixel_referee_and_disc_assets() -> void:
 	var art = load("res://scripts/game/view/character_art.gd").new("referee")

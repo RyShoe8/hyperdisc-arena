@@ -12,7 +12,7 @@ func run():
  for id in ["beach","concrete","lawn","clay","tiled","stadium"]:
   if crowd!=null: crowd.set_visible(false)
   crowd=load("res://scripts/game/view/pixel_crowd.gd").new(id)
-  crowd.people.clear() # Isolate the environmental pass from crowd-pose tests.
+  crowd.audience_visible=false # Isolate the environmental pass from crowd-pose tests.
   var baseline: Image
   var total_changes := 0
   for sample in 8:

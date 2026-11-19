@@ -1,7 +1,13 @@
 # Court and crowd workflow
 
 ## Current state
-Twelve spectators across the bar court have registered watch/applause/cheer poses; two also have quiet drinking gestures. All six venues have registered environmental lighting/water animation. Other spectators remain static until their own poses are authored and reviewed. Do not claim complete crowd coverage. No random replacement sprites or whole-scene deformation is enabled.
+Matches on all six courts draw their audience from the isolated cast in `assets/art/crowds/live/`. Each venue has an empty seating plate, bench endpoints and foreground cutoff heights in `data/crowd_seating.json`. The original composed courts still supply the calibrated playing surface and selection thumbnails.
+
+## Live cast
+
+The built-in image generator edited each original venue to remove spectators and reveal the seats. Separate illustration prompts produced twelve seated identities from front, rear and profile views, then edited each view into open hands, clap contact and goal celebration poses while preserving clothes, feet and seating. Sources live in `tools/art/crowd-cast/`.
+
+Run `python tools/art/crowd-cast/pack.py` with Pillow, NumPy and OpenCV installed. It registers and packs transparent figure attachments, generates intermediate drawings and protects the playable floor. Run `node tools/art/crowd-cast/rig.mjs build/rigby-tool` with a Rigby2D checkout at that path. This builds editable projects in `build/crowd-attachments/<view>/<index>/spectator.rigby` and samples their timing into `data/crowd_motion.json`. At runtime the bench line clips the actor and the upper body tracks the rally, nearby conversations and match events. Review both crowded and quiet states at match size. Previous patch-based tooling below applies to the archived pilot.
 
 ## Sources of truth
 - `assets/art/courts/*_pixel.png`: current composed court backgrounds.

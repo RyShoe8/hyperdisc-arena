@@ -100,13 +100,10 @@ func _run() -> void:
 	view.tick()
 	assert(view._anim_for(p)==["win",1])
 	var crowd=view.pixel_spectators
-	crowd.ticks_left=0
-	assert(crowd.frames.watch != null)
-	crowd.handle({"type":"point","side":0})
-	var serial: int=crowd.event_serial
+	assert(crowd.background != null)
 	crowd.handle({"type":"catch","side":1,"speed":30})
-	assert(crowd.reaction=="cheer" and crowd.reaction_side==0 and crowd.event_serial==serial)
-	for i in 151: crowd.tick()
-	assert(crowd.reaction=="watch")
+	assert(crowd.people.all(func(f): return f.priority==5))
+	for i in 180: crowd.tick()
+	assert(crowd.people.all(func(f): return f.priority<5))
 	print("CHARACTER MOTION TESTS PASSED")
 	quit()
