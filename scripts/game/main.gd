@@ -1509,7 +1509,25 @@ func _story_menu_input() -> void:
 			story_round = 0
 			story_order = _story_ladder()
 			_save_story()
-			_prepare_story()
+			_play_story_opening()
+
+
+func _play_story_opening() -> void:
+	var opening = load("res://scenes/story_prologue.tscn").instantiate()
+	opening.z_index = 2000
+	set_physics_process(false)
+	set_process_unhandled_input(false)
+	Mixtape.cinematic_active = true
+	Controls.swallow_menu_keys()
+	opening.finished.connect(func(_skipped: bool):
+		opening.queue_free()
+		Mixtape.cinematic_active = false
+		Controls.swallow_menu_keys()
+		set_physics_process(true)
+		set_process_unhandled_input(true)
+		_prepare_story()
+	, CONNECT_ONE_SHOT)
+	add_child(opening)
 
 
 func _draw_story_menu() -> void:

@@ -68,7 +68,7 @@ jobs:
         timeout-minutes: 5
         run: |
           set -o pipefail
-          for test in run_tests test_mixtape test_playbound_presence test_character_motion test_lobby test_modes; do
+          for test in run_tests test_mixtape test_playbound_presence test_character_motion test_lobby test_modes test_story_prologue; do
             echo "Running $test"
             log="$(mktemp)"
             timeout 120s ~/godot/godot --headless --script "res://tests/$test.gd" 2>&1 | tee "$log"
@@ -78,6 +78,7 @@ jobs:
             fi
             rm "$log"
           done
+          python3 tools/art/story/check_motion.py
 
       - name: Export all platforms
         run: |

@@ -1,0 +1,343 @@
+{
+  "title": "NO ORDINARY DAY",
+  "beats": [
+    {
+      "art": "beach",
+      "speaker": "",
+      "text": "SOUTHERN CALIFORNIA",
+      "kind": "opening",
+      "duration": 8,
+      "subtitle": "A perfectly ordinary day off."
+    },
+    {
+      "art": "beach",
+      "speaker": "",
+      "text": "Mick Magnum. Fighter pilot. Ocean enthusiast.\nTango’s best friend.",
+      "duration": 7
+    },
+    {
+      "art": "beach",
+      "speaker": "pete",
+      "text": "Go talk to her, man! You miss 100% of the shots you don’t take.",
+      "focus": "pete"
+    },
+    {
+      "art": "beach",
+      "speaker": "pete",
+      "text": "You’re a hero, Mick. Remember that time over Korea when I was out of fuel, and you tilted your plane into mine so just enough fuel got into my tank to make it home?",
+      "focus": "pete"
+    },
+    {
+      "art": "beach",
+      "speaker": "pete",
+      "text": "You saved my life that day, and I will never forget it. Take Tango with you, bro. You know ladies can’t resist this cute little troublemaker.",
+      "focus": "pete"
+    },
+    {
+      "art": "beach",
+      "speaker": "",
+      "text": "Tiffany Seasons. On duty.",
+      "focus": "tiffany",
+      "duration": 5
+    },
+    {
+      "art": "beach",
+      "speaker": "",
+      "text": "Mick finally makes his approach. Tango stays close.\nSix figures reach the tower first.",
+      "duration": 8
+    },
+    {
+      "art": "standoff",
+      "speaker": "",
+      "text": "A stolen whistle. A very bad idea.",
+      "duration": 4
+    },
+    {
+      "art": "standoff",
+      "speaker": "mick",
+      "text": "Do you all have a problem? Because it looks like you’re picking on the lifeguard."
+    },
+    {
+      "art": "standoff",
+      "speaker": "keno",
+      "text": "What’s it to you, pretty boy? You trying to get into her pants? Better wait your turn, because I’m getting there first."
+    },
+    {
+      "art": "standoff",
+      "speaker": "mick",
+      "text": "Don’t talk about her that way! Show her some respect and give her back her whistle, you losers. Or there’s gonna be high-altitude trouble."
+    },
+    {
+      "art": "standoff",
+      "speaker": "steve",
+      "text": "Hey, Keno! This guy thinks he’s some kind of hero. Look at him, with that haircut and those shades. What are you, some type of movie character?",
+      "focus": "steve"
+    },
+    {
+      "art": "standoff",
+      "speaker": "mick",
+      "text": "I’m a pilot, and I’ve served my entire life. As a baby, on the national tricycle Olympic team. In elementary school, as leader of the national hall monitor association.",
+      "focus": "mick"
+    },
+    {
+      "art": "standoff",
+      "speaker": "mick",
+      "text": "In high school, as a state champion soccer player. In college, as leader of the Air Force Reserves. And now, in Korea, in Russia, in Poland, in Brazil…",
+      "focus": "mick"
+    },
+    {
+      "art": "standoff",
+      "speaker": "mick",
+      "text": "…as the Captain of Top Gun. The most elite Air Force unit in existence, protecting the weak and promoting freedom all over the world!",
+      "focus": "mick"
+    },
+    {
+      "art": "standoff",
+      "speaker": "",
+      "text": "The entire gang has stopped listening.",
+      "kind": "gang",
+      "duration": 4
+    },
+    {
+      "art": "standoff",
+      "speaker": "gang",
+      "text": "“Haha, what a chump!”  /  “This guy’s submissive to authority.”\n“Is your mom your co-pilot too?”  /  “What a sucker.”",
+      "kind": "gang"
+    },
+    {
+      "art": "standoff",
+      "speaker": "gang",
+      "text": "“I zoned out, but this guy is hot.”\n“I’d never want to have a beer with this guy.”\n“I’m not crying, you’re crying.”",
+      "kind": "gang"
+    },
+    {
+      "art": "standoff",
+      "speaker": "keno",
+      "text": "Look, flyboy, the lady isn’t interested. She’s got bigger goals in mind. This airspace is too much of a danger zone for you. We wouldn’t want to see you… crash and burn."
+    },
+    {
+      "art": "standoff",
+      "speaker": "mick",
+      "text": "You think you can take me, tough guy? You probably can’t even spell your own name. Walk away, all of you, or I’m going six-G target lock."
+    },
+    {
+      "art": "standoff",
+      "speaker": "jason",
+      "text": "Stop toying with him, Keno, and let’s get out of here. We’ve got a reservation with a bar stool, and Alex is buying.",
+      "focus": "jason"
+    },
+    {
+      "art": "standoff",
+      "speaker": "alex",
+      "text": "I’m not buying. You haven’t paid your last ten bills!",
+      "focus": "alex"
+    },
+    {
+      "art": "standoff",
+      "speaker": "jimmy",
+      "text": "Well, it’s hard to pay bills when you show up late for your roofing job every day, because your primary job of partying keeps you out all night!",
+      "focus": "jimmy"
+    },
+    {
+      "art": "standoff",
+      "speaker": "pete",
+      "text": "That explains the roof at your bar.",
+      "focus": "pete"
+    },
+    {
+      "art": "standoff",
+      "speaker": "alex",
+      "text": "It explains the buckets at my bar.",
+      "focus": "alex"
+    },
+    {
+      "art": "standoff",
+      "speaker": "",
+      "text": "While Steve is distracted, Tiffany takes back her whistle.",
+      "duration": 4
+    },
+    {
+      "art": "standoff",
+      "speaker": "tiffany",
+      "text": "There. Everybody’s had their fun. Go bother a parking meter.",
+      "focus": "tiffany"
+    },
+    {
+      "art": "standoff",
+      "speaker": "mick",
+      "text": "You heard the lady."
+    },
+    {
+      "art": "standoff",
+      "speaker": "tiffany",
+      "text": "I was doing pretty well before the speech.",
+      "focus": "tiffany"
+    },
+    {
+      "art": "standoff",
+      "speaker": "mick",
+      "text": "Absolutely. I was providing air support."
+    },
+    {
+      "art": "standoff",
+      "speaker": "keno",
+      "text": "Cute. You two practice fetching together?"
+    },
+    {
+      "art": "standoff",
+      "speaker": "",
+      "text": "Jimmy laughs. Then catches himself.\nKeno notices.",
+      "duration": 4
+    },
+    {
+      "art": "standoff",
+      "speaker": "",
+      "text": "The rim begins to hum.",
+      "kind": "charge",
+      "duration": 4
+    },
+    {
+      "art": "standoff",
+      "speaker": "alex",
+      "text": "Put that away, Keno.",
+      "mood": "danger"
+    },
+    {
+      "art": "standoff",
+      "speaker": "keno",
+      "text": "Relax. The captain’s got great reflexes.",
+      "mood": "danger"
+    },
+    {
+      "art": "intercept",
+      "speaker": "",
+      "text": "Tango moves first.",
+      "kind": "intercept",
+      "duration": 3.4
+    },
+    {
+      "art": "intercept",
+      "speaker": "",
+      "text": "",
+      "kind": "impact",
+      "duration": 2.8
+    },
+    {
+      "art": "aftermath",
+      "speaker": "mick",
+      "text": "Tango?",
+      "mood": "silence",
+      "duration": 5
+    },
+    {
+      "art": "aftermath",
+      "speaker": "mick",
+      "text": "Come on, buddy.",
+      "mood": "silence",
+      "duration": 5
+    },
+    {
+      "art": "aftermath",
+      "speaker": "",
+      "text": "His tennis ball rolls down the sand.\nIt stops against Mick’s hand.",
+      "mood": "silence",
+      "duration": 5
+    },
+    {
+      "art": "aftermath",
+      "speaker": "mick",
+      "text": "Tiff…?",
+      "mood": "silence",
+      "duration": 3
+    },
+    {
+      "art": "aftermath",
+      "speaker": "tiffany",
+      "text": "Pete, bring my truck around.",
+      "mood": "silence"
+    },
+    {
+      "art": "aftermath",
+      "speaker": "mick",
+      "text": "He’s not moving.",
+      "mood": "silence"
+    },
+    {
+      "art": "aftermath",
+      "speaker": "tiffany",
+      "text": "We need to go. Right now.",
+      "mood": "silence"
+    },
+    {
+      "art": "aftermath",
+      "speaker": "",
+      "text": "Pete and Tiffany lift Tango onto a towel.\nHis collar slips loose. Mick catches it.",
+      "mood": "silence",
+      "duration": 6
+    },
+    {
+      "art": "aftermath",
+      "speaker": "",
+      "text": "The truck pulls away.\nMick stays in the sand.",
+      "mood": "silence",
+      "duration": 5
+    },
+    {
+      "art": "aftermath",
+      "speaker": "steve",
+      "text": "Technically, the dog entered the flight path.",
+      "mood": "silence"
+    },
+    {
+      "art": "aftermath",
+      "speaker": "vanessa",
+      "text": "Shut up.",
+      "mood": "silence",
+      "duration": 3
+    },
+    {
+      "art": "aftermath",
+      "speaker": "keno",
+      "text": "Wasn’t aiming at the dog.",
+      "mood": "silence"
+    },
+    {
+      "art": "aftermath",
+      "speaker": "mick",
+      "text": "You should start running.",
+      "kind": "vow",
+      "mood": "resolve",
+      "duration": 7
+    },
+    {
+      "art": "aftermath",
+      "speaker": "vanessa",
+      "text": "Leave. Now. You smelly losers.",
+      "mood": "resolve"
+    },
+    {
+      "art": "aftermath",
+      "speaker": "",
+      "text": "The gang retreats along the boardwalk.",
+      "mood": "resolve",
+      "duration": 4
+    },
+    {
+      "art": "aftermath",
+      "speaker": "",
+      "text": "SIX NAMES.\nONE WAY UP.",
+      "kind": "card",
+      "mood": "resolve",
+      "duration": 9
+    },
+    {
+      "art": "aftermath",
+      "speaker": "",
+      "text": "THE LEAKY TIKI",
+      "kind": "end",
+      "mood": "resolve",
+      "subtitle": "FIRST CHALLENGE  /  ALEX ALOHA",
+      "duration": 9999
+    }
+  ]
+}

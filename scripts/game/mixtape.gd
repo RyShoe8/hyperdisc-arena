@@ -28,6 +28,7 @@ var _refreshing := false
 var _reported := false
 var _catalog_elapsed := 0.0
 var _failed_tracks := {}
+var cinematic_active := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -64,6 +65,7 @@ func _music_bus() -> String:
 
 
 func _process(delta: float) -> void:
+	_player.stream_paused = cinematic_active
 	_player.volume_db = linear_to_db(maxf(0.0001, music_volume)) + (MENU_ATTENUATION_DB if _mode == "menu" else 0.0)
 	_catalog_elapsed += delta
 	if _catalog_elapsed >= 120.0:
